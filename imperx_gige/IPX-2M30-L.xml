@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<Camera_Interface_Application>
+
+  <camera mac="00-11-1C-00-02-75" name="New Device 1" type="IPX-2M30--G">
+    <connectivity>
+      <mode>MODE_DRV</mode>
+      <address>[192.168.2.254]</address>
+      <packet_size>8128</packet_size>
+      <adapter_id>00:17:31:00:A7:DA</adapter_id>
+      <timeouts>
+        <answer>1000</answer>
+        <first_packet>0</first_packet>
+        <packet>500</packet>
+        <request>5000</request>
+      </timeouts>
+      <multicast enabled="false" master="false"></multicast>
+      <channels>
+        <channel id="0" name="Channel 0"/>
+      </channels>
+    </connectivity>
+    <LynxGigE_Software>
+      <image_type>area scan</image_type>
+      <windowing>
+        <size_x>1600</size_x>
+        <size_y>1200</size_y>
+        <offset_x>0</offset_x>
+        <offset_y>0</offset_y>
+        <binning_x>1</binning_x>
+        <binning_y>1</binning_y>
+        <decimation_x>1</decimation_x>
+        <decimation_y>1</decimation_y>
+        <decimation_block_x>1</decimation_block_x>
+        <decimation_block_y>1</decimation_block_y>
+      </windowing>
+      <pixel_type_id>65537</pixel_type_id>
+      <tap_quantity>2</tap_quantity>
+      <black_Level>0</black_Level>
+      <synchronization_mode>free run programmable</synchronization_mode>
+      <exposure_time>1</exposure_time>
+      <frame_rate>0.1</frame_rate>
+      <gains_and_offsets quantity="0"/>
+      <digital_shift>0</digital_shift>
+      <test_pattern>0</test_pattern>
+      <flip_image>false</flip_image>
+      <grabber>
+        <triggering id="0">
+          <force_single_shot>false</force_single_shot>
+          <frame_skip>0</frame_skip>
+          <gpio_trigger>false</gpio_trigger>
+          <auto_internal_retrigger>false</auto_internal_retrigger>
+          <pipe_count>2</pipe_count>
+        </triggering>
+        <test_pattern>false</test_pattern>
+        <water_level>1</water_level>
+        <pixel_shifting>0</pixel_shifting>
+        <port_mapping>0</port_mapping>
+        <pixel_inversion>false</pixel_inversion>
+        <bad_images_passthrough>false</bad_images_passthrough>
+        <ignore_missing_packets>false</ignore_missing_packets>
+        <interlaced_field_mode>0</interlaced_field_mode>
+        <undefined_size_x>false</undefined_size_x>
+        <undefined_size_Y>false</undefined_size_Y>
+        <image_sequence_id_in_data>false</image_sequence_id_in_data>
+        <input_output>
+          <pulse_generator id="0">
+            <delay>1024</delay>
+            <width>4096</width>
+            <granularity>0</granularity>
+            <periodic>false</periodic>
+            <trigger_mode>0</trigger_mode>
+          </pulse_generator>
+          <pulse_generator id="1">
+            <delay>1024</delay>
+            <width>4096</width>
+            <granularity>0</granularity>
+            <periodic>false</periodic>
+            <trigger_mode>0</trigger_mode>
+          </pulse_generator>
+          <pulse_generator id="2">
+            <delay>1024</delay>
+            <width>4096</width>
+            <granularity>0</granularity>
+            <periodic>false</periodic>
+            <trigger_mode>0</trigger_mode>
+          </pulse_generator>
+          <pulse_generator id="3">
+            <delay>1024</delay>
+            <width>4096</width>
+            <granularity>0</granularity>
+            <periodic>false</periodic>
+            <trigger_mode>0</trigger_mode>
+          </pulse_generator>
+          <rescaler id="0">
+            <granularity>0</granularity>
+            <divider>256</divider>
+            <multiplicator>0</multiplicator>
+            <input>0</input>
+            <backup_mode>false</backup_mode>
+            <backup_window>0</backup_window>
+            <backup_input>0</backup_input>
+          </rescaler>
+          <delayer id="0">
+            <delay>1</delay>
+            <reference>0</reference>
+            <input>0</input>
+          </delayer>
+          <counter id="0">
+            <up_event>0</up_event>
+            <down_event>0</down_event>
+            <clear_event>0</clear_event>
+            <clear_input>0</clear_input>
+            <compare_value>0</compare_value>
+          </counter>
+          <debouncer_0>0</debouncer_0>
+          <debouncer_1>0</debouncer_1>
+          <debouncer_2>0</debouncer_2>
+          <debouncer_3>0</debouncer_3>
+          <timestamp>
+            <granularity>0</granularity>
+            <set_mode>0</set_mode>
+            <set_input>0</set_input>
+            <clear_mode>0</clear_mode>
+            <clear_input>0</clear_input>
+            <counter_select>0</counter_select>
+          </timestamp>
+          <GPIO>
+            <look_up_table></look_up_table>
+            <input0>0</input0>
+            <input1>0</input1>
+            <input2>0</input2>
+            <input3>0</input3>
+            <input4>0</input4>
+            <input5>1</input5>
+            <input6>0</input6>
+            <input7>0</input7>
+            <enabled_interrupts>1</enabled_interrupts>
+            <gpio0_function>0</gpio0_function>
+            <gpio1_function>0</gpio1_function>
+            <gpio2_function>0</gpio2_function>
+            <gpio3_function>0</gpio3_function>
+            <gpio4_function>0</gpio4_function>
+            <gpio5_function>0</gpio5_function>
+            <gpio6_function>0</gpio6_function>
+            <gpio7_function>0</gpio7_function>
+            <gpio8_function>0</gpio8_function>
+            <gpio9_function>0</gpio9_function>
+            <gpio10_function>0</gpio10_function>
+            <gpio11_function>0</gpio11_function>
+            <cc1_function>0</cc1_function>
+            <cc2_function>0</cc2_function>
+            <cc3_function>0</cc3_function>
+            <cc4_function>0</cc4_function>
+          </GPIO>
+        </input_output>
+      </grabber>
+    </LynxGigE_Software>
+    <camera_specific>
+      <Last_Error_String></Last_Error_String>
+      <Manufacturer_data>Assembly Part #:   ASSY-0083-0001-RE01
+Assembly Serial #: 060287
+CCD Serial #:      006474
+Date of Mfg:       12/26/05
+Camera Type:       IPX-2M30--GMCN
+
+: </Manufacturer_data>
+      <Camera_Software_Version>SW v1.58 BL v1.37 CUST 0
+
+: </Camera_Software_Version>
+      <Camera_Firmware_Version>FW v4.0 CUST 0
+
+: </Camera_Firmware_Version>
+      <Horizontal_Window_Mode>0</Horizontal_Window_Mode>
+      <Horizontal_Window_Position_Left>1</Horizontal_Window_Position_Left>
+      <Horizontal_Window_Position_Right>1600</Horizontal_Window_Position_Right>
+      <Vertical_Window_Mode>0</Vertical_Window_Mode>
+      <Vertical_Window_Top_Lines>1</Vertical_Window_Top_Lines>
+      <Vertical_Window_Bottom_Lines>1200</Vertical_Window_Bottom_Lines>
+      <Shutter_Enable>false</Shutter_Enable>
+      <Shutter_Time>50</Shutter_Time>
+      <Long_Integration_Enable>false</Long_Integration_Enable>
+      <Long_Integration_Time>70</Long_Integration_Time>
+      <Strobe_Position_Enable>false</Strobe_Position_Enable>
+      <Strobe_Position>50</Strobe_Position>
+      <Trigger_Duration>1</Trigger_Duration>
+      <Pre_Exposure_Standard_Time>10</Pre_Exposure_Standard_Time>
+      <Pre_Exposure_Double_Time>1</Pre_Exposure_Double_Time>
+      <User_LUT>0</User_LUT>
+      <Channel_1_Offset>0</Channel_1_Offset>
+      <Channel_1_Gain>9.98</Channel_1_Gain>
+      <Channel_2_Offset>0</Channel_2_Offset>
+      <Channel_2_Gain>9.98</Channel_2_Gain>
+      <Noise_Correction_Enable>false</Noise_Correction_Enable>
+      <Test_Mode>0</Test_Mode>
+      <Image_Reversal_Enable>false</Image_Reversal_Enable>
+      <Trigger_Type>0</Trigger_Type>
+      <Trigger_Mode>0</Trigger_Mode>
+      <CC_Exposure_Computer_Control_Enable>false</CC_Exposure_Computer_Control_Enable>
+      <Negative_Image_Enable>false</Negative_Image_Enable>
+      <Auto_Iris_Enable>false</Auto_Iris_Enable>
+      <Auto_Iris_Level>1</Auto_Iris_Level>
+      <Frame_Rate_Control_Enable>false</Frame_Rate_Control_Enable>
+      <Frame_Rate>2</Frame_Rate>
+      <Boot_Mode>0</Boot_Mode>
+      <Temperature_Alarm_Enable>false</Temperature_Alarm_Enable>
+      <Temperature_Alarm_Set>80</Temperature_Alarm_Set>
+      <Temperature_Alarm_Clear>75</Temperature_Alarm_Clear>
+      <Current_Temperature>42.25</Current_Temperature>
+      <Camera_Speed>33.22</Camera_Speed>
+      <Camera_Exposure>30100</Camera_Exposure>
+    </camera_specific>
+    <camera_link>
+      <camera_link_data_valid_enabled>true</camera_link_data_valid_enabled>
+      <camera_link_serial_select>UART0</camera_link_serial_select>
+      <camera_link_data_valid_polarity>false</camera_link_data_valid_polarity>
+      <camera_link_line_valid_polarity>false</camera_link_line_valid_polarity>
+      <camera_link_frame_valid_polarity>false</camera_link_frame_valid_polarity>
+      <camera_link_line_valid_edge_sensitive>false</camera_link_line_valid_edge_sensitive>
+      <camera_link_frame_valid_edge_sensitive>false</camera_link_frame_valid_edge_sensitive>
+      <camera_link_frame_valid_function_select>0</camera_link_frame_valid_function_select>
+      <camera_link_line_valid_function_select>0</camera_link_line_valid_function_select>
+    </camera_link>
+  </camera>
+
+</Camera_Interface_Application>

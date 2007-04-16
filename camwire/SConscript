@@ -1,0 +1,9 @@
+import glob
+
+Import('env')
+src_files = glob.glob('src/*.c')
+objects = []
+for src_file in src_files:
+    objects = objects + env.Object(src_file,CPPPATH = ['.','../libdc1394'])
+
+Return('objects')
