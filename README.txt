@@ -5,6 +5,12 @@ independent image acquisition framework.
 
 There is also a Python wrapper of the cam_iface libraries.
 
+= Backend status =
+
+A number of backends are supported. For the latest status, see http://code.astraw.com/motmot/trunk/cam_iface/backend_scorecard.png
+
+[[Image(source:/trunk/cam_iface/backend_scorecard.png)]]
+
 = Installing =
 
 == A.0 Building cam_iface C library on Windows ==
