@@ -92,11 +92,15 @@ def add_openthreads(d):
         d.setdefault('CPPPATH',[]).extend([opj('OpenThreads','include')])
 
 def add_prosilica_gige( d ):
-    #add_openthreads(d)
+    if sys.platform.startswith('linux'):
+        if not os.path.exists('/usr/include/PvApi.h'):
+            raise PrereqsNotFoundError('Prosilica headers not found')
+    else:
+        raise NotImplementedError('Need to fixup dependency finding on Windows')
+    
     opj = os.path.join
     d.setdefault('source',[]).extend([opj('src','cam_iface_prosilica_gige.cpp'),
                                       ])
-    d.setdefault('CPPPATH',[]).append(opj('Prosilica GigE SDK','inc-pc'))
     d.setdefault('LIBS',[]).extend(['PvAPI'])
     
     if sys.platform.startswith('linux'):
@@ -107,14 +111,12 @@ def add_prosilica_gige( d ):
                                         ])
 	if os.uname()[4] in ['i686']:
 	    d.setdefault('CPPDEFINES',{}).update( {'_x86':None} )
-        # XXX this is for static linking with GCC 4.0 on x86 architecture
-        d.setdefault('LIBPATH',[]).append( opj('Prosilica GigE SDK','lib-pc','x86','4.0'))
-
         d.setdefault('LIBS',[]).append('-lOpenThreads')
         
     elif sys.platform.startswith('win'):
         # _LINUX is defined in Prosilica's examples
         d.setdefault('CPPDEFINES',{}).update( {'_WINDOWS':None} )
+        d.setdefault('CPPPATH',[]).append(opj('Prosilica GigE SDK','inc-pc'))
         d.setdefault('LIBPATH',[]).append( opj('Prosilica GigE SDK','lib-pc'))
     
 def add_camwire( d ):
@@ -177,7 +179,7 @@ def add_stuff( backend, cam_iface_obj_dict ):
 if sys.platform.startswith('linux'):
     BUILD_BACKENDS += ['dc1394']
     BUILD_BACKENDS += ['camwire']
-    if os.uname()[4]=='i686':
+    if os.uname()[4] in ['i386','i686']:
         # only builds on i386/i686 architectures for now...
         BUILD_BACKENDS += ['prosilica_gige']
 elif sys.platform.startswith('win'):
