@@ -11,8 +11,11 @@ A number of backends are supported.
 
 {{{
 #!html
+
+<!-- This raw HTML draws a table of the supported backends. -->
+
 <div>
-<table>
+<table border="1">
 <tr>
 <td>
 <p> <strong>Backend</strong> </p>
