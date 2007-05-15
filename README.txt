@@ -14,6 +14,21 @@ A number of backends are supported.
 
 <!-- This raw HTML draws a table of the supported backends. -->
 
+<!
+
+---- The following is the MoinMoin wiki text that produced this HTML output: ----
+
+ Status of backends and platforms::
+ || '''Backend''' || '''linux i386''' || '''linux x86_64''' || '''win32 (XP)''' || '''Mac OS X''' ||
+ || libdc1394 v2 ||<style="background-color: green;">works ||<style="background-color: green;">works || NA ||<style="background-color: yellowgreen;">triggering options disabled ||
+ || camwire/libdc1394 v1 ||<style="background-color: green;">works ||<style="background-color: green;">works || NA || NA ||
+ || Prosilica ||<style="background-color: green;">works || NA ||<style="background-color: green;">works || NA ||
+ || ImperX || NA || NA ||<style="background-color: orange;">rudiments present || NA ||
+ || Basler BCAM 1.8 || NA || NA ||<style="background-color: orange;">rudiments present, frequent BSOD || NA ||
+ || Basler Pylon ||<style="background-color: red;"> not started || supported by driver? ||<style="background-color: red;"> not started || supported by driver? ||
+ || !QuickTime !SequenceGrabber || NA || NA || supported by driver? ||<style="background-color: yellowgreen;">basic functionality works ||
+>
+
 <div>
 <table border="1">
 <tr>
