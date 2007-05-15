@@ -14,7 +14,7 @@ A number of backends are supported.
 
 <!-- This raw HTML draws a table of the supported backends. -->
 
-<!
+<!--
 
 ---- The following is the MoinMoin wiki text that produced this HTML output: ----
 
@@ -27,7 +27,7 @@ A number of backends are supported.
  || Basler BCAM 1.8 || NA || NA ||<style="background-color: orange;">rudiments present, frequent BSOD || NA ||
  || Basler Pylon ||<style="background-color: red;"> not started || supported by driver? ||<style="background-color: red;"> not started || supported by driver? ||
  || !QuickTime !SequenceGrabber || NA || NA || supported by driver? ||<style="background-color: yellowgreen;">basic functionality works ||
->
+-->
 
 <div>
 <table border="1">
