@@ -7,9 +7,164 @@ There is also a Python wrapper of the cam_iface libraries.
 
 = Backend status =
 
-A number of backends are supported. For the latest status, see http://code.astraw.com/motmot/trunk/cam_iface/backend_scorecard.png
+A number of backends are supported. 
 
-[[Image(source:/trunk/cam_iface/backend_scorecard.png)]]
+{{{
+#!html
+<div>
+<table>
+<tr>
+<td>
+<p> <strong>Backend</strong> </p>
+
+</td>
+<td>
+<p> <strong>linux i386</strong> </p>
+</td>
+<td>
+<p> <strong>linux x86_64</strong> </p>
+</td>
+<td>
+<p> <strong>win32 (XP)</strong> </p>
+
+</td>
+<td>
+<p> <strong>Mac OS X</strong> </p>
+</td>
+</tr>
+<tr>
+<td>
+<p> libdc1394 v2 </p>
+</td>
+<td style="background-color: green;">
+<p>works </p>
+
+</td>
+<td style="background-color: green;">
+<p>works </p>
+</td>
+<td>
+<p> NA </p>
+</td>
+<td style="background-color: yellowgreen;">
+<p>triggering options disabled </p>
+</td>
+</tr>
+<tr>
+<td>
+
+<p> camwire/libdc1394 v1 </p>
+</td>
+<td style="background-color: green;">
+<p>works </p>
+</td>
+<td style="background-color: green;">
+<p>works </p>
+</td>
+<td>
+<p> NA </p>
+</td>
+
+<td>
+<p> NA </p>
+</td>
+</tr>
+<tr>
+<td>
+<p> Prosilica </p>
+</td>
+<td style="background-color: green;">
+<p>works </p>
+</td>
+<td>
+
+<p> NA </p>
+</td>
+<td style="background-color: green;">
+<p>works </p>
+</td>
+<td>
+<p> NA </p>
+</td>
+</tr>
+<tr>
+<td>
+<p> ImperX </p>
+
+</td>
+<td>
+<p> NA </p>
+</td>
+<td>
+<p> NA </p>
+</td>
+<td style="background-color: orange;">
+<p>rudiments present </p>
+</td>
+<td>
+<p> NA </p>
+
+</td>
+</tr>
+<tr>
+<td>
+<p> Basler BCAM 1.8 </p>
+</td>
+<td>
+<p> NA </p>
+</td>
+<td>
+<p> NA </p>
+
+</td>
+<td style="background-color: orange;">
+<p>rudiments present, frequent BSOD </p>
+</td>
+<td>
+<p> NA </p>
+</td>
+</tr>
+<tr>
+<td>
+<p> Basler Pylon </p>
+</td>
+
+<td style="background-color: red;">
+<p> not started </p>
+</td>
+<td>
+<p> supported by driver? </p>
+</td>
+<td style="background-color: red;">
+<p> not started </p>
+</td>
+<td>
+<p> supported by driver? </p>
+
+</td>
+</tr>
+<tr>
+<td>
+<p> QuickTime SequenceGrabber </p>
+</td>
+<td>
+<p> NA </p>
+</td>
+<td>
+<p> NA </p>
+
+</td>
+<td>
+<p> supported by driver? </p>
+</td>
+<td style="background-color: yellowgreen;">
+<p>basic functionality works </p>
+</td>
+</tr>
+</table>
+</div>
+}}}
+
 
 = Installing =
 
