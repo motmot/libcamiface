@@ -20,167 +20,74 @@ A number of backends are supported.
 
  Status of backends and platforms::
  || '''Backend''' || '''linux i386''' || '''linux x86_64''' || '''win32 (XP)''' || '''Mac OS X''' ||
- || libdc1394 v2 ||<style="background-color: green;">works ||<style="background-color: green;">works || NA ||<style="background-color: yellowgreen;">triggering options disabled ||
- || camwire/libdc1394 v1 ||<style="background-color: green;">works ||<style="background-color: green;">works || NA || NA ||
- || Prosilica ||<style="background-color: green;">works || NA ||<style="background-color: green;">works || NA ||
- || ImperX || NA || NA ||<style="background-color: orange;">rudiments present || NA ||
- || Basler BCAM 1.8 || NA || NA ||<style="background-color: orange;">rudiments present, frequent BSOD || NA ||
- || Basler Pylon ||<style="background-color: red;"> not started || supported by driver? ||<style="background-color: red;"> not started || supported by driver? ||
- || !QuickTime !SequenceGrabber || NA || NA || supported by driver? ||<style="background-color: yellowgreen;">basic functionality works ||
+ || [http://damien.douxchamps.net/ieee1394/libdc1394/index.php libdc1394 v2] ||<style="background-color: green;">works ||<style="background-color: green;">works || NA ||<style="background-color: yellowgreen;">triggering options disabled ||
+ || [http://kauri.auck.irl.cri.nz/~johanns/camwire/ camwire/libdc1394 v1] ||<style="background-color: green;">works ||<style="background-color: green;">works || NA || NA ||
+ || [http://www.prosilica.com/ Prosilica GigE Vision] ||<style="background-color: green;">works || NA ||<style="background-color: green;">works || NA ||
+ || [http://www.imperx.com/ ImperX GigE] || NA || NA ||<style="background-color: orange;">rudiments present || NA ||
+ || [http://www.baslerweb.com/indizes/beitrag_index_en_21486.html Basler BCAM 1.8] || NA || NA ||<style="background-color: orange;">rudiments present, frequent BSOD || NA ||
+ || [http://www.baslerweb.com/beitraege/beitrag_en_53074.html Basler Pylon] ||<style="background-color: red;"> not started || supported by driver? ||<style="background-color: red;"> not started || supported by driver? ||
+ || [http://developer.apple.com/quicktime/ QuickTime SequenceGrabber] || NA || NA || supported by driver? ||<style="background-color: yellowgreen;">basic functionality works ||
+
 -->
 
-<div>
-<table border="1">
-<tr>
-<td>
-<p> <strong>Backend</strong> </p>
+<table><tbody><tr>  <td><p class="line862"> <strong>Backend</strong> </td>
 
-</td>
-<td>
-<p> <strong>linux i386</strong> </p>
-</td>
-<td>
-<p> <strong>linux x86_64</strong> </p>
-</td>
-<td>
-<p> <strong>win32 (XP)</strong> </p>
+  <td><p class="line862"> <strong>linux i386</strong> </td>
+  <td><p class="line862"> <strong>linux x86_64</strong> </td>
+  <td><p class="line862"> <strong>win32 (XP)</strong> </td>
+  <td><p class="line862"> <strong>Mac OS X</strong> </td>
 
-</td>
-<td>
-<p> <strong>Mac OS X</strong> </p>
-</td>
 </tr>
-<tr>
-<td>
-<p> libdc1394 v2 </p>
-</td>
-<td style="background-color: green;">
-<p>works </p>
+<tr>  <td><span class="anchor" id="line-65"></span><p class="line862"> <a class="http" href="http://damien.douxchamps.net/ieee1394/libdc1394/index.php">libdc1394 v2</a> </td>
+  <td style="background-color: green;"><p class="line862">works </td>
+  <td style="background-color: green;"><p class="line862">works </td>
+  <td><p class="line862"> NA </td>
+  <td style="background-color: yellowgreen;"><p class="line862">triggering options disabled </td>
 
-</td>
-<td style="background-color: green;">
-<p>works </p>
-</td>
-<td>
-<p> NA </p>
-</td>
-<td style="background-color: yellowgreen;">
-<p>triggering options disabled </p>
-</td>
 </tr>
-<tr>
-<td>
+<tr>  <td><span class="anchor" id="line-66"></span><p class="line862"> <a class="http" href="http://kauri.auck.irl.cri.nz/~johanns/camwire/">camwire/libdc1394 v1</a> </td>
+  <td style="background-color: green;"><p class="line862">works </td>
+  <td style="background-color: green;"><p class="line862">works </td>
+  <td><p class="line862"> NA </td>
+  <td><p class="line862"> NA </td>
 
-<p> camwire/libdc1394 v1 </p>
-</td>
-<td style="background-color: green;">
-<p>works </p>
-</td>
-<td style="background-color: green;">
-<p>works </p>
-</td>
-<td>
-<p> NA </p>
-</td>
-
-<td>
-<p> NA </p>
-</td>
 </tr>
-<tr>
-<td>
-<p> Prosilica </p>
-</td>
-<td style="background-color: green;">
-<p>works </p>
-</td>
-<td>
+<tr>  <td><span class="anchor" id="line-67"></span><p class="line862"> <a class="http" href="http://www.prosilica.com/">Prosilica GigE Vision</a> </td>
+  <td style="background-color: green;"><p class="line862">works </td>
+  <td><p class="line862"> NA </td>
+  <td style="background-color: green;"><p class="line862">works </td>
+  <td><p class="line862"> NA </td>
 
-<p> NA </p>
-</td>
-<td style="background-color: green;">
-<p>works </p>
-</td>
-<td>
-<p> NA </p>
-</td>
 </tr>
-<tr>
-<td>
-<p> ImperX </p>
+<tr>  <td><span class="anchor" id="line-68"></span><p class="line862"> <a class="http" href="http://www.imperx.com/">ImperX GigE</a> </td>
+  <td><p class="line862"> NA </td>
+  <td><p class="line862"> NA </td>
+  <td style="background-color: orange;"><p class="line862">rudiments present </td>
 
-</td>
-<td>
-<p> NA </p>
-</td>
-<td>
-<p> NA </p>
-</td>
-<td style="background-color: orange;">
-<p>rudiments present </p>
-</td>
-<td>
-<p> NA </p>
-
-</td>
+  <td><p class="line862"> NA </td>
 </tr>
-<tr>
-<td>
-<p> Basler BCAM 1.8 </p>
-</td>
-<td>
-<p> NA </p>
-</td>
-<td>
-<p> NA </p>
+<tr>  <td><span class="anchor" id="line-69"></span><p class="line862"> <a class="http" href="http://www.baslerweb.com/indizes/beitrag_index_en_21486.html">Basler BCAM 1.8</a> </td>
+  <td><p class="line862"> NA </td>
+  <td><p class="line862"> NA </td>
 
-</td>
-<td style="background-color: orange;">
-<p>rudiments present, frequent BSOD </p>
-</td>
-<td>
-<p> NA </p>
-</td>
+  <td style="background-color: orange;"><p class="line862">rudiments present, frequent BSOD </td>
+  <td><p class="line862"> NA </td>
 </tr>
-<tr>
-<td>
-<p> Basler Pylon </p>
-</td>
+<tr>  <td><span class="anchor" id="line-70"></span><p class="line862"> <a class="http" href="http://www.baslerweb.com/beitraege/beitrag_en_53074.html">Basler Pylon</a> </td>
+  <td style="background-color: red;"><p class="line862"> not started </td>
 
-<td style="background-color: red;">
-<p> not started </p>
-</td>
-<td>
-<p> supported by driver? </p>
-</td>
-<td style="background-color: red;">
-<p> not started </p>
-</td>
-<td>
-<p> supported by driver? </p>
-
-</td>
+  <td><p class="line862"> supported by driver? </td>
+  <td style="background-color: red;"><p class="line862"> not started </td>
+  <td><p class="line862"> supported by driver? </td>
 </tr>
-<tr>
-<td>
-<p> QuickTime SequenceGrabber </p>
-</td>
-<td>
-<p> NA </p>
-</td>
-<td>
-<p> NA </p>
+<tr>  <td><span class="anchor" id="line-71"></span><p class="line862"> <a class="http" href="http://developer.apple.com/quicktime/">QuickTime SequenceGrabber</a> </td>
 
-</td>
-<td>
-<p> supported by driver? </p>
-</td>
-<td style="background-color: yellowgreen;">
-<p>basic functionality works </p>
-</td>
+  <td><p class="line862"> NA </td>
+  <td><p class="line862"> NA </td>
+  <td><p class="line862"> supported by driver? </td>
+  <td style="background-color: yellowgreen;"><p class="line862">basic functionality works </td>
 </tr>
-</table>
-</div>
+</tbody></table>
 }}}
 
 
