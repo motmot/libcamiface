@@ -1,3 +1,12 @@
+/* 
+
+ Note: see also
+ http://www.auc.edu.au/conf/conf03/papers/FAUC_DV2003_Heckenberg.pdf
+ which suggests the "VDIG" interface is better for low-latency video
+ access.
+
+*/
+
 #include "cam_iface.h"
 
 #include <Carbon/Carbon.h>
@@ -229,14 +238,25 @@ pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
 
 void cam_iface_startup() {
   OSErr err;
+  OSType resType;
+  short resID;
+  Handle theResource;
 
-  err=EnterMovies();
-  CHK_QT(err); 
+
 
   ComponentDescription	theDesc;
   Component		sgCompID;
-  //  ComponentDescription  foundDesc = {0, 0, 0, 0, 0};
-  int i;
+  int i,j,k;
+
+  char name[256];
+  Handle componentName=NULL;
+  char info[256];
+  Handle componentInfo=NULL;
+  componentName=NewHandle(sizeof(name));
+  componentInfo=NewHandle(sizeof(info));
+
+  err=EnterMovies();
+  CHK_QT(err); 
 
   theDesc.componentType = SeqGrabComponentType;
   theDesc.componentSubType = 0L;
@@ -256,15 +276,23 @@ void cam_iface_startup() {
     sgCompID 	= FindNextComponent(sgCompID, &theDesc);
     components_by_device_number[i] = sgCompID;
 
-    //GetComponentInfo(sgCompID,&foundDesc,NULL,NULL,NULL);
+    // Used http://muonics.net/extras/GRL_ROTTERDAM_KPN_APP/kpnAppSourceCode.zip
+    // for componentName and componentInfo example.
 
+    err=GetComponentInfo(sgCompID,&theDesc,componentName,componentInfo,NULL);
+    CHK_QT(err); 
+    
     /*
     printf("found a device to capture with \n");
-    printf("Type: %s\n", &foundDesc.componentType);
-    printf("Manufacturer: %s\n", &foundDesc.componentManufacturer);
+    printf("Type: %s\n", &theDesc.componentType);
+    printf("Manufacturer: %s\n", &theDesc.componentManufacturer);
+    printf("Name: %s\n", *componentName ? p2cstr((StringPtr)*componentName) : "-" );
+    printf("Info: %s\n", *componentInfo ? p2cstr((StringPtr)*componentInfo) : "-");
     */
-  }
 
+  }
+  DisposeHandle(componentName);
+  DisposeHandle(componentInfo);
 }
 
 void cam_iface_shutdown() {
@@ -275,6 +303,7 @@ int cam_iface_get_num_cameras() {
 }
 
 void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
+  /// XXX TODO: should implement this
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   snprintf(out_camid->vendor,CAMWIRE_ID_MAX_CHARS,"unknown vendor");
   snprintf(out_camid->model,CAMWIRE_ID_MAX_CHARS,"unknown model");
