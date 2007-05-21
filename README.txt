@@ -133,24 +133,3 @@ cam_iface is licensed under the BSD license. See the LICENSE.txt file
 for the full description. Note that cam_iface is also distributed with
 other open source code packages, which have their own licenses, also
 listed in LICENSE.txt.
-
-= Related Software =
-
-* What is GenICam(TM), and how does camiface compare?
-
-Another project with similar goals is GenICam(TM)
-http://www.genicam.com/ . Primary differences between camiface and
-GenICam(TM) include the following: 1) camiface has been developed by a
-single individual to support a limited number of camera features from
-a limited number of cameras and is necessarily narrower in scope than
-an API meant to encompass every available feature on every available
-camera. 2) camiface operates using existing drivers rather than
-creating a new implementation of the driver layer.
-
-One implementation of GenICam(TM) appears to be Basler's
-Pylon. http://www.baslerweb.com/beitraege/beitrag_en_53074.html
-
-* What is GigEVision(TM)?
-
-See http://www.machinevisiononline.org/public/articles/index.cfm?cat=167
-for a description of GigEVision(TM).
