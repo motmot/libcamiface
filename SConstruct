@@ -39,31 +39,37 @@ def add_dc1394v2( d ):
         
     # assume dc1394 is installed to prefix /usr
     dc1394_prefix = os.environ.get('DC1394_PREFIX','/usr')
-    static_build = os.environ.get('CAMIFACE_DC1394_STATIC',static_build_default)
+    dc1394_prefix = os.path.expanduser(dc1394_prefix)
+    static_build_str = os.environ.get('CAMIFACE_DC1394_STATIC',str(static_build_default))
+    if static_build_str.lower().startswith('f'):
+        static_build = False
+    else:
+        static_build = True
 
+    lib_dir = os.path.join(dc1394_prefix,'lib') # e.g. /usr/include
+        
     if not static_build:
         include_dir = os.path.join(dc1394_prefix,'include') # e.g. /usr/include
+        d.setdefault('LIBS',[]).extend(['dc1394'])
+        d.setdefault('LIBPATH',[]).extend( [lib_dir] )
     else:
         include_dir = dc1394_prefix
-        
-    if not os.path.exists(os.path.join(include_dir,'dc1394/control.h')):
-        raise PrereqsNotFoundError('libdc1394 (v2) not found at prefix "%s" '
-                                   '- refusing to build'%dc1394_prefix)
-    
-    if not static_build:
-        d.setdefault('LIBS',[]).extend(['dc1394'])
-    else:
         sources = glob.glob(os.path.join(dc1394_prefix,'dc1394/*.c'))
         if sys.platform.startswith('darwin'):
             sources = sources + glob.glob(os.path.join(dc1394_prefix,'dc1394/macosx/*.c'))
         elif sys.platform.startswith('linux'):
             sources = sources + glob.glob(os.path.join(dc1394_prefix,'dc1394/linux/*.c'))
         d.setdefault('source',[]).extend(sources)
-        d.setdefault('CPPPATH',[]).extend( [dc1394_prefix,
-                                        os.path.join(dc1394_prefix,'dc1394')] )
+        d.setdefault('CPPPATH',[]).extend( [os.path.join(dc1394_prefix,'dc1394')] )
+                                        
+    d.setdefault('CPPPATH',[]).extend( [include_dir] )
+        
+    if not os.path.exists(os.path.join(include_dir,'dc1394/control.h')):
+        raise PrereqsNotFoundError('libdc1394 (v2) not found at prefix "%s" '
+                                   '- refusing to build'%dc1394_prefix)
     
     if sys.platform.startswith('darwin'):
-        d.setdefault('LINKFLAGS',[]).extend('-framework IOKit -framework CoreFoundation'.split())
+        d.setdefault('LINKFLAGS',[]).extend('-framework IOKit -framework CoreFoundation -framework CoreServices'.split())
     d.setdefault('LIBS',[]).extend(['m'])
     
 def add_system_libdc1394( d ):
