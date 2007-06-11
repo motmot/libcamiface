@@ -58,25 +58,25 @@ char *device_name=NULL;
   }
 
 #define CIDC1394CHK(err) {						\
-    dc1394error_t m = err;						\
-    if ((m)!=DC1394_SUCCESS) {						\
+    dc1394error_t m = (err);						\
+    if (m!=DC1394_SUCCESS) {						\
       cam_iface_error = -1;						\
       snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
 	       "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,	\
-	       (m),							\
-	       dc1394_error_strings[(m)]);				\
+	       m,							\
+	       dc1394_error_strings[m]);				\
       return;								\
     }									\
   }
 
 #define CIDC1394CHKV(err) {						\
-    dc1394error_t m = err;						\
-    if ((m)!=DC1394_SUCCESS) {						\
+    dc1394error_t m = (err);						\
+    if (m!=DC1394_SUCCESS) {						\
       cam_iface_error = -1;						\
       snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
 	       "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,	\
-	       (m),							\
-	       dc1394_error_strings[(m)]);				\
+	       m,							\
+	       dc1394_error_strings[m]);				\
       return NULL;							\
     }									\
   }
@@ -504,12 +504,6 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   video_mode = modes_by_device_number[device_number].modes[mode_number].video_mode;
   framerate = modes_by_device_number[device_number].modes[mode_number].framerate;
 
-#if 0
-  CIDC1394CHKV(dc1394_cleanup_iso_channels_and_bandwidth(cameras[device_number]));
-#else
-  printf("WARING: skipped cleanup_iso_channels_and_bandwidth() call\n");
-#endif
-
   in_cr = (CamContext*)malloc(sizeof(CamContext));
   if (!in_cr) {
     cam_iface_error = -1;
@@ -694,6 +688,16 @@ void CamContext_start_camera( CamContext *in_cr ) {
 			     ((cam_iface_backend_extras*)
 			      (in_cr->backend_extras))->num_dma_buffers,
 			     DC1394_CAPTURE_FLAGS_DEFAULT);
+
+  if (err==DC1394_IOCTL_FAILURE) {
+    cam_iface_error = -1;						\
+    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
+	     "%s (%d): libdc1394 err %d: %s. (Did you request too many DMA buffers?)\n",__FILE__,__LINE__,	\
+	     err,							\
+	     dc1394_error_strings[err]);				\
+    return;
+  }
+
   CIDC1394CHK(err);
 
   /*have the camera start sending data*/
@@ -782,6 +786,7 @@ void CamContext_get_camera_property_info(CamContext *in_cr,
   case DC1394_FEATURE_TEMPERATURE: info->name = "temperature"; break;
   case DC1394_FEATURE_TRIGGER: info->name = "trigger"; break;
   case DC1394_FEATURE_TRIGGER_DELAY: info->name = "trigger delay"; break;
+  case DC1394_FEATURE_FRAME_RATE: info->name = "frame rate"; break;
   default:
     fprintf(stderr,"unknown feature id = %d\n",feature_id);
     cam_iface_error = -1;
@@ -802,7 +807,10 @@ void CamContext_get_camera_property_info(CamContext *in_cr,
   info->has_manual_mode = mybool;
 
   info->is_scaled_quantity = 0;
-  
+
+  // Hacks for each known camera type should go here, or a more
+  // general way.
+
   if ((strcmp(camera->vendor,"Basler")==0) &&
       (strcmp(camera->model,"A602f")==0) && 
       (feature_id==DC1394_FEATURE_SHUTTER)) {

@@ -90,7 +90,7 @@ int main() {
   mode_number = 0;
   printf("\nChoosing mode %d\n",mode_number);
 
-  num_buffers = 80;
+  num_buffers = 5;
 
   cc = new_CamContext(0,num_buffers,mode_number);
   _check_error();
