@@ -643,6 +643,10 @@ void delete_CamContext(CamContext *in_cr) {
   dc1394camera_t *camera;
   camera = cameras[in_cr->device_number];
 
+  /* make sure the camera stops sending data */
+  CIDC1394CHK(dc1394_video_set_transmission(camera,
+					    DC1394_OFF));
+
   if (camera->capture_is_set>0) {
     CIDC1394CHK(dc1394_capture_stop(camera));
   }
