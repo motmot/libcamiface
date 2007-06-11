@@ -327,6 +327,8 @@ void cam_iface_shutdown() {
     dc1394_free_camera(cameras[device_number]);
   }
 
+  free(cameras);
+
   num_cameras=0;
 }
 
@@ -620,6 +622,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   }
     
   backend_extras->num_dma_buffers=NumImageBuffers;
+  backend_extras->buffer_size=(backend_extras->roi_width)*(backend_extras->roi_height)*in_cr->depth/8;
 
 #ifdef CAM_IFACE_DEBUG
   fprintf(stdout,"new cam context 1\n");
@@ -691,19 +694,6 @@ void CamContext_start_camera( CamContext *in_cr ) {
 			     ((cam_iface_backend_extras*)
 			      (in_cr->backend_extras))->num_dma_buffers,
 			     DC1394_CAPTURE_FLAGS_DEFAULT);
-
-#ifdef CAM_IFACE_CALL_UNLISTEN
-  if (err == DC1394_IOCTL_FAILURE) {
-
-    fprintf(stderr, "ioctl failure -- calling VIDEO1394_IOC_UNLISTEN_CHANNEL");
-    dma_fd = dc1394_capture_get_dma_fd(camera);
-    ioctl(dma_fd,VIDEO1394_IOC_UNLISTEN_CHANNEL,&(camera->iso_channel));
-    err = dc1394_capture_setup(camera,
-			       ((cam_iface_backend_extras*)
-				(in_cr->backend_extras))->num_dma_buffers);
-  }
-#endif
-  
   CIDC1394CHK(err);
 
   /*have the camera start sending data*/
@@ -964,8 +954,8 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr,
 
   for (row=0;row<h;row++) {
     memcpy((void*)(out_bytes+row*stride0), /*dest*/
-	   (const void*)(frame->image + row*wb),/*src*/
-	   wb);/*size*/
+    	   (const void*)(frame->image + row*wb),/*src*/
+    	   wb);/*size*/
   }
 
   (((cam_iface_backend_extras*)(in_cr->backend_extras))->last_timestamp)=frame->timestamp; // get timestamp
@@ -1194,6 +1184,7 @@ void CamContext_set_frame_size( CamContext *in_cr,
   dc1394video_mode_t video_mode;
   int restart;
   uint32_t test_width, test_height;
+  cam_iface_backend_extras* backend_extras;
 
   restart=0;
   CHECK_CC(in_cr);
@@ -1237,6 +1228,10 @@ void CamContext_set_frame_size( CamContext *in_cr,
     return;
   }
 
+  backend_extras = (cam_iface_backend_extras*)(in_cr->backend_extras);
+  backend_extras->roi_width = test_width;
+  backend_extras->roi_height = test_height;
+  backend_extras->buffer_size=(backend_extras->roi_width)*(backend_extras->roi_height)*in_cr->depth/8;
 }
 
 

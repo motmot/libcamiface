@@ -122,6 +122,11 @@ int main() {
   CamContext_get_buffer_size(cc,&buffer_size);
   _check_error();
 
+  if (buffer_size == 0) {
+    fprintf(stderr,"buffer size was 0 in %s, line %d\n",__FILE__,__LINE__);
+    exit(1);
+  }
+
   pixels = (unsigned char *)malloc( buffer_size );
   if (pixels==NULL) {
     fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
