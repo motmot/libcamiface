@@ -207,6 +207,7 @@ void cam_iface_startup() {
 #endif
 
       if (feature_info->id == DC1394_FEATURE_TRIGGER) {
+	/*
 	printf("feature_info->trigger_modes.num = %d\n",feature_info->trigger_modes.num);
 	for (j=0; j<(feature_info->trigger_modes.num); j++) {
 	  printf("AVAIL feature_info->trigger_mode = %d\n",feature_info->trigger_modes.modes[j]);
@@ -218,10 +219,11 @@ void cam_iface_startup() {
 	  printf("AVAIL feature_info->trigger_source = %d\n",feature_info->trigger_sources.sources[j]);
 	}
 	printf("feature_info->trigger_source = %d\n",feature_info->trigger_source);
+	*/
 
 	if (feature_info->trigger_sources.num) {
 	  CIDC1394CHK(dc1394_external_trigger_set_source(cameras[device_number], DC1394_TRIGGER_SOURCE_0));
-	  printf("set source\n");
+	  //printf("set source\n");
 	}
       }
 
@@ -1210,8 +1212,13 @@ void CamContext_set_frame_size( CamContext *in_cr,
   CIDC1394CHK(dc1394_format7_get_unit_size(camera, 
 					   video_mode, 
 					   &h_unit, &v_unit));
-  if ((h_unit!=1) | (v_unit!=1)) {
-    NOT_IMPLEMENTED;
+
+  if ((width%h_unit != 0) || (height%v_unit != 0)) {
+    if (restart) {
+      CamContext_start_camera( in_cr );
+    }
+    CAM_IFACE_ERROR_FORMAT("specified ROI size not attainable with this camera");
+    return;
   }
 
   CIDC1394CHK(dc1394_format7_set_image_size(camera, 
