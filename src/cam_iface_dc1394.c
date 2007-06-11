@@ -689,7 +689,8 @@ void CamContext_start_camera( CamContext *in_cr ) {
 
   err = dc1394_capture_setup(camera,
 			     ((cam_iface_backend_extras*)
-			      (in_cr->backend_extras))->num_dma_buffers);
+			      (in_cr->backend_extras))->num_dma_buffers,
+			     DC1394_CAPTURE_FLAGS_DEFAULT);
 
 #ifdef CAM_IFACE_CALL_UNLISTEN
   if (err == DC1394_IOCTL_FAILURE) {
