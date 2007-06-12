@@ -108,6 +108,13 @@ def add_prosilica_gige( d ):
     d.setdefault('source',[]).extend([opj('src','cam_iface_prosilica_gige.cpp'),
                                       ])
     d.setdefault('LIBS',[]).extend(['PvAPI'])
+
+    arch_name = os.uname()[4]
+    print 'arch_name',arch_name
+    if arch_name in ['i386','i686']:
+        d.setdefault('CPPDEFINES',{}).update( {'_x86':None} )
+    elif arch_name == 'x86_64':
+        d.setdefault('CPPDEFINES',{}).update( {'_x64':None} )
     
     if sys.platform.startswith('linux'):
         # _LINUX is defined in Prosilica's examples
@@ -120,7 +127,6 @@ def add_prosilica_gige( d ):
         d.setdefault('LIBS',[]).append('-lOpenThreads')
         
     elif sys.platform.startswith('win'):
-        # _LINUX is defined in Prosilica's examples
         d.setdefault('CPPDEFINES',{}).update( {'_WINDOWS':None} )
         d.setdefault('CPPPATH',[]).append(opj('Prosilica GigE SDK','inc-pc'))
         d.setdefault('LIBPATH',[]).append( opj('Prosilica GigE SDK','lib-pc'))
@@ -185,9 +191,7 @@ def add_stuff( backend, cam_iface_obj_dict ):
 if sys.platform.startswith('linux'):
     BUILD_BACKENDS += ['dc1394']
     BUILD_BACKENDS += ['camwire']
-    if os.uname()[4] in ['i386','i686']:
-        # only builds on i386/i686 architectures for now...
-        BUILD_BACKENDS += ['prosilica_gige']
+    BUILD_BACKENDS += ['prosilica_gige']
 elif sys.platform.startswith('win'):
     BUILD_BACKENDS += ['imperx']
     BUILD_BACKENDS += ['prosilica_gige']
