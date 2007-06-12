@@ -352,11 +352,18 @@ void cam_iface_startup() {
     Sleep(250);
   }
 
+  // get list of reachable cameras
   unsigned long     ul_nc, numCamerasAvail;
   ul_nc = PvCameraList(camera_list, PV_MAX_NUM_CAMERAS, &numCamerasAvail);
 
   if (ul_nc != numCamerasAvail) {
     CAM_IFACE_THROW_ERROR("more cameras available than PV_MAX_NUM_CAMERAS");
+  }
+
+  if (ul_nc < PV_MAX_NUM_CAMERAS) {
+    ul_nc += PvCameraListUnreachable(&camera_list[ul_nc],
+				     PV_MAX_NUM_CAMERAS-ul_nc,
+				     NULL);
   }
 
   num_cameras = (int)ul_nc; // cast to integer
