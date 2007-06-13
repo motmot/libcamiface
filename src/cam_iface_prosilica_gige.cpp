@@ -111,6 +111,7 @@ const char *pv_attr_strings[PV_NUM_ATTR] = {
 #define PV_ATTR_GAIN 0
 #define PV_ATTR_SHUTTER 1
 
+  // from PvApi.h
 #define PV_ERROR_NUM 22
 const char *pv_error_strings[PV_ERROR_NUM] = {
   "No error",
