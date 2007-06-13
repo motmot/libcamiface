@@ -40,6 +40,12 @@ extern "C" {
 #define _STDCALL
 #endif
 
+#if 1
+#define DPRINTF(...)
+#else
+#define DPRINTF(...) printf(__VA_ARGS__)
+#endif
+
 #if defined(_LINUX) || defined(_QNX)
 void Sleep(unsigned int time)
 {
@@ -361,6 +367,7 @@ void cam_iface_startup() {
   }
 
   if (ul_nc < PV_MAX_NUM_CAMERAS) {
+    DPRINTF("trying unreachable cameras...\n");
     ul_nc += PvCameraListUnreachable(&camera_list[ul_nc],
 				     PV_MAX_NUM_CAMERAS-ul_nc,
 				     NULL);
@@ -428,7 +435,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   CIPVCHKV(PvAttrUint32Get(*handle_ptr,"FirmwareVerMinor",&FirmwareVerMinor));
   CIPVCHKV(PvAttrUint32Get(*handle_ptr,"FirmwareVerBuild",&FirmwareVerBuild));
 
-  // printf("firmware %d %d %d\n",FirmwareVerMajor,FirmwareVerMinor,FirmwareVerBuild);
+  // DPRINTF("firmware %d %d %d\n",FirmwareVerMajor,FirmwareVerMinor,FirmwareVerBuild);
 
   if ( ! ((FirmwareVerMajor >= 1) && (FirmwareVerMinor >= 24) ) ) {
     CAM_IFACE_THROW_ERRORV("firmware too old - see http://www.prosilica.com/support/gige/ge_download.html");
@@ -443,27 +450,27 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   };
   tPvAttributeInfo attrInfo;
   for (int i=0;i<5;i++) {
-    printf("%s\n",attr_names[i]);
+    DPRINTF("%s\n",attr_names[i]);
     CIPVCHKV(PvAttrInfo(*handle_ptr,attr_names[i],&attrInfo));
-    printf("     impact: %s\n",attrInfo.Impact);
-    printf("     category: %s\n",attrInfo.Category);
+    DPRINTF("     impact: %s\n",attrInfo.Impact);
+    DPRINTF("     category: %s\n",attrInfo.Category);
     if (attrInfo.Flags & ePvFlagRead) {
-      printf("       Read access is permitted\n");
+      DPRINTF("       Read access is permitted\n");
     }
     if (attrInfo.Flags & ePvFlagWrite) {
-      printf("       Write access is permitted\n");
+      DPRINTF("       Write access is permitted\n");
     }
     if (attrInfo.Flags & ePvFlagVolatile) {
-      printf("       The camera may change the value any time\n");
+      DPRINTF("       The camera may change the value any time\n");
     }
     if (attrInfo.Flags & ePvFlagConst) {
-      printf("       Value is read only and never changes\n");
+      DPRINTF("       Value is read only and never changes\n");
     }
   }
 
   /*
   if (NumImageBuffers!=5) {
-    printf("forcing num_buffers to 5 for performance reasons\n"); // seems to work well - ADS 20061204
+    DPRINTF("forcing num_buffers to 5 for performance reasons\n"); // seems to work well - ADS 20061204
     NumImageBuffers = 5;
   }
   */
@@ -600,7 +607,7 @@ void CamContext_get_num_camera_properties(CamContext *ccntxt,
   unsigned long num_props_pv=0;
   CIPVCHK(PvAttrList(*handle_ptr,&attr_list,&num_props_pv));
   for (int i=0;i<num_props_pv;i++) {
-    printf("attr: %d %s\n",i,attr_list[i]);
+    DPRINTF("attr: %d %s\n",i,attr_list[i]);
   }
   */
   *num_properties = PV_NUM_ATTR;
@@ -644,7 +651,7 @@ void CamContext_get_camera_property_info(CamContext *ccntxt,
     /// XXX HACK!!!
     //info->max_value = mymax;
     info->max_value = 50000;
-    printf("WARNING: artificially setting max_value of shutter to 50000 in %s, %d\n",__FILE__,__LINE__);
+    DPRINTF("WARNING: artificially setting max_value of shutter to 50000 in %s, %d\n",__FILE__,__LINE__);
     info->is_scaled_quantity = 1;
     info->scaled_unit_name = "msec";
     info->scale_offset = 0;
@@ -852,7 +859,7 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
   dif64=ts_uint64-prev_ts_uint64;
   prev_ts_uint64 = ts_uint64;
 
-  //  printf("got it                         (ts %llu)    (diff %lld)!\n",ts_uint64,dif64);
+  //  DPRINTF("got it                         (ts %llu)    (diff %lld)!\n",ts_uint64,dif64);
   backend_extras->last_timestamp = ts_uint64;
 
   tPvErr oldstatus = frame->Status;
@@ -1152,7 +1159,7 @@ int XXXhack() {
   if (cam_iface_get_num_cameras()<1) {
     _check_error();
 
-    printf("no cameras found, will now exit\n");
+    DPRINTF("no cameras found, will now exit\n");
 
     cam_iface_shutdown();
     _check_error();
@@ -1164,22 +1171,22 @@ int XXXhack() {
   cam_iface_get_num_modes(0, &num_modes);
   _check_error();
 
-  printf("%d mode(s) available\n",num_modes);
+  DPRINTF("%d mode(s) available\n",num_modes);
   
   for (i=0; i<num_modes; i++) {
     cam_iface_get_mode_string(0,i,mode_string,255);
-    printf("%d: %s\n",i,mode_string);
+    DPRINTF("%d: %s\n",i,mode_string);
   }
 
   mode_number = 0;
-  printf("\nChoosing mode %d\n",mode_number);
+  DPRINTF("\nChoosing mode %d\n",mode_number);
 
   num_buffers = 80;
 
   cc = new_CamContext(0,num_buffers,mode_number);
   _check_error();
 
-  printf("allocated %d buffers\n",num_buffers);
+  DPRINTF("allocated %d buffers\n",num_buffers);
 
   CamContext_get_num_camera_properties(cc,&num_props);
   _check_error();
@@ -1188,9 +1195,9 @@ int XXXhack() {
     CamContext_get_camera_property_info(cc,i,&cam_props);
     if (cam_props.is_present) {
       CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
-      printf("  %s: %d\n",cam_props.name,prop_value);
+      DPRINTF("  %s: %d\n",cam_props.name,prop_value);
     } else {
-      printf("  %s: not present\n");
+      DPRINTF("  %s: not present\n");
     }
   }
 
@@ -1271,7 +1278,7 @@ CamContext * XXXhack2() {
   if (cam_iface_get_num_cameras()<1) {
     _check_error();
 
-    printf("no cameras found, will now exit\n");
+    DPRINTF("no cameras found, will now exit\n");
 
     cam_iface_shutdown();
     _check_error();
@@ -1283,22 +1290,22 @@ CamContext * XXXhack2() {
   cam_iface_get_num_modes(0, &num_modes);
   _check_error();
 
-  printf("%d mode(s) available\n",num_modes);
+  DPRINTF("%d mode(s) available\n",num_modes);
   
   for (i=0; i<num_modes; i++) {
     cam_iface_get_mode_string(0,i,mode_string,255);
-    printf("%d: %s\n",i,mode_string);
+    DPRINTF("%d: %s\n",i,mode_string);
   }
 
   mode_number = 0;
-  printf("\nChoosing mode %d\n",mode_number);
+  DPRINTF("\nChoosing mode %d\n",mode_number);
 
   num_buffers = 80;
 
   cc = new_CamContext(0,num_buffers,mode_number);
   _check_error();
 
-  printf("allocated %d buffers\n",num_buffers);
+  DPRINTF("allocated %d buffers\n",num_buffers);
 
   /*
   CamContext_get_num_camera_properties(cc,&num_props);
@@ -1308,9 +1315,9 @@ CamContext * XXXhack2() {
     CamContext_get_camera_property_info(cc,i,&cam_props);
     if (cam_props.is_present) {
       CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
-      printf("  %s: %d\n",cam_props.name,prop_value);
+      DPRINTF("  %s: %d\n",cam_props.name,prop_value);
     } else {
-      printf("  %s: not present\n");
+      DPRINTF("  %s: not present\n");
     }
   }
   */
