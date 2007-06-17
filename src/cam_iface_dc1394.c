@@ -325,7 +325,6 @@ void cam_iface_shutdown() {
   }  
 
   for (device_number=0;device_number<num_cameras;device_number++) {
-    CIDC1394CHK(dc1394_cleanup_iso_channels_and_bandwidth(cameras[device_number]));
     dc1394_free_camera(cameras[device_number]);
   }
 
