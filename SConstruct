@@ -115,12 +115,12 @@ def add_prosilica_gige( d ):
     if sys.platform.startswith('linux'):
         # _LINUX is defined in Prosilica's examples
         d.setdefault('CPPDEFINES',{}).update( {'_LINUX':None} )
-        d.setdefault('LIBS',[]).extend(['rt', # for clock_gettime(), timer_create(), timer_settime()
-                                        'pthread',
-                                        ])
+        #d.setdefault('LIBS',[]).extend(['rt', # for clock_gettime(), timer_create(), timer_settime()
+        #                                'pthread',
+        #                                ])
 	if os.uname()[4] in ['i686']:
 	    d.setdefault('CPPDEFINES',{}).update( {'_x86':None} )
-        d.setdefault('LIBS',[]).append('-lOpenThreads')
+        #d.setdefault('LIBS',[]).append('-lOpenThreads')
         
     elif sys.platform.startswith('win'):
         d.setdefault('CPPDEFINES',{}).update( {'_WINDOWS':None} )

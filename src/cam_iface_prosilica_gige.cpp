@@ -64,7 +64,7 @@ static char cam_iface_backend_string[CAM_IFACE_MAX_ERROR_LEN];
 #define PV_MAX_ENUM_LEN 32
 
 /* global variables */
-#define PV_MAX_NUM_CAMERAS 2
+#define PV_MAX_NUM_CAMERAS 1
 #define PV_MAX_NUM_BUFFERS 80
 static int num_cameras = 0;
 static tPvCameraInfo camera_list[PV_MAX_NUM_CAMERAS];
@@ -248,7 +248,6 @@ void _internal_start_streaming( CamContext * ccntxt,
   if ((backend_extras->malloced_buf_size) < iBytesPerFrame) {
     CAM_IFACE_THROW_ERROR("buffer is larger than allocated memory");
   }
-  // I guess this doesn't "cross" a thread boundary because we're not capturing
   for (int i=0; i<backend_extras->num_buffers; i++) {
     backend_extras->frames[i]->ImageBufferSize = backend_extras->buf_size;
   }
@@ -936,7 +935,6 @@ void CamContext_set_frame_size( CamContext *ccntxt,
   CIPVCHK(PvAttrUint32Get(*handle_ptr,"TotalBytesPerFrame",&FrameSize));
   backend_extras->buf_size = FrameSize; // XXX should check for int overflow...
   
-  // XXX I can't see how this doesn't cross a thread boundary -- don't we have to de-queue the frame first?
   for (int i=0; i<backend_extras->num_buffers; i++) {
     backend_extras->frames[i]->ImageBufferSize = backend_extras->buf_size;
   }
