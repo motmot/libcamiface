@@ -32,15 +32,10 @@ def add_system_raw1394( d ):
     d.setdefault('LIBS',[]).append('raw1394')
     
 def add_dc1394v2( d ):
-    if sys.platform.startswith('darwin'):
-        static_build_default = True # include dc1394 code in extension
-    else:
-        static_build_default = False # link to dynamic library in extension
-        
     # assume dc1394 is installed to prefix /usr
     dc1394_prefix = os.environ.get('DC1394_PREFIX','/usr')
     dc1394_prefix = os.path.expanduser(dc1394_prefix)
-    static_build_str = os.environ.get('CAMIFACE_DC1394_STATIC',str(static_build_default))
+    static_build_str = os.environ.get('CAMIFACE_DC1394_STATIC','false')
     if static_build_str.lower().startswith('f'):
         static_build = False
     else:
@@ -63,10 +58,11 @@ def add_dc1394v2( d ):
         d.setdefault('CPPPATH',[]).extend( [os.path.join(dc1394_prefix,'dc1394')] )
                                         
     d.setdefault('CPPPATH',[]).extend( [include_dir] )
-        
-    if not os.path.exists(os.path.join(include_dir,'dc1394/control.h')):
-        raise PrereqsNotFoundError('libdc1394 (v2) not found at prefix "%s" '
-                                   '- refusing to build'%dc1394_prefix)
+
+    test_header_loc = os.path.join(include_dir,'dc1394/control.h')
+    if not os.path.exists(test_header_loc):
+        raise PrereqsNotFoundError('libdc1394 (v2) not found at "%s" '
+                                   '- refusing to build'%test_header_loc)
     
     if sys.platform.startswith('darwin'):
         d.setdefault('LINKFLAGS',[]).extend('-framework IOKit -framework CoreFoundation -framework CoreServices'.split())
