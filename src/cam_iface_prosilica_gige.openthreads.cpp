@@ -65,6 +65,7 @@ void Sleep(unsigned int time)
 static int cam_iface_error;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 static char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN];
+static char cam_iface_backend_string[CAM_IFACE_MAX_ERROR_LEN];
 
 #define PV_MAX_ENUM_LEN 32
 
@@ -311,7 +312,11 @@ void _internal_stop_streaming( CamContext * ccntxt,
 }
 
 const char *cam_iface_get_driver_name() {
-  return "prosilica_gige";
+  unsigned long major, minor;
+  PvVersion(&major,&minor);
+  cam_iface_snprintf(cam_iface_backend_string,CAM_IFACE_MAX_ERROR_LEN,
+		     "prosilica_gige (%lu.%lu)");
+  return cam_iface_backend_string;
 }
 
 void cam_iface_clear_error() {
