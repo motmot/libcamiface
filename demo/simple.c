@@ -65,6 +65,8 @@ int main() {
   cam_iface_startup_with_version_check();
   _check_error();
 
+  printf("using driver %s\n",cam_iface_get_driver_name());
+
   if (cam_iface_get_num_cameras()<1) {
     _check_error();
 
