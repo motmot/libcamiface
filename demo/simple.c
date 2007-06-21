@@ -43,6 +43,18 @@ double floattime() {
     }									\
   }									\
 
+void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
+  int i,j;
+  FILE* fd;
+  fd = fopen(filename,"w");
+  fprintf(fd,"P5\n");
+  fprintf(fd,"%d %d\n",width,height);
+  fprintf(fd,"255\n");
+  fwrite(pixels,1,width*height,fd);
+  fprintf(fd,"\n");
+  fclose(fd);
+}
+
 int main() {
   CamContext *cc;
   unsigned char *pixels;
@@ -61,6 +73,7 @@ int main() {
   long prop_value;
   int prop_auto;
   int errnum;
+  int width, height;
 
   cam_iface_startup_with_version_check();
   _check_error();
@@ -97,6 +110,9 @@ int main() {
   cc = new_CamContext(0,num_buffers,mode_number);
   _check_error();
 
+  CamContext_get_frame_size(cc, &width, &height);
+  _check_error();
+
   CamContext_get_num_framebuffers(cc,&num_buffers);
   printf("allocated %d buffers\n",num_buffers);
 
@@ -129,11 +145,14 @@ int main() {
     exit(1);
   }
 
+#define USE_COPY
+#ifdef USE_COPY
   pixels = (unsigned char *)malloc( buffer_size );
   if (pixels==NULL) {
     fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
     exit(1);
   }
+#endif
 
   CamContext_start_camera(cc);
   _check_error();
@@ -145,7 +164,6 @@ int main() {
   printf("will now grab %d frames\n",NUM_FRAMES);
 
   for (i=0;i<NUM_FRAMES;i++) {
-#define USE_COPY 1
 #ifdef USE_COPY
     CamContext_grab_next_frame_blocking(cc,pixels);
     errnum = cam_iface_have_error();
@@ -185,6 +203,12 @@ int main() {
 
   cam_iface_shutdown();
   _check_error();
+
+  save_pgm("image.pgm",pixels, width, height);
+
+#ifdef USE_COPY
+  free(pixels);
+#endif
 
   return 0;
 }
