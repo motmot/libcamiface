@@ -22,7 +22,7 @@ A number of backends are supported.
 
 -->
 
-<table><tbody><tr> <td><p
+<table border="1"><tbody><tr> <td><p
 class="line862"> <strong>Backend</strong> </td> <td><p
 class="line862"> <strong>linux i386</strong> </td> <td><p
 class="line862"> <strong>linux x86_64</strong> </td> <td><p
