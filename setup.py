@@ -85,6 +85,4 @@ are involved with digital camera acquisition and analysis""",
       ext_modules=ext_modules,
       zip_safe=True,
       distclass = PlatformDependentDistribution,
-      install_requires = ['numpy>=1.0',
-                          'setuptools>=0.6c3'],
       **kws)
