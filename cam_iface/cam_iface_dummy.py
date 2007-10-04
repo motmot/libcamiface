@@ -7,8 +7,15 @@ def get_wrapper_name():
 def get_driver_name():
     return 'dummy'
 
+num_cameras = 1
+
+def set_num_cameras(n):
+    global num_cameras
+    num_cameras = n
+
 def get_num_cameras():
-    return 1
+    global num_cameras
+    return num_cameras
 
 def get_camera_info(index):
     return 'Dummy Vendor', 'Dummy Model', 'Dummy Chip ID'
