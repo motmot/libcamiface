@@ -156,6 +156,66 @@ const char* cam_iface_get_api_version() {
   return CAM_IFACE_API_VERSION;
 }
 
+#define MODE_CASE(m) case m:\
+    result = #m;	      \
+  break;
+
+void fprint_dc1394format7mode_t(FILE* fd, dc1394format7mode_t* mode) {
+  if (!(mode->present)) {
+    fprintf(fd,"present: FALSE\n");
+    return;
+  }
+
+  fprintf(fd,"present: TRUE\n");
+  fprintf(fd,"size_x: %d\n",mode->size_x);
+  fprintf(fd,"size_y: %d\n",mode->size_y);
+  fprintf(fd,"max_size_x: %d\n",mode->max_size_x);
+  fprintf(fd,"max_size_y: %d\n",mode->max_size_y);
+  fprintf(fd,"(more info display not implemented...)\n");
+};
+
+const char* get_dc1394_mode_string(dc1394video_mode_t mode) {
+  const char* result;
+  switch (mode) {
+  MODE_CASE(DC1394_VIDEO_MODE_160x120_YUV444)
+  MODE_CASE(DC1394_VIDEO_MODE_320x240_YUV422)
+  MODE_CASE(DC1394_VIDEO_MODE_640x480_YUV411)
+  MODE_CASE(DC1394_VIDEO_MODE_640x480_YUV422)
+  MODE_CASE(DC1394_VIDEO_MODE_640x480_RGB8)
+  MODE_CASE(DC1394_VIDEO_MODE_640x480_MONO8)
+  MODE_CASE(DC1394_VIDEO_MODE_640x480_MONO16)
+  MODE_CASE(DC1394_VIDEO_MODE_800x600_YUV422)
+  MODE_CASE(DC1394_VIDEO_MODE_800x600_RGB8)
+  MODE_CASE(DC1394_VIDEO_MODE_800x600_MONO8)
+  MODE_CASE(DC1394_VIDEO_MODE_1024x768_YUV422)
+  MODE_CASE(DC1394_VIDEO_MODE_1024x768_RGB8)
+  MODE_CASE(DC1394_VIDEO_MODE_1024x768_MONO8)
+  MODE_CASE(DC1394_VIDEO_MODE_800x600_MONO16)
+  MODE_CASE(DC1394_VIDEO_MODE_1024x768_MONO16)
+  MODE_CASE(DC1394_VIDEO_MODE_1280x960_YUV422)
+  MODE_CASE(DC1394_VIDEO_MODE_1280x960_RGB8)
+  MODE_CASE(DC1394_VIDEO_MODE_1280x960_MONO8)
+  MODE_CASE(DC1394_VIDEO_MODE_1600x1200_YUV422)
+  MODE_CASE(DC1394_VIDEO_MODE_1600x1200_RGB8)
+  MODE_CASE(DC1394_VIDEO_MODE_1600x1200_MONO8)
+  MODE_CASE(DC1394_VIDEO_MODE_1280x960_MONO16)
+  MODE_CASE(DC1394_VIDEO_MODE_1600x1200_MONO16)
+  MODE_CASE(DC1394_VIDEO_MODE_EXIF)
+  MODE_CASE(DC1394_VIDEO_MODE_FORMAT7_0)
+  MODE_CASE(DC1394_VIDEO_MODE_FORMAT7_1)
+  MODE_CASE(DC1394_VIDEO_MODE_FORMAT7_2)
+  MODE_CASE(DC1394_VIDEO_MODE_FORMAT7_3)
+  MODE_CASE(DC1394_VIDEO_MODE_FORMAT7_4)
+  MODE_CASE(DC1394_VIDEO_MODE_FORMAT7_5)
+  MODE_CASE(DC1394_VIDEO_MODE_FORMAT7_6)
+  MODE_CASE(DC1394_VIDEO_MODE_FORMAT7_7)
+  default:
+    result = "UNKNOWN";
+  }
+  return result;
+
+}
+
 void cam_iface_startup() {
   //extern void cam_iface_startup() {
   int device_number,i,j,current_mode,feature_number;
@@ -163,6 +223,7 @@ void cam_iface_startup() {
   dc1394framerates_t framerates;
   dc1394featureset_t features;
   dc1394feature_info_t    *feature_info;
+  //dc1394format7mode_t sf7mode;
 
   cameras=NULL;
   CIDC1394CHK(dc1394_find_cameras(&cameras,&num_cameras));
@@ -236,15 +297,19 @@ void cam_iface_startup() {
     // enumerate total number of modes ("mode" = dc1394 mode + dc1394 framerate)
     for (i=video_modes.num-1;i>=0;i--) {
       // framerates don't work for format 7
+      //fprintf(stderr,"mode: %s ",get_dc1394_mode_string(video_modes.modes[i]));
       if (cam_iface_is_video_mode_scalable(video_modes.modes[i])) {
 	// format7
 	modes_by_device_number[device_number].num_modes++; // a single mode entry
+	//dc1394_format7_get_mode_info(cameras[device_number], video_modes.modes[i],&sf7mode);
+	//fprint_dc1394format7mode_t(stderr,&sf7mode);
       } else {
 	CIDC1394CHK(dc1394_video_get_supported_framerates(cameras[device_number],
 							  video_modes.modes[i],
 							  &framerates));
 	for (j=framerates.num-1;j>=0;j--) {
 	  modes_by_device_number[device_number].num_modes++;
+	  //fprintf(stderr,"non-format7: num_modes++\n");
 	}
       }
     }
@@ -406,7 +471,7 @@ void cam_iface_get_mode_string(int device_number,
 			       int mode_string_maxlen) {
   dc1394video_mode_t video_mode;
   dc1394framerate_t framerate;
-  char *coding_string, *framerate_string, *fmt_string;
+  char *coding_string, *framerate_string, *dc1394_mode_string;
   int scalable;
   dc1394color_coding_t coding;
   uint32_t h_size,v_size;
@@ -461,13 +526,9 @@ void cam_iface_get_mode_string(int device_number,
     }
   }
 
-  if (scalable) {
-    fmt_string = "%d x %d (scalable) %s %s";
-  } else {
-    fmt_string = "%d x %d %s %s";
-  }
-  snprintf(mode_string,mode_string_maxlen,fmt_string,
-	   h_size,v_size,coding_string,framerate_string);
+  dc1394_mode_string = get_dc1394_mode_string(video_mode);
+  snprintf(mode_string,mode_string_maxlen,"%d x %d %s %s %s",
+	   h_size,v_size,dc1394_mode_string,coding_string,framerate_string);
 }
 
 CamContext * new_CamContext( int device_number, int NumImageBuffers,
@@ -548,6 +609,9 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   CIDC1394CHKV(dc1394_video_get_mode(cameras[device_number],&test_video_mode));
   
   if (test_video_mode != video_mode) {
+    fprintf(stderr,"ERROR while setting video modes\n");
+    fprintf(stderr,"  video_mode (desired): %s\n",get_dc1394_mode_string(video_mode));
+    fprintf(stderr,"  video_mode (actual): %s\n", get_dc1394_mode_string(test_video_mode));
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("Video mode set failed. (Camera may report modes it can't use.)");
     return NULL;
