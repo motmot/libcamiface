@@ -55,7 +55,13 @@ void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
   fclose(fd);
 }
 
-int main() {
+void show_usage(char * cmd) {
+  printf("usage: %s [num_frames]\n",cmd);
+  printf("  where num_frames can be a number of 'forever'\n");
+  exit(1);
+}
+
+int main(int argc, char** argv) {
   CamContext *cc;
   unsigned char *pixels;
 
@@ -74,10 +80,24 @@ int main() {
   int prop_auto;
   int errnum;
   int width, height;
+  int do_num_frames;
 
   cam_iface_startup_with_version_check();
   _check_error();
 
+  if (argc>1) {
+    if (strcmp(argv[1],"forever")==0) {
+      do_num_frames = -1;
+    } else if (sscanf(argv[1],"%d",&do_num_frames)==0) {
+      show_usage(argv[0]);
+    } 
+  } else {
+    do_num_frames = 50;
+  }
+      
+  for (i=0;i<argc;i++) {
+    printf("%d: %s\n",i,argv[i]);
+  }
   printf("using driver %s\n",cam_iface_get_driver_name());
 
   if (cam_iface_get_num_cameras()<1) {
@@ -160,13 +180,20 @@ int main() {
   last_fps_print = my_floattime();
   n_frames = 0;
 
-#define NUM_FRAMES 50
-  printf("will now grab %d frames\n",NUM_FRAMES);
+  if (do_num_frames < 0) {
+    printf("will now run forever. press Ctrl-C to interrupt\n");
+  } else {
+    printf("will now for %d frames.\n",do_num_frames);
+  }
 
-  for (i=0;i<NUM_FRAMES;i++) {
+  while (1) {
+    if (do_num_frames>=0) {
+      do_num_frames--;
+      if (do_num_frames<0) break;
+    }
 #ifdef USE_COPY
-    CamContext_grab_next_frame_blocking(cc,pixels,0.001f);
-    //    CamContext_grab_next_frame_blocking(cc,pixels,-1.0f);
+    CamContext_grab_next_frame_blocking(cc,pixels,0.020); // timeout after 20 msec
+    //    CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
       cam_iface_clear_error();
