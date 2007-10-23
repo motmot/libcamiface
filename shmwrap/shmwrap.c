@@ -52,7 +52,7 @@ void malloc_info_buffer( char**info_buffer, int* buflen, int w, int h ) {
     return;
   }
   
-  *buflen = snprintf(*info_buffer,x,"[general]\r\ncameras: cam1\r\n[cam1]\r\nresolution: %dx%d\r\n",w,h);
+  *buflen = snprintf(*info_buffer,x,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nresolution: %dx%d\r\n",sizeof(shmwrap_msg_ready_t),w,h);
 }
 
 int main() {

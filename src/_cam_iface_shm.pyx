@@ -15,6 +15,7 @@ cdef extern from "shmwrap.h":
     int shmwrap_frame_ready_port
     int shmwrap_control_port
     ctypedef struct shmwrap_msg_ready_t:
+        int cam_id
         int sendnumber
         int framenumber
         int width
@@ -66,10 +67,32 @@ shmwrap_control_port_ = shmwrap_control_port
 cdef ShmManager _shm_manager
 _shm_manager = ShmManager()
 
+class Stuff:
+    pass
+
+def buf2class(buf):
+    cdef char* cbuf
+    cdef shmwrap_msg_ready_t *pack
+    
+    cbuf = buf # convert to C
+    pack = <shmwrap_msg_ready_t *>&(cbuf[0])
+    result = Stuff()
+    result.cam_id = pack.cam_id
+    result.sendnumber = pack.sendnumber
+    result.framenumber = pack.framenumber
+    result.width = pack.width
+    result.height = pack.height
+    result.roi_x = pack.roi_x
+    result.roi_y = pack.roi_y
+    result.timestamp = pack.timestamp
+    result.start_offset = pack.start_offset
+    result.stride = pack.stride
+    return result
+    
 def get_data_copy(curmsg, optional_preallocated_buf=None):
     cdef char* source_ptr
     cdef int size
-    cdef int start_offset
+    cdef unsigned long start_offset
     cdef int row
     cdef int width, height
     cdef int source_stride,dest_stride,rowoffset
