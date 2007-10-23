@@ -5,14 +5,6 @@ Import('backend','env','cam_iface_external_libs',
        'cam_iface_static_lib', 'cam_iface_shared_lib',
        'cam_iface_env_kwargs')
 
-if backend =='blank':
-    # only build once
-    shmwrap_recv_obj = env.Object(target='shmwrap_recv',
-                                  source=['shmwrap_recv.c'],
-                                  )
-    env.Program(target='shmwrap_recv',
-                source=shmwrap_recv_obj)
-
 shmwrap_obj = env.Object(target='shmwrap_%s'%backend,
                          source=['shmwrap.c'],
                          LIBS=cam_iface_external_libs+[cam_iface_static_lib],
