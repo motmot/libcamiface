@@ -179,7 +179,10 @@ const char *pv_error_strings[PV_ERROR_NUM] = {
 #define CIPVCHK(err) {							\
   tPvErr m = err;							\
   if (m!=ePvErrSuccess) {						\
-    cam_iface_error = -1;						\
+    cam_iface_error = CAM_IFACE_GENERIC_ERROR;				\
+    if (m==ePvErrTimeout) {						\
+      cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;			\
+    }									\
     if (m<PV_ERROR_NUM) {						\
       cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
 			 "%s (%d): Prosilica GigE err %d: %s\n",__FILE__,__LINE__, \
@@ -198,7 +201,10 @@ const char *pv_error_strings[PV_ERROR_NUM] = {
 #define CIPVCHKV(err) {							\
   tPvErr m = err;							\
   if (m!=ePvErrSuccess) {						\
-    cam_iface_error = -1;						\
+    cam_iface_error = CAM_IFACE_GENERIC_ERROR;				\
+    if (m==ePvErrTimeout) {						\
+      cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;			\
+    }									\
     if (m<PV_ERROR_NUM) {						\
       cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
 			 "%s (%d): Prosilica GigE err %d: %s\n",__FILE__,__LINE__, \
@@ -725,16 +731,18 @@ void CamContext_set_camera_property(CamContext *ccntxt,
   return;
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes ) {
+void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes, float timeout) {
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->backend_extras);
   CamContext_grab_next_frame_blocking_with_stride(ccntxt,out_bytes,
-						  backend_extras->current_width);
+						  backend_extras->current_width,
+						  timeout);
 }
 
 void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, 
 						      unsigned char *out_bytes, 
-						      intptr_t stride0 ) {
+						      intptr_t stride0, 
+						      float timeout ) {
   CHECK_CC(ccntxt);
   tPvHandle* handle_ptr = (tPvHandle*)ccntxt->cam;
   tPvFrame* frame;
@@ -743,13 +751,19 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
 
   int status;
   int frame_waiting;
+  unsigned long pvTimeout;
+  
+  if (timeout < 0)
+    pvTimeout = PVINFINITE;
+  else
+    pvTimeout = (timeout*1000.0f); // convert to milliseconds
 
   frame = frames_ready_list_cam0[frames_ready_cam0_read_idx];
   frames_ready_cam0_read_idx++;
   frames_ready_cam0_num--;
 
   //  printf("  waiting for frame %d\n",int(frame->Context[0]));
-  CIPVCHK(PvCaptureWaitForFrameDone(*handle_ptr,frame,PVINFINITE));
+  CIPVCHK(PvCaptureWaitForFrameDone(*handle_ptr,frame,pvTimeout));
   
   size_t wb = frame->Width;
   int height = frame->Height;
@@ -792,7 +806,8 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
   }
 }
 
-void CamContext_point_next_frame_blocking( CamContext *ccntxt, unsigned char **buf_ptr){
+void CamContext_point_next_frame_blocking( CamContext *ccntxt, unsigned char **buf_ptr, 
+					   float timeout){
   CHECK_CC(ccntxt);
   NOT_IMPLEMENTED;
 }
@@ -1036,217 +1051,5 @@ void _check_error() {
     exit(1);
   }
 }
-
-
-
-
-int XXXhack() {
-  CamContext *cc;
-  unsigned char *pixels;
-
-  int num_buffers;
-
-  double last_fps_print, now, t_diff;
-  double fps;
-  int n_frames;
-  int buffer_size;
-  int num_modes, num_props;
-  const char** mode_strings;
-  char mode_string[255];
-  int i,mode_number;
-  CameraPropertyInfo cam_props;
-  long prop_value;
-  int prop_auto;
-
-  /*
-  cam_iface_startup();
-  _check_error();
-  */
-  
-  if (cam_iface_get_num_cameras()<1) {
-    _check_error();
-
-    DPRINTF("no cameras found, will now exit\n");
-
-    cam_iface_shutdown();
-    _check_error();
-    
-    exit(0);
-  }
-  _check_error();
-
-  cam_iface_get_num_modes(0, &num_modes);
-  _check_error();
-
-  DPRINTF("%d mode(s) available\n",num_modes);
-  
-  for (i=0; i<num_modes; i++) {
-    cam_iface_get_mode_string(0,i,mode_string,255);
-    DPRINTF("%d: %s\n",i,mode_string);
-  }
-
-  mode_number = 0;
-  DPRINTF("\nChoosing mode %d\n",mode_number);
-
-  num_buffers = 80;
-
-  cc = new_CamContext(0,num_buffers,mode_number);
-  _check_error();
-
-  DPRINTF("allocated %d buffers\n",num_buffers);
-
-  CamContext_get_num_camera_properties(cc,&num_props);
-  _check_error();
-
-  for (i=0; i<num_props; i++) {
-    CamContext_get_camera_property_info(cc,i,&cam_props);
-    if (cam_props.is_present) {
-      CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
-      DPRINTF("  %s: %d\n",cam_props.name,prop_value);
-    } else {
-      DPRINTF("  %s: not present\n");
-    }
-  }
-
-  CamContext_get_buffer_size(cc,&buffer_size);
-  _check_error();
-
-  pixels = (unsigned char *)malloc( buffer_size );
-  if (pixels==NULL) {
-    fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
-    exit(1);
-  }
-
-  
-
-  CamContext_start_camera(cc);
-  _check_error();
-
-  last_fps_print = floattime();
-  n_frames = 0;
-  for (;;) {
-#define USE_COPY 1
-#ifdef USE_COPY
-    CamContext_grab_next_frame_blocking(cc,pixels);
-    now = floattime();
-    n_frames += 1;
-    _check_error();
-    fprintf(stdout,".");
-    fflush(stdout);
-#else
-    CamContext_point_next_frame_blocking(cc,&pixels);
-    now = floattime();
-    n_frames += 1;
-    _check_error();
-    fprintf(stdout,".");
-    fflush(stdout);
-    CamContext_unpoint_frame(cc);
-    _check_error();
-#endif
-
-    t_diff = now-last_fps_print;
-    if (t_diff > 5.0) {
-      fps = n_frames/t_diff;
-      fprintf(stdout,"%.1f fps\n",fps);
-      last_fps_print = now;
-      n_frames = 0;
-    }
-  }
-  delete_CamContext(cc);
-
-  _check_error();
-  cam_iface_shutdown();
-}
-
-
-
-
-CamContext * XXXhack2() {
-  CamContext *cc;
-  unsigned char *pixels;
-
-  int num_buffers;
-
-  double last_fps_print, now, t_diff;
-  double fps;
-  int n_frames;
-  int buffer_size;
-  int num_modes, num_props;
-  const char** mode_strings;
-  char mode_string[255];
-  int i,mode_number;
-  CameraPropertyInfo cam_props;
-  long prop_value;
-  int prop_auto;
-
-  cam_iface_startup();
-  _check_error();
-  
-  if (cam_iface_get_num_cameras()<1) {
-    _check_error();
-
-    DPRINTF("no cameras found, will now exit\n");
-
-    cam_iface_shutdown();
-    _check_error();
-    
-    exit(0);
-  }
-  _check_error();
-
-  cam_iface_get_num_modes(0, &num_modes);
-  _check_error();
-
-  DPRINTF("%d mode(s) available\n",num_modes);
-  
-  for (i=0; i<num_modes; i++) {
-    cam_iface_get_mode_string(0,i,mode_string,255);
-    DPRINTF("%d: %s\n",i,mode_string);
-  }
-
-  mode_number = 0;
-  DPRINTF("\nChoosing mode %d\n",mode_number);
-
-  num_buffers = 80;
-
-  cc = new_CamContext(0,num_buffers,mode_number);
-  _check_error();
-
-  DPRINTF("allocated %d buffers\n",num_buffers);
-
-  /*
-  CamContext_get_num_camera_properties(cc,&num_props);
-  _check_error();
-
-  for (i=0; i<num_props; i++) {
-    CamContext_get_camera_property_info(cc,i,&cam_props);
-    if (cam_props.is_present) {
-      CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
-      DPRINTF("  %s: %d\n",cam_props.name,prop_value);
-    } else {
-      DPRINTF("  %s: not present\n");
-    }
-  }
-  */
-
-  /*
-  CamContext_get_buffer_size(cc,&buffer_size);
-  _check_error();
-
-  pixels = (unsigned char *)malloc( buffer_size );
-  if (pixels==NULL) {
-    fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
-    exit(1);
-  }
-  */
-  
-  CamContext_start_camera(cc);
-  _check_error();
-  
-  return cc;
-}
-
-
-
 
 } // closes: extern "C"

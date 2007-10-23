@@ -981,7 +981,7 @@ void CamContext_set_camera_property(CamContext *in_cr,
 
 void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr, 
 						      unsigned char *out_bytes, 
-						      intptr_t stride0) {
+						      intptr_t stride0, float timeout) {
   dc1394camera_t *camera;
   dc1394video_frame_t *frame;
   int row, depth, wb;
@@ -990,7 +990,12 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr,
   uint32_t h_size,v_size;
   int scalable;
 #endif
-  
+
+  if (timeout >= 0) {
+    NOT_IMPLEMENTED;
+    return;
+  }
+
   CHECK_CC(in_cr);
   camera = cameras[in_cr->device_number];
   CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &frame));
@@ -1040,17 +1045,16 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr,
   CIDC1394CHK(dc1394_capture_enqueue (camera, frame));
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes ) {
+void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes, float timeout) {
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->backend_extras);
   int stride0 = backend_extras->roi_width*(ccntxt->depth/8);
-  CamContext_grab_next_frame_blocking_with_stride(ccntxt,out_bytes,stride0);
+  CamContext_grab_next_frame_blocking_with_stride(ccntxt,out_bytes,stride0,timeout);
 }
 
-void CamContext_point_next_frame_blocking( CamContext *in_cr, unsigned char **buf_ptr){
+void CamContext_point_next_frame_blocking( CamContext *in_cr, unsigned char **buf_ptr, float timeout) {
   CHECK_CC(in_cr);
   NOT_IMPLEMENTED;
-
 }
 
 void CamContext_unpoint_frame( CamContext *in_cr){

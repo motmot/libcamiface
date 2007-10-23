@@ -278,20 +278,26 @@ for backend in BUILD_BACKENDS:
             env['SHLINKCOM'] = [env['SHLINKCOM'], 
               'mt.exe /nologo /manifest %s /outputresource:$TARGET;#2' % os.path.join(lib_output_dir,manifest)]
 
-    env.SharedLibrary(**cam_iface_obj_dict)
+    cam_iface_shared_lib = env.SharedLibrary(**cam_iface_obj_dict)
+    cam_iface_static_lib = env.StaticLibrary(**cam_iface_obj_dict)
+    
+    cam_iface_external_libs = cam_iface_obj_dict.get('LIBS',[])
+    cam_iface_external_libpath = cam_iface_obj_dict.get('LIBPATH',[])
 
     # --------------------------------------
     #
     # Done building cam_iface
     #
     # --------------------------------------
-    cam_iface_external_libs = [libname]
+    cam_iface_shared_lib = [libname]
 
     cam_iface_env_kwargs = cam_iface_obj_dict['CPPDEFINES']
     Export('env','backend','cam_iface_external_libs',
            'cam_iface_external_libpath','cam_iface_external_cpppath',
+           'cam_iface_static_lib','cam_iface_shared_lib',
            'cam_iface_env_kwargs')
     SConscript( 'demo/SConscript' )
+    SConscript( 'shmwrap/SConscript' )
 
 # save built backends
 if 1:

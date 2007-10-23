@@ -1,17 +1,19 @@
+#emacs, this is -*-Python-*- mode
 Import('backend','env','cam_iface_external_libs',
        'cam_iface_external_libpath',
        'cam_iface_external_cpppath',
+       'cam_iface_static_lib', 'cam_iface_shared_lib',
        'cam_iface_env_kwargs')
 
 simple_obj = env.Object(target='simple_%s'%backend,
                         source=['simple.c'],
-                        LIBS=cam_iface_external_libs,
+                        LIBS=cam_iface_external_libs+[cam_iface_static_lib],
                         LIBPATH=cam_iface_external_libpath,
                         CPPPATH=['../inc']+cam_iface_external_cpppath,
                         **cam_iface_env_kwargs)
 env.Program(target='simple_%s'%backend,
             source=simple_obj,
-            LIBS=cam_iface_external_libs,
+            LIBS=cam_iface_external_libs+[cam_iface_static_lib],
             LIBPATH=cam_iface_external_libpath,
             CPPPATH=['../inc'],
             **cam_iface_env_kwargs)

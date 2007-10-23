@@ -69,6 +69,7 @@ CAM_IFACE_API const char * cam_iface_get_error_string(void);
 #define CAM_IFACE_FRAME_TIMEOUT -392074
 #define CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE -392076
 #define CAM_IFACE_OTHER_ERROR -392077
+#define CAM_IFACE_GENERIC_ERROR -1
 
 CAM_IFACE_API const char* cam_iface_get_api_version();
 CAM_IFACE_API void cam_iface_startup(void); // call cam_iface_startup_with_version_check()
@@ -165,13 +166,13 @@ CAM_IFACE_API void CamContext_set_camera_property(CamContext *ccntxt,
 						  int Auto);
 
 // copy the image data into a buffer passed in
-CAM_IFACE_API void CamContext_grab_next_frame_blocking(CamContext *ccntxt, unsigned char* out_bytes);
+CAM_IFACE_API void CamContext_grab_next_frame_blocking(CamContext *ccntxt, unsigned char* out_bytes, float timeout);
 
 // copy the image data into a buffer passed in (with buffer stride information)
-CAM_IFACE_API void CamContext_grab_next_frame_blocking_with_stride(CamContext *ccntxt, unsigned char* out_bytes, intptr_t stride0);
+CAM_IFACE_API void CamContext_grab_next_frame_blocking_with_stride(CamContext *ccntxt, unsigned char* out_bytes, intptr_t stride0, float timeout);
 
 // get a pointer to the image data
-CAM_IFACE_API void CamContext_point_next_frame_blocking(CamContext *ccntxt, unsigned char** buf_ptr);
+CAM_IFACE_API void CamContext_point_next_frame_blocking(CamContext *ccntxt, unsigned char** buf_ptr, float timeout);
 // release point to the image data
 CAM_IFACE_API void CamContext_unpoint_frame(CamContext *ccntxt);
 

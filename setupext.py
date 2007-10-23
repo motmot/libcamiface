@@ -157,3 +157,13 @@ def get_blank_extension(debug=None):
         ext.define_macros.extend([('CAM_IFACE_DEBUG',1),
                                   ])
     return ext
+
+def get_shm_extension(debug=None):
+    ext = Extension(name='cam_iface._cam_iface_shm',
+                    sources=['src/_cam_iface_shm.pyx'],
+                    include_dirs=['inc','shmwrap',],
+                    )
+    if debug is not None:
+        ext.define_macros.extend([('CAM_IFACE_DEBUG',1),
+                                  ])
+    return ext

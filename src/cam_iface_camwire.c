@@ -649,13 +649,18 @@ void CamContext_set_camera_property(CamContext *ccntxt,
   return;
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes ) {
+void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes, float timeout ) {
   Camwire_handle c_handle;
   int buffer_err;
 
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
+    return;
+  }
+
+  if (timeout >= 0) {
+    CAM_IFACE_ERROR_FORMAT("timeout not implemented");
     return;
   }
 
@@ -677,13 +682,18 @@ void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out
 
 }
 
-void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, unsigned char *out_bytes, intptr_t stride0 ) {
+void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, unsigned char *out_bytes, intptr_t stride0, float timeout ) {
   Camwire_handle c_handle;
   int buffer_err;
 
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
+    return;
+  }
+
+  if (timeout >= 0) {
+    CAM_IFACE_ERROR_FORMAT("timeout not implemented");
     return;
   }
 
@@ -705,12 +715,17 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, unsign
 
 }
 
-void CamContext_point_next_frame_blocking( CamContext *ccntxt, unsigned char **buf_ptr){
+void CamContext_point_next_frame_blocking( CamContext *ccntxt, unsigned char **buf_ptr, float timeout){
   Camwire_handle c_handle;
 
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
+    return;
+  }
+
+  if (timeout >= 0) {
+    CAM_IFACE_ERROR_FORMAT("timeout not implemented");
     return;
   }
 

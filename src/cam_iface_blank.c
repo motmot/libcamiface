@@ -164,17 +164,17 @@ void CamContext_set_camera_property(CamContext *ccntxt,
   NOT_IMPLEMENTED;
 }
 
-void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, unsigned char *out_bytes, intptr_t stride0) {
+void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, unsigned char *out_bytes, intptr_t stride0, float timeout) {
   CHECK_CC(ccntxt);
   NOT_IMPLEMENTED;
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes ) {
+void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes, float timeout) {
   CHECK_CC(ccntxt);
   NOT_IMPLEMENTED;
 }
 
-void CamContext_point_next_frame_blocking( CamContext *ccntxt, unsigned char **buf_ptr){
+void CamContext_point_next_frame_blocking( CamContext *ccntxt, unsigned char **buf_ptr, float timeout){
   CHECK_CC(ccntxt);
   NOT_IMPLEMENTED;
 }

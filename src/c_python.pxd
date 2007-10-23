@@ -6,6 +6,7 @@ cimport c_lib
 cdef extern from "Python.h":
     #cdef object PyExc_OSError
     ctypedef int Py_intptr_t
+#    ctypedef int Py_ssize_t
     void Py_BEGIN_ALLOW_THREADS()
     void Py_END_ALLOW_THREADS()
     void Py_INCREF(object)
@@ -24,3 +25,6 @@ cdef extern from "Python.h":
     object PyString_FromString( char *v)
     int PyFile_Check(object fobj)
     c_lib.FILE* PyFile_AsFile(object fobj)
+    
+#    int PyObject_AsWriteBuffer( object, void **buffer, Py_ssize_t *buffer_len)
+    int PyObject_AsWriteBuffer( object, void **buffer, int *buffer_len)

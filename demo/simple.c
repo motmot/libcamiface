@@ -9,7 +9,7 @@
 #include <time.h>
 #include "cam_iface.h"
 
-double floattime() {
+double my_floattime() {
 #ifdef _WIN32
 #if _MSC_VER == 1310
   struct _timeb t;
@@ -157,7 +157,7 @@ int main() {
   CamContext_start_camera(cc);
   _check_error();
 
-  last_fps_print = floattime();
+  last_fps_print = my_floattime();
   n_frames = 0;
 
 #define NUM_FRAMES 50
@@ -165,8 +165,15 @@ int main() {
 
   for (i=0;i<NUM_FRAMES;i++) {
 #ifdef USE_COPY
-    CamContext_grab_next_frame_blocking(cc,pixels);
+    CamContext_grab_next_frame_blocking(cc,pixels,0.001f);
+    //    CamContext_grab_next_frame_blocking(cc,pixels,-1.0f);
     errnum = cam_iface_have_error();
+    if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
+      cam_iface_clear_error();
+      fprintf(stdout,"T");
+      fflush(stdout);
+      continue; // wait again
+    }
     if (errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) {
       cam_iface_clear_error();
       fprintf(stdout,"M");
@@ -176,11 +183,11 @@ int main() {
       fprintf(stdout,".");
       fflush(stdout);
     }
-    now = floattime();
+    now = my_floattime();
     n_frames += 1;
 #else
-    CamContext_point_next_frame_blocking(cc,&pixels);
-    now = floattime();
+    CamContext_point_next_frame_blocking(cc,&pixels,-1.0f);
+    now = my_floattime();
     n_frames += 1;
     _check_error();
     fprintf(stdout,".");

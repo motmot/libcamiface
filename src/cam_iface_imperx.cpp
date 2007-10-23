@@ -550,9 +550,14 @@ void CamContext_set_camera_property(CamContext *in_cr,
   }
 }
 
-void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr, unsigned char *out_bytes, intptr_t stride0) {
+void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr, unsigned char *out_bytes, intptr_t stride0, float timeout) {
   CHECK_CC(in_cr);
   SAFE_CAMERA_DEREF;
+
+  if (timeout >= 0) {
+    NOT_IMPLEMENTED;
+    return;
+  }
 
   int w,h;
 
@@ -585,15 +590,15 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr, unsigne
   }
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *in_cr, unsigned char *out_bytes ) {
+void CamContext_grab_next_frame_blocking( CamContext *in_cr, unsigned char *out_bytes, float timeout ) {
   CHECK_CC(in_cr);
   SAFE_CAMERA_DEREF;
   int w;
   w=lBuffer->GetSizeX();
-  CamContext_grab_next_frame_blocking_with_stride(in_cr,out_bytes,w);
+  CamContext_grab_next_frame_blocking_with_stride(in_cr,out_bytes,w,timeout);
 }
 
-void CamContext_point_next_frame_blocking( CamContext *in_cr, unsigned char **buf_ptr){
+void CamContext_point_next_frame_blocking( CamContext *in_cr, unsigned char **buf_ptr, float timeout){
   CHECK_CC(in_cr);
   NOT_IMPLEMENTED;
 }

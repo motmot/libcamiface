@@ -52,6 +52,9 @@ if build_ctypes_based_wrapper:
             print '***** WARNING: Could not find file %s'%fname
         kws.setdefault('package_data',{}).setdefault('cam_iface',[]).append(fname)
 
+
+ext_modules.append( setupext.get_shm_extension() )
+
 pyrex_backends = []
 if build_pyrex_based_wrappers:
     #ext_modules.append( setupext.get_blank_extension() )

@@ -19,7 +19,9 @@ def generate_choose_module( pyrex_backends, ctypes_backends):
 
 wrappers_and_backends = {'pyrex':pyrex_backends,
                          'ctypes':ctypes_backends,
-                         'dummy':['dummy']}
+                         'dummy':['dummy'],
+                         'sharedmem':['sharedmem'],
+                         }
 
 import sys, os
 
@@ -77,6 +79,20 @@ def import_backend( lib_name, wrapper ):
             del os.environ['CAM_IFACE_DUMMY']
         else:
             os.environ['CAM_IFACE_DUMMY'] = orig
+    elif wrapper == 'sharedmem':
+        if 'cam_iface' in sys.modules:
+            if 'cam_iface.cam_iface_sharedmem' not in sys.modules:
+                raise RuntimeError('sharedmem backend must be first cam_iface backend')
+        if lib_name != 'sharedmem':
+            raise ValueError('unknown sharedmem backend requested')
+
+        orig = os.environ.get('CAM_IFACE_SHAREDMEM',None)
+        os.environ['CAM_IFACE_SHAREDMEM'] = '1'
+        result = my_import('cam_iface.cam_iface_sharedmem')
+        if orig is None:
+            del os.environ['CAM_IFACE_SHAREDMEM']
+        else:
+            os.environ['CAM_IFACE_SHAREDMEM'] = orig
     else:
         raise ValueError('unknown wrapper %s'%wrapper)
     return result
