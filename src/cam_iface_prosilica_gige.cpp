@@ -260,7 +260,6 @@ void _internal_start_streaming( CamContext * ccntxt,
 
   for (int i=0; i<backend_extras->num_buffers; i++) {
     CIPVCHK(PvCaptureQueueFrame(*handle_ptr,backend_extras->frames[i],NULL));
-    //printf("queued frame %d\n",int(backend_extras->frames[i]->Context[0]));
     frames_ready_list_cam0[frames_ready_cam0_write_idx] = backend_extras->frames[i];
     frames_ready_cam0_write_idx++;
     frames_ready_cam0_num++;
@@ -759,11 +758,12 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
     pvTimeout = (timeout*1000.0f); // convert to milliseconds
 
   frame = frames_ready_list_cam0[frames_ready_cam0_read_idx];
+  if (frame==NULL) CAM_IFACE_THROW_ERROR("internal cam_iface error: frame not allocated");
+
+  CIPVCHK(PvCaptureWaitForFrameDone(*handle_ptr,frame,pvTimeout));
+
   frames_ready_cam0_read_idx++;
   frames_ready_cam0_num--;
-
-  //  printf("  waiting for frame %d\n",int(frame->Context[0]));
-  CIPVCHK(PvCaptureWaitForFrameDone(*handle_ptr,frame,pvTimeout));
   
   size_t wb = frame->Width;
   int height = frame->Height;
