@@ -96,6 +96,8 @@ int main() {
   char* info_buffer=NULL;
   int buflen;
 
+  double last_timestamp;
+
   sock_udp_fast= socket(AF_INET, SOCK_DGRAM, 0);
   if (sock_udp_fast < 0) SHM_FATAL_PERROR(__FILE__,__LINE__);
 
@@ -270,13 +272,16 @@ int main() {
     now = shm_floattime();
     n_frames += 1;
 
+    CamContext_get_last_timestamp(cc,&last_timestamp);
+    _check_error();
+
     curmsg.sendnumber = sendnumber++;
     curmsg.framenumber = framenumber;
     curmsg.width = width;
     curmsg.height = height;
     curmsg.roi_x = 0;
     curmsg.roi_y = 0;
-    curmsg.timestamp = now;
+    curmsg.timestamp = last_timestamp;
     curmsg.start_offset = offset;
     curmsg.stride = width;
     
@@ -294,7 +299,7 @@ int main() {
     t_diff = now-last_fps_print;
     if (t_diff > 5.0) {
       fps = n_frames/t_diff;
-      fprintf(stdout,"%.1f fps\n",fps);
+      fprintf(stdout,"approx. %.1f fps\n",fps);
       last_fps_print = now;
       n_frames = 0;
     }
