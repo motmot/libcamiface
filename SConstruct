@@ -283,6 +283,7 @@ for backend in BUILD_BACKENDS:
     
     cam_iface_external_libs = cam_iface_obj_dict.get('LIBS',[])
     cam_iface_external_libpath = cam_iface_obj_dict.get('LIBPATH',[])
+    cam_iface_external_linkflags = cam_iface_obj_dict.get('LINKFLAGS',[])
 
     # --------------------------------------
     #
@@ -294,6 +295,7 @@ for backend in BUILD_BACKENDS:
     cam_iface_env_kwargs = cam_iface_obj_dict['CPPDEFINES']
     Export('env','backend','cam_iface_external_libs',
            'cam_iface_external_libpath','cam_iface_external_cpppath',
+           'cam_iface_external_linkflags',
            'cam_iface_static_lib','cam_iface_shared_lib',
            'cam_iface_env_kwargs')
     SConscript( 'demo/SConscript' )

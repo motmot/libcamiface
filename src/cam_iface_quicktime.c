@@ -504,7 +504,8 @@ void CamContext_stop_camera( CamContext *in_cr ) {
 
 void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, 
 						      unsigned char *out_bytes, 
-						      intptr_t stride0) {
+						      intptr_t stride0,
+						      float timeout) {
   SeqGrabComponent cam;
   OSErr err=noErr;
   cam_iface_backend_extras* be;
@@ -512,6 +513,11 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
   CHECK_CC(ccntxt);
   cam = ccntxt->cam;
   be = ccntxt->backend_extras;
+
+  if (timeout >= 0) {
+    NOT_IMPLEMENTED;
+    return;
+  }
 
   be->image_was_copied = 0;
   be->stride0 = stride0;
@@ -532,14 +538,17 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
   }
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes ) {
+void CamContext_grab_next_frame_blocking( CamContext *ccntxt, 
+					  unsigned char *out_bytes, 
+					  float timeout ) {
   cam_iface_backend_extras* be;
   intptr_t stride0;
 
   CHECK_CC(ccntxt);
+
   be = ccntxt->backend_extras;
   stride0 = be->rect.right*(ccntxt->depth/8);
-  CamContext_grab_next_frame_blocking_with_stride( ccntxt, out_bytes, stride0 ) ;
+  CamContext_grab_next_frame_blocking_with_stride( ccntxt, out_bytes, stride0, timeout ) ;
 }
 
 void CamContext_get_last_timestamp( CamContext *in_cr, double* timestamp ) {

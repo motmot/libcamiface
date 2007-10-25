@@ -2,6 +2,7 @@
 Import('backend','env','cam_iface_external_libs',
        'cam_iface_external_libpath',
        'cam_iface_external_cpppath',
+       'cam_iface_external_linkflags',
        'cam_iface_static_lib', 'cam_iface_shared_lib',
        'cam_iface_env_kwargs')
 
@@ -10,18 +11,12 @@ simple_obj = env.Object(target='simple_%s'%backend,
                         LIBS=cam_iface_external_libs+[cam_iface_static_lib],
                         LIBPATH=cam_iface_external_libpath,
                         CPPPATH=['../inc']+cam_iface_external_cpppath,
+                        LINKFLAGS=cam_iface_external_linkflags,
                         **cam_iface_env_kwargs)
 env.Program(target='simple_%s'%backend,
             source=simple_obj,
             LIBS=cam_iface_external_libs+[cam_iface_static_lib],
             LIBPATH=cam_iface_external_libpath,
             CPPPATH=['../inc'],
+            LINKFLAGS=cam_iface_external_linkflags,
             **cam_iface_env_kwargs)
-
-if 0:
-    env.Program(target='simple_fast_%s'%backend,
-                source=['simple_fast.c'],
-                LIBS=cam_iface_external_libs,
-                LIBPATH=cam_iface_external_libpath,
-                CPPPATH=['../inc'],
-                **cam_iface_env_kwargs)
