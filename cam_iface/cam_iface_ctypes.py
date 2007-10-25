@@ -19,12 +19,15 @@ backend_fname = os.environ.get('CAM_IFACE_CTYPES_BACKEND',None)
 if backend_fname is None:
     if sys.platform.startswith('linux'):
         #backend_fname = 'libcam_iface_camwire.so'
-        backend_fname = 'libcam_iface_prosilica_gige.so'
+        #backend_fname = 'libcam_iface_prosilica_gige.so'
         #backend_fname = 'libcam_iface_dc1394.so'
+        backend_fname = 'libcam_iface_blank.so'
     elif sys.platform.startswith('win'):
-        backend_fname = 'cam_iface_imperx.dll'
+        #backend_fname = 'cam_iface_imperx.dll'
+        backend_fname = 'cam_iface_blank.dll'
     elif sys.platform.startswith('darwin'):
-        backend_fname = 'libcam_iface_dc1394.so'
+        #backend_fname = 'libcam_iface_dc1394.dylib'
+        backend_fname = 'libcam_iface_blank.dylib'
     else:
         raise ValueError("unknown platform '%s'"%sys.platform)
 
@@ -118,11 +121,15 @@ c_cam_iface.CamContext_get_frame_size.argtypes = [ctypes.POINTER(CamContext),
                                                   ctypes.POINTER(ctypes.c_int)]
 c_cam_iface.CamContext_grab_next_frame_blocking.argtypes = [
     ctypes.POINTER(CamContext),
-    ctypes.c_void_p]
+    ctypes.c_void_p,
+    ctypes.c_float,
+    ]
 c_cam_iface.CamContext_grab_next_frame_blocking_with_stride.argtypes = [
     ctypes.POINTER(CamContext),
     ctypes.c_void_p,
-    intptr_type]
+    intptr_type,
+    ctypes.c_float,
+    ]
 c_cam_iface.CamContext_get_last_framenumber.argtypes = [
     ctypes.POINTER(CamContext),
     ctypes.POINTER(ctypes.c_long)]
@@ -284,7 +291,7 @@ class Camera:
         c_cam_iface.CamContext_stop_camera(self.cval)
         _check_error()
 
-    def grab_next_frame_blocking(self):
+    def grab_next_frame_blocking(self,timeout=-1.0):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
                 raise RuntimeError("Camera class is not thread safe!")
@@ -300,11 +307,15 @@ class Camera:
         else:
             data_ptr = ctypes.c_void_p(buf.ctypes.data)
         c_cam_iface.CamContext_grab_next_frame_blocking(self.cval,
-                                                        data_ptr)
+                                                        data_ptr,
+                                                        timeout)
         _check_error()
         return buf
     
-    def grab_next_frame_into_buf_blocking(self,buf,bypass_buffer_checks=False):
+    def grab_next_frame_into_buf_blocking(self,
+                                          buf,
+                                          bypass_buffer_checks=False,
+                                          timeout=-1.0):
         """grab frame into user-supplied buffer"""
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -316,7 +327,8 @@ class Camera:
             data_ptr = ctypes.c_void_p(buf.ctypes.data)
         c_cam_iface.CamContext_grab_next_frame_blocking_with_stride(self.cval,
                                                                     data_ptr,
-                                                                    buf.ctypes.strides[0])
+                                                                    buf.ctypes.strides[0],
+                                                                    timeout)
         _check_error()
 
     def grab_next_frame_into_alloced_buf_blocking(self,buf_alloc,bypass_buffer_checks=False):
