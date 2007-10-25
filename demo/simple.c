@@ -81,6 +81,7 @@ int main(int argc, char** argv) {
   int errnum;
   int width, height;
   int do_num_frames;
+  CameraPixelCoding coding;
 
   cam_iface_startup_with_version_check();
   _check_error();
@@ -183,7 +184,7 @@ int main(int argc, char** argv) {
   if (do_num_frames < 0) {
     printf("will now run forever. press Ctrl-C to interrupt\n");
   } else {
-    printf("will now for %d frames.\n",do_num_frames);
+    printf("will now grab %d frames.\n",do_num_frames);
   }
 
   while (1) {
@@ -231,6 +232,9 @@ int main(int argc, char** argv) {
       n_frames = 0;
     }
   }
+  
+  coding = cc->coding;
+
   printf("\n");
   delete_CamContext(cc);
   _check_error();
@@ -238,8 +242,12 @@ int main(int argc, char** argv) {
   cam_iface_shutdown();
   _check_error();
 
-  save_pgm("image.pgm",pixels, width, height);
-  printf("saved last image as image.pgm\n");
+  if (coding==CAM_IFACE_MONO8) {
+    save_pgm("image.pgm",pixels, width, height);
+    printf("saved last image as image.pgm\n");
+  } else {
+    printf("do not know how to save sample image for this format\n");
+  }
 
 #ifdef USE_COPY
   free(pixels);
