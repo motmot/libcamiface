@@ -649,7 +649,9 @@ void CamContext_set_camera_property(CamContext *ccntxt,
   return;
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out_bytes, float timeout ) {
+void CamContext_grab_next_frame_blocking( CamContext *ccntxt, 
+					  unsigned char *out_bytes, 
+					  float timeout ) {
   Camwire_handle c_handle;
   int buffer_err;
 
@@ -682,7 +684,10 @@ void CamContext_grab_next_frame_blocking( CamContext *ccntxt, unsigned char *out
 
 }
 
-void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, unsigned char *out_bytes, intptr_t stride0, float timeout ) {
+void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, 
+						      unsigned char *out_bytes, 
+						      intptr_t stride0, 
+						      float timeout ) {
   Camwire_handle c_handle;
   int buffer_err;
 
@@ -715,7 +720,9 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, unsign
 
 }
 
-void CamContext_point_next_frame_blocking( CamContext *ccntxt, unsigned char **buf_ptr, float timeout){
+void CamContext_point_next_frame_blocking( CamContext *ccntxt, 
+					   unsigned char **buf_ptr, 
+					   float timeout){
   Camwire_handle c_handle;
 
   if (!ccntxt) {
