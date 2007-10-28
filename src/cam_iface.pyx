@@ -326,7 +326,7 @@ ctypedef class Camera:
         self.grab_next_frame_into_buf_blocking(buf,bypass_buffer_checks=bypass_buffer_checks)
         return buf
         
-    def grab_next_frame_into_buf_blocking(self,object buf,int bypass_buffer_checks=0):
+    def grab_next_frame_into_buf_blocking(self,object buf,int bypass_buffer_checks=0, float timeout=-1.0):
         """grab frame into user-supplied buffer"""
         cdef int h, w
         cdef PyArrayInterface* inter
@@ -359,11 +359,11 @@ ctypedef class Camera:
                     inter.shape[0],h))
         c_python.Py_BEGIN_ALLOW_THREADS
         c_cam_iface.CamContext_grab_next_frame_blocking_with_stride(self.cval,<unsigned char*>inter.data,
-                                                                    inter.strides[0])
+                                                                    inter.strides[0],timeout)
         c_python.Py_END_ALLOW_THREADS
         _check_error()
     
-    def grab_next_frame_blocking(self):
+    def grab_next_frame_blocking(self,float timeout=-1.0):
         """grab frame into a newly allocated buffer"""
         cdef int h, w
         cdef PyArrayInterface* inter
@@ -373,12 +373,12 @@ ctypedef class Camera:
         _check_error()
         buf=CamIfaceBuf((w*self.cval.depth)/8,h)
         c_python.Py_BEGIN_ALLOW_THREADS
-        c_cam_iface.CamContext_grab_next_frame_blocking(self.cval,buf.data)
+        c_cam_iface.CamContext_grab_next_frame_blocking(self.cval,buf.data,timeout)
         c_python.Py_END_ALLOW_THREADS
         _check_error()
         return buf
     
-    def point_next_frame_blocking(self):
+    def point_next_frame_blocking(self, float blocking):
         cdef CamIfaceBuf framebuffer
         cdef int h, w
         c_cam_iface.CamContext_get_frame_size(self.cval,&w,&h)
@@ -386,7 +386,8 @@ ctypedef class Camera:
         framebuffer = CamIfaceBuf.__new__(CamIfaceBuf) # allocate C struct, but don't malloc memory buffer
         c_python.Py_BEGIN_ALLOW_THREADS        
         c_cam_iface.CamContext_point_next_frame_blocking(self.cval,
-                                                         &framebuffer.data)
+                                                         &framebuffer.data,
+                                                         blocking)
         c_python.Py_END_ALLOW_THREADS
         _check_error()
         framebuffer.strides[0]=(w*self.cval.depth)/8

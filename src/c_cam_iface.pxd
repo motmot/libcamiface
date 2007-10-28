@@ -95,9 +95,9 @@ cdef extern from "cam_iface.h":
                                         long Value,
                                         int Auto)
     
-    void CamContext_grab_next_frame_blocking(CamContext *ccntxt, unsigned char* out_bytes)
-    void CamContext_grab_next_frame_blocking_with_stride(CamContext *ccntxt, unsigned char* out_bytes,intptr_t stride0)
-    void CamContext_point_next_frame_blocking(CamContext *ccntxt, unsigned char** buf_ptr)
+    void CamContext_grab_next_frame_blocking(CamContext *ccntxt, unsigned char* out_bytes, float timeout)
+    void CamContext_grab_next_frame_blocking_with_stride(CamContext *ccntxt, unsigned char* out_bytes,intptr_t stride0, float timeout)
+    void CamContext_point_next_frame_blocking(CamContext *ccntxt, unsigned char** buf_ptr, float timeout)
     void CamContext_unpoint_frame(CamContext *ccntxt)
     
     void CamContext_get_last_timestamp( CamContext *ccntxt, 
