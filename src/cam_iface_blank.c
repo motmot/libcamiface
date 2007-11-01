@@ -325,7 +325,9 @@ void CamContext_set_framerate( CamContext *ccntxt,
 void CamContext_get_max_frame_size( CamContext *ccntxt, 
 				    int *width, int *height ){
   CHECK_CC(ccntxt);
-  NOT_IMPLEMENTED;
+  cam_iface_blank_backend_extras* backend_extras = (cam_iface_blank_backend_extras*)(ccntxt->backend_extras);
+  *width = backend_extras->width;
+  *height = backend_extras->height;
 }
 
 void CamContext_get_num_framebuffers( CamContext *ccntxt, 
