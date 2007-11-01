@@ -230,7 +230,7 @@ for backend in BUILD_BACKENDS:
         # if using GCC (this isn't the right test)
         if sys.platform.startswith('linux'):
             if debug:
-                cam_iface_obj_dict.setdefault('CCFLAGS',[]).append('-g')
+                cam_iface_obj_dict.setdefault('CCFLAGS',[]).extend(['-g','-O0'])
 
         # if using darwin/MacOS X
         if sys.platform.startswith('darwin'):
