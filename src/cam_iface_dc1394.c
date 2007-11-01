@@ -471,7 +471,8 @@ void cam_iface_get_mode_string(int device_number,
 			       int mode_string_maxlen) {
   dc1394video_mode_t video_mode;
   dc1394framerate_t framerate;
-  char *coding_string, *framerate_string, *dc1394_mode_string;
+  char *coding_string, *framerate_string;
+  const char *dc1394_mode_string;
   int scalable;
   dc1394color_coding_t coding;
   uint32_t h_size,v_size;
