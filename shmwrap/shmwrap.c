@@ -45,6 +45,7 @@ double shm_floattime() {
 
 void malloc_info_buffer( char**info_buffer, int* buflen, int w, int h ) {
   int x;
+  const char* properties_string="shutter: {'has_auto_mode':1,'max_value':24,'min_value':0,'is_present':0,'has_manual_mode': 1, 'is_scaled_quantity': 0}\r\n";
   x = 1000;
   *info_buffer=(char*)malloc(x);
   if (*info_buffer==NULL) {
@@ -52,7 +53,7 @@ void malloc_info_buffer( char**info_buffer, int* buflen, int w, int h ) {
     return;
   }
   
-  *buflen = snprintf(*info_buffer,x,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nresolution: %dx%d\r\n",sizeof(shmwrap_msg_ready_t),w,h);
+  *buflen = snprintf(*info_buffer,x,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nwidth: %d\r\nheight: %d\r\n%s",sizeof(shmwrap_msg_ready_t),w,h,properties_string);
 }
 
 int main() {

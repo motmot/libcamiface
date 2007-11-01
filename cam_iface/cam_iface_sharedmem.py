@@ -7,8 +7,25 @@ class _GlobalCameraState:
     pass
 _camera_state = _GlobalCameraState()
 
-class _PerCameraState:
-    pass
+class _CameraProperties:
+    def __init__(self,name,prop_str):
+        print name,'prop_str',repr(prop_str)
+        #vals = prop_str.split('.')
+        self.name = name
+        self.prop_str = prop_str
+
+class _Camera:
+    def __init__(self,name):
+        self.name = name
+        self.w = None
+        self.h = None
+        self.properties = []
+    def set_resolution(self,w,h):
+        self.w = w
+        self.h = h
+##    def set_properties(self,properties):
+##        self.properties = properties
+##        print 'self.properties', properties
 
 def printf(msg):
     print msg
@@ -35,6 +52,7 @@ def _startup():
 
     # micro parser
     section = None
+    cams = {}
     for line in buf.split('\n'):
         line = line.strip()
         if not len(line):
@@ -45,23 +63,29 @@ def _startup():
             section = line
             continue
         else:
-            parts = line.split(':')
-            #print section,parts
-            key = parts[0].strip()
-            value = parts[1].strip()
+            split_idx = line.index(':')
+            key = line[:split_idx].strip()
+            value = line[(split_idx+1):].strip()
+            print 'value',repr(value)
+            if value == ['']:
+                print 'compare OK'
+                value = []
             
         if section == '[general]' and key == 'udp_packet_size':
             _camera_state.udp_packet_size = int(value)
         if section == '[general]' and key == 'cameras':
             camera_names = value.split()
-            assert len(camera_names)==1
-            assert camera_names[0]=='cam1'
-        if section == '[cam1]' and key == 'resolution':
-            resolution = map(int,value.split('x'))
+            for cn in camera_names:
+                cams[ '['+cn+']' ] = _Camera(cn)
+        if section in cams.keys():
+            cam = cams[section]
+            name = key
+            valstr = value
+            cam.properties.append( _CameraProperties(name,valstr) )
 
-    cam = _PerCameraState()
-    cam.w, cam.h = resolution
-    _camera_state.cams = [cam]
+##    cam = _PerCameraState()
+##    cam.w, cam.h = resolution
+    _camera_state.cams = [cams['['+cn+']'] for cn in camera_names]
 
     udp_listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     udp_listen_sock.bind(('127.0.0.1', _cam_iface_shm.shmwrap_frame_ready_port_ ))
@@ -79,8 +103,9 @@ def get_camera_info(index):
 class Camera:
     def __init__(self,device_number,num_buffers,mode_number):
         assert (0<=device_number) and (device_number<get_num_cameras())
-        self.w = _camera_state.cams[device_number].w
-        self.h = _camera_state.cams[device_number].h
+        self.device_number = device_number
+        self.w = _camera_state.cams[self.device_number].w
+        self.h = _camera_state.cams[self.device_number].h
         self.last_timestamp = None
         self.last_framenumber = 0
         self.set_camera_property = self.noop
@@ -96,11 +121,14 @@ class Camera:
     def noop(self,*args,**kw):
         pass
     def get_num_camera_properties(self):
-        return 0
+        return len(_camera_state.cams[self.device_number].properties)
     def get_camera_property(self,*args,**kw):
         raise ValueError("not a valid property")
     def get_camera_property_range(self,*args,**kw):
         raise ValueError("not a valid property")
+    def get_camera_property_info(self,i):
+        prop = _camera_state.cams[self.device_number].properties[i]
+        raise NotImplementedError("")
     def get_trigger_mode_number(self):
         return 0
     def get_framerate(self,*args,**kw):
