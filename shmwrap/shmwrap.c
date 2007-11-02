@@ -247,7 +247,8 @@ int main() {
     }
     offset = shm_chunk_size*(sendnumber % num_shm_buffers);
     pixels = data + offset;
-    CamContext_grab_next_frame_blocking(cc,pixels,0.02f); // block for 20 msec
+    //CamContext_grab_next_frame_blocking(cc,pixels,0.02f); // block for 20 msec
+    CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // block forever
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) {
       cam_iface_clear_error();
