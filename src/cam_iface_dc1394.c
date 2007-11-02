@@ -12,8 +12,13 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
+
+#include <sys/select.h>
+#include <errno.h>
 
 #undef CAM_IFACE_DC1394_SLOWDEBUG
+#define INVALID_FILENO 0
 
 /* typedefs */
 struct cam_iface_dc1394_mode {
@@ -45,6 +50,14 @@ cam_iface_dc1394_modes_t *modes_by_device_number=NULL;
 cam_iface_dc1394_feature_list_t *features_by_device_number=NULL;
 
 char *device_name=NULL;
+
+double dc1394_floattime() {
+  struct timeval t;
+  if (gettimeofday(&t, (struct timezone *)NULL) == 0)
+    return (double)t.tv_sec + t.tv_usec*0.000001;
+  else
+    return 0.0;
+}
 
 #define CAM_IFACE_ERROR_FORMAT(m)					\
   snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
@@ -123,6 +136,11 @@ struct _cam_iface_backend_extras {
 
   int num_dma_buffers;
   uint64_t last_timestamp;
+
+  // for select()
+  int fileno;
+  fd_set fdset;
+  int nfds;
 };
 typedef struct _cam_iface_backend_extras cam_iface_backend_extras;
 
@@ -583,9 +601,13 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
     return NULL;
   }
   backend_extras = (cam_iface_backend_extras*)in_cr->backend_extras;
+  bzero( (void*)backend_extras, sizeof(cam_iface_backend_extras) );
   backend_extras->cam_iface_mode_number = mode_number; // different than DC1934 mode number
-
   backend_extras->nframe_hack=0;
+  backend_extras->fileno = INVALID_FILENO;
+  backend_extras->nfds = 0;
+  FD_ZERO(&(backend_extras->fdset));
+  printf("zeroed fdset\n");
 
   backend_extras->device_name=NULL;
   if (backend_extras->device_name!=NULL) {
@@ -732,11 +754,12 @@ void CamContext_start_camera( CamContext *in_cr ) {
   int DROP_FRAMES;
   dc1394camera_t *camera;
   dc1394error_t err;
-  int dma_fd;
+  cam_iface_backend_extras *backend_extras;
 
   DROP_FRAMES=0;
   CHECK_CC(in_cr);
   camera = cameras[in_cr->device_number];
+  backend_extras = (cam_iface_backend_extras*)in_cr->backend_extras;
 
 #ifdef CAM_IFACE_DEBUG
   fprintf(stdout,"start_camera 1\n");
@@ -744,16 +767,13 @@ void CamContext_start_camera( CamContext *in_cr ) {
   usleep(5000000);
 #endif
 
-/*   CIDC1394CHK(dc1394_capture_setup_dma(cameras[in_cr->device_number],  */
-/* 				       ((cam_iface_backend_extras*) */
-/* 					(in_cr->backend_extras))->num_dma_buffers, */
-/* 				       DROP_FRAMES)); */
-/*   fprintf(stdout,"start_camera 2\n"); */
-/*   fprintf(stdout,"num_dma_buffers = %d\n",((cam_iface_backend_extras*) */
-/* 					   (in_cr->backend_extras))->num_dma_buffers); */
-/*   fflush(stdout); */
-/*   usleep(5000000); */
-
+  dc1394switch_t pwr;
+  CIDC1394CHK(dc1394_video_get_transmission(camera, &pwr));
+  if ((camera->capture_is_set>0) || (pwr==DC1394_ON)) {
+    // Stop the camera if it's already started. (XXX Should check if
+    // capture parameters are OK, and only restart if they're not.)
+    CamContext_stop_camera(in_cr);
+  }
   err = dc1394_capture_setup(camera,
 			     ((cam_iface_backend_extras*)
 			      (in_cr->backend_extras))->num_dma_buffers,
@@ -779,12 +799,28 @@ void CamContext_start_camera( CamContext *in_cr ) {
   usleep(5000000);
 #endif
 
+  backend_extras->fileno = dc1394_capture_get_fileno(camera);
+  FD_SET(backend_extras->fileno, &(backend_extras->fdset));
+  printf("set fdset: %d\n",backend_extras->fileno);
+
+  backend_extras->nfds = (backend_extras->fileno+1);
+
 }
 
 void CamContext_stop_camera( CamContext *in_cr ) {
   dc1394camera_t *camera;
+  cam_iface_backend_extras* backend_extras;
+
   CHECK_CC(in_cr);
   camera = cameras[in_cr->device_number];
+  backend_extras = (cam_iface_backend_extras*)in_cr->backend_extras;
+
+  if ((backend_extras->fileno) != INVALID_FILENO) {
+    FD_CLR(backend_extras->fileno, &(backend_extras->fdset));
+    printf("cleared fdset: %d\n",backend_extras->fileno);
+
+    backend_extras->nfds = 0;
+  }
 
   /* have the camera stop sending data */
   CIDC1394CHK(dc1394_video_set_transmission(camera,
@@ -991,14 +1027,42 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr,
   uint32_t h_size,v_size;
   int scalable;
 #endif
+  struct timeval tv;
+  int retval;
+  cam_iface_backend_extras* backend_extras;
+  int errsv;
+  double tstart, tstop;
+
+  CHECK_CC(in_cr);
+  camera = cameras[in_cr->device_number];
+  backend_extras = (cam_iface_backend_extras*)in_cr->backend_extras;
 
   if (timeout >= 0) {
     NOT_IMPLEMENTED;
     return;
+    /* The below does not seem to be working...
+    // wait for up to timeout seconds for something to become available on our fileno.
+    tv.tv_sec = timeout;
+    tv.tv_usec = ((timeout-(float)tv.tv_sec)*1.0e6);
+
+    tstart = dc1394_floattime();
+    retval = select( backend_extras->nfds, &(backend_extras->fdset), NULL, NULL, &tv );
+    errsv = errno;
+    tstop = dc1394_floattime();
+
+    printf("select() duration: %.1f msec\n",(tstop-tstart)*1e3);
+    if (retval < 0 ) {
+      // some error that we want to deal with
+      CAM_IFACE_ERROR_FORMAT("select() error");
+      return;
+    } else if (retval==0) {
+      // timeout exceeded
+      cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;
+      return;
+    }
+    */
   }
 
-  CHECK_CC(in_cr);
-  camera = cameras[in_cr->device_number];
   CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &frame));
   (((cam_iface_backend_extras*)(in_cr->backend_extras))->nframe_hack)+=1;
   
