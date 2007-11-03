@@ -1,3 +1,4 @@
+#emacs, this is -*-Python-*- mode
 # shared memory backend for cam_iface
 
 cimport c_lib
@@ -6,6 +7,17 @@ cimport c_lib_shm
 
 import sys
 import numpy
+
+# numpy's __array_struct__ interface:
+ctypedef struct PyArrayInterface:
+    int two                       # contains the integer 2 as a sanity check
+    int nd                        # number of dimensions
+    char typekind                 # kind in array --- character code of typestr
+    int itemsize                  # size of each element
+    int flags                     # flags indicating how the data should be interpreted
+    c_python.Py_intptr_t *shape   # A length-nd array of shape information
+    c_python.Py_intptr_t *strides # A length-nd array of stride information
+    void *data                    # A pointer to the first element of the array
 
 cdef extern from "shmwrap.h":
     # defined in shmwrap.h
@@ -99,7 +111,8 @@ def get_data_copy(curmsg, optional_preallocated_buf=None):
     cdef void* dest_ptr
     #cdef c_python.Py_ssize_t buflen
     cdef int buflen
-
+    cdef PyArrayInterface* inter
+    
     if optional_preallocated_buf is not None:
         optional_preallocated_buf = numpy.asarray(optional_preallocated_buf)
         assert len(optional_preallocated_buf.shape)==2
@@ -118,10 +131,18 @@ def get_data_copy(curmsg, optional_preallocated_buf=None):
     
     if optional_preallocated_buf is not None:
         result = optional_preallocated_buf
-        dest_buf = result.data
-        c_python.PyObject_AsWriteBuffer( dest_buf, &dest_ptr, &buflen)
+        # keep reference to prevent dealloc:
+        hold_onto_until_done_with_array = result.__array_struct__ 
+        inter = <PyArrayInterface*>c_python.PyCObject_AsVoidPtr( hold_onto_until_done_with_array )
+        assert inter.two == 2
+        
+        #dest_buf = result.data
+        #c_python.PyObject_AsWriteBuffer( dest_buf, &dest_ptr, &buflen)
         for row from 0<=row<height:
-            c_lib.memcpy( dest_ptr + row*dest_stride,   # dest
+##            c_lib.memcpy( dest_ptr + row*dest_stride,   # dest
+##                          source_ptr+row*source_stride, # src
+##                          width )        # size
+            c_lib.memcpy( inter.data + row*dest_stride,   # dest
                           source_ptr+row*source_stride, # src
                           width )        # size
     else:
@@ -130,3 +151,8 @@ def get_data_copy(curmsg, optional_preallocated_buf=None):
         result1.shape = curmsg.height, curmsg.stride
         result = result1[:,:curmsg.width]
     return result
+
+
+cdef PyArrayInterface* inter
+
+    

@@ -43,9 +43,11 @@ double shm_floattime() {
     }									\
   }									\
 
-void malloc_info_buffer( char**info_buffer, int* buflen, int w, int h ) {
+void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, int h ) {
   int x;
-  const char* properties_string="shutter: {'has_auto_mode':1,'max_value':24,'min_value':0,'is_present':0,'has_manual_mode': 1, 'is_scaled_quantity': 0}\r\n";
+  //  const char* properties_string="shutter: {'has_auto_mode':1,'max_value':24,'min_value':0,'is_present':0,'has_manual_mode': 1, 'is_scaled_quantity': 0}\r\n";
+
+
   x = 1000;
   *info_buffer=(char*)malloc(x);
   if (*info_buffer==NULL) {
@@ -53,7 +55,62 @@ void malloc_info_buffer( char**info_buffer, int* buflen, int w, int h ) {
     return;
   }
   
-  *buflen = snprintf(*info_buffer,x,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nwidth: %d\r\nheight: %d\r\n%s",sizeof(shmwrap_msg_ready_t),w,h,properties_string);
+  char properties_string[1234];
+  char str1[1234];
+  char str2[1234];
+  char* write_str, *read_str, *tmp_str;
+
+  read_str = &(str2[0]);
+  snprintf(read_str,1234,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nwidth: %d\r\nheight: %d\r\n",sizeof(shmwrap_msg_ready_t),w,h);
+
+  int num_properties;
+  CamContext_get_num_camera_properties(cc,&num_properties);
+  _check_error();
+  int i;
+
+  CameraPropertyInfo info;
+  long value;
+  int autoprop;
+
+  printf("whole info buffer (pre)\n");
+  printf(read_str);
+
+  write_str = &(str1[0]);
+
+  for (i=0;i<num_properties;i++) {
+
+    CamContext_get_camera_property_info(cc,i,&info);
+    _check_error();
+    CamContext_get_camera_property(cc,i,&value,&autoprop);
+    _check_error();
+
+    // XXX no scaled quantity support yet
+    snprintf(&(properties_string[0]),1234,
+	     "%s: %d, %d, {'name':'%s', 'is_present':%d, 'min_value':%d, 'max_value':%d, 'has_auto_mode':%d, 'has_manual_mode':%d, 'is_scaled_quantity':0}\r\n",
+	     info.name, value, autoprop, info.name, info.is_present, info.min_value, info.max_value, info.has_auto_mode, info.has_manual_mode);
+
+    //"shutter: {'has_auto_mode':1,'max_value':24,'min_value':0,'is_present':0,'has_manual_mode': 1, 'is_scaled_quantity': 0}\r\n";
+    printf("\n\nproperty %d:\n",i);
+    printf(properties_string);
+    *buflen = snprintf(write_str,1234,"%s%s",read_str,properties_string);
+
+    // swap buffers
+    tmp_str = read_str;
+    read_str = write_str;
+    write_str = tmp_str;
+
+    printf("whole info buffer\n");
+    printf(read_str);
+    printf("--------\n");
+  
+  }
+
+  *buflen = snprintf(*info_buffer,x,"%s",read_str);
+
+  printf("whole info buffer (final)\n");
+  printf(*info_buffer);
+  printf("--------\n");
+  
 }
 
 int main() {
@@ -236,7 +293,7 @@ int main() {
       break;
     case SHMWRAP_CMD_REQUEST_INFO:
       printf("got info request command\n");
-      malloc_info_buffer( &info_buffer, &buflen, max_width, max_height );
+      malloc_info_buffer( cc, &info_buffer, &buflen, max_width, max_height );
       send_buf(mystate, info_buffer, buflen);
       free((void*)info_buffer);
       info_buffer=NULL;

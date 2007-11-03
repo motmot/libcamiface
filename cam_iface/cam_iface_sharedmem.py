@@ -7,12 +7,28 @@ class _GlobalCameraState:
     pass
 _camera_state = _GlobalCameraState()
 
+##class ClassDict:
+##    def __init__(self,dict):
+##        self.__dict__ = dict
+
 class _CameraProperties:
     def __init__(self,name,prop_str):
         print name,'prop_str',repr(prop_str)
         #vals = prop_str.split('.')
         self.name = name
-        self.prop_str = prop_str
+        value,auto,prop_info_dict = eval(prop_str)
+
+        self.value = value
+        self.auto = auto
+
+        self.prop_info = prop_info_dict
+        
+##        self.has_auto_mode = pi['has_auto_mode']
+##        self.max_value = pi['max_value']
+##        self.min_value = pi['min_value']
+##        self.is_present = pi['is_present']
+##        self.has_manual_mode = pi['has_manual_mode']
+##        self.is_scaled_quantity = pi['is_scaled_quantity']
 
 class _Camera:
     def __init__(self,name):
@@ -20,9 +36,11 @@ class _Camera:
         self.w = None
         self.h = None
         self.properties = []
-    def set_resolution(self,w,h):
-        self.w = w
-        self.h = h
+    def set_resolution(self,w=None,h=None):
+        if w is not None:
+            self.w = w
+        if h is not None:
+            self.h = h
 ##    def set_properties(self,properties):
 ##        self.properties = properties
 ##        print 'self.properties', properties
@@ -50,11 +68,17 @@ def _startup():
     tcp_control_socket.send('info\r\n')
     buf = tcp_control_socket.recv(4096)
 
+    print 'received','='*80
+    print repr(buf)
+    print '='*80
+    print
+    
     # micro parser
     section = None
     cams = {}
     for line in buf.split('\n'):
         line = line.strip()
+        print 'line',repr(line)
         if not len(line):
             continue
         if line.startswith('#'):
@@ -75,13 +99,21 @@ def _startup():
             _camera_state.udp_packet_size = int(value)
         if section == '[general]' and key == 'cameras':
             camera_names = value.split()
+            print 'camera_names',camera_names
             for cn in camera_names:
                 cams[ '['+cn+']' ] = _Camera(cn)
         if section in cams.keys():
             cam = cams[section]
             name = key
             valstr = value
-            cam.properties.append( _CameraProperties(name,valstr) )
+
+            # Naughty: width and height exceptions to our property parsing code
+            if name == 'width':
+                cam.set_resolution(w=int(valstr))
+            elif name == 'height':
+                cam.set_resolution(h=int(valstr))
+            else:
+                cam.properties.append( _CameraProperties(name,valstr) )
 
 ##    cam = _PerCameraState()
 ##    cam.w, cam.h = resolution
@@ -122,13 +154,13 @@ class Camera:
         pass
     def get_num_camera_properties(self):
         return len(_camera_state.cams[self.device_number].properties)
-    def get_camera_property(self,*args,**kw):
-        raise ValueError("not a valid property")
+    def get_camera_property(self,i):
+        p = _camera_state.cams[self.device_number].properties[i]
+        return p.value, p.auto
     def get_camera_property_range(self,*args,**kw):
         raise ValueError("not a valid property")
     def get_camera_property_info(self,i):
-        prop = _camera_state.cams[self.device_number].properties[i]
-        raise NotImplementedError("")
+        return _camera_state.cams[self.device_number].properties[i].prop_info
     def get_trigger_mode_number(self):
         return 0
     def get_framerate(self,*args,**kw):
