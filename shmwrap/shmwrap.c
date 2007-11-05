@@ -43,7 +43,7 @@ double shm_floattime() {
     }									\
   }									\
 
-void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, int h ) {
+void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, int h, char * trig_modes_str ) {
   int x;
   //  const char* properties_string="shutter: {'has_auto_mode':1,'max_value':24,'min_value':0,'is_present':0,'has_manual_mode': 1, 'is_scaled_quantity': 0}\r\n";
 
@@ -61,7 +61,7 @@ void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, 
   char* write_str, *read_str, *tmp_str;
 
   read_str = &(str2[0]);
-  snprintf(read_str,1234,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nwidth: %d\r\nheight: %d\r\n",sizeof(shmwrap_msg_ready_t),w,h);
+  snprintf(read_str,1234,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nwidth: %d\r\nheight: %d\r\ntrigger_modes: %s\r\n",sizeof(shmwrap_msg_ready_t),w,h,trig_modes_str);
 
   int num_properties;
   CamContext_get_num_camera_properties(cc,&num_properties);
@@ -155,6 +155,7 @@ int main() {
   int buflen;
 
   double last_timestamp;
+  camera_property_set_info_t *set_prop_buf;
 
   sock_udp_fast= socket(AF_INET, SOCK_DGRAM, 0);
   if (sock_udp_fast < 0) SHM_FATAL_PERROR(__FILE__,__LINE__);
@@ -226,6 +227,33 @@ int main() {
   CamContext_get_max_frame_size(cc, &max_width, &max_height);
   _check_error();
 
+  int num_trigger_modes;
+  CamContext_get_num_trigger_modes(cc, &num_trigger_modes);
+  _check_error();
+
+  char tmp_str1[255];
+  char tmp_str2[255];
+  char tmp_str3[255];
+  char *read_str, *write_str, *tmp_str;
+  
+  tmp_str1[0] = '(';
+  tmp_str1[1] = '\0';
+  read_str = &(tmp_str1[0]);
+  write_str = &(tmp_str2[0]);
+
+  for (i=0;i<num_trigger_modes;i++) {
+    CamContext_get_trigger_mode_string(cc,i,&(tmp_str3[0]),255);
+    _check_error();
+
+    printf("X %d: %s\n",i,read_str);
+
+    snprintf(write_str, 255, "%s\"%s\", ", read_str, &(tmp_str3[0]) );
+    tmp_str = write_str;
+    write_str = read_str;
+    read_str = tmp_str;
+  }
+  snprintf(write_str, 255, "%s)", read_str);
+
   CamContext_get_num_framebuffers(cc,&num_buffers);
   printf("allocated %d buffers\n",num_buffers);
 
@@ -289,19 +317,53 @@ int main() {
       // no command
       break;
     case SHMWRAP_CMD_HELLO:
-      printf("got hello command\n");
       break;
     case SHMWRAP_CMD_REQUEST_INFO:
       printf("got info request command\n");
-      malloc_info_buffer( cc, &info_buffer, &buflen, max_width, max_height );
+      malloc_info_buffer( cc, &info_buffer, &buflen, max_width, max_height, write_str );
       send_buf(mystate, info_buffer, buflen);
       free((void*)info_buffer);
       info_buffer=NULL;
+      break;
+    case SHMWRAP_CMD_SET_PROP:
+      printf("setting property\n");
+      set_prop_buf = (camera_property_set_info_t*)incoming_command.payload;
+      if (set_prop_buf==NULL) {
+	printf("payload was null?!\n");
+	exit(1);
+      }
+      if (set_prop_buf->device_number != 0) {
+	printf("only device 0 currently supported\n");
+	exit(1);
+      }
+      CamContext_set_camera_property(cc,set_prop_buf->property_number, set_prop_buf->Value, set_prop_buf->Auto );
+      _check_error();
+      send_buf(mystate,"OK\r\n",4);
+      break;
+    case SHMWRAP_CMD_SET_TRIG:
+      printf("setting trig\n");
+
+      camera_trigger_set_trig_t* set_trig_buf;
+      set_trig_buf = (camera_trigger_set_trig_t*)incoming_command.payload;
+
+      if (set_trig_buf==NULL) {
+	printf("payload was null?!\n");
+	exit(1);
+      }
+      if (set_trig_buf->device_number != 0) {
+	printf("only device 0 currently supported\n");
+	exit(1);
+      }
+      CamContext_set_trigger_mode_number(cc,set_trig_buf->mode);
+      _check_error();
+      send_buf(mystate,"OK\r\n",4);
       break;
     default:
       printf("got unknown command\n");
       break;
     }
+    cleanup_handle_network(mystate,&incoming_command);
+
     offset = shm_chunk_size*(sendnumber % num_shm_buffers);
     pixels = data + offset;
     //CamContext_grab_next_frame_blocking(cc,pixels,0.02f); // block for 20 msec

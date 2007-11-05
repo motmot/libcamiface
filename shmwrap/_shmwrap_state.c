@@ -50,6 +50,11 @@ void destoy_state(shmwrap_state_t *state) {
     free(state);
   }
 }
+void cleanup_handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command) {
+  if (incoming_command->payload != NULL) {
+    free(incoming_command->payload);
+  }
+}
 
 void handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command) {
   int newsockfd, clilen, n;
@@ -58,7 +63,11 @@ void handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command) 
   int incoming_sockfd;
   int err;
 
+  int device, prop, is_auto, trig_value;
+  long value;
+
     incoming_command->type = SHMWRAP_CMD_NOCOMMAND;
+    incoming_command->payload = NULL;
 
     // check for connection attempts on state->server_sockfd
     clilen = sizeof(cli_addr);
@@ -135,23 +144,42 @@ void handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command) 
 	}
 	else if (!strcmp(buffer,"info\r\n")) {
 	  incoming_command->type = SHMWRAP_CMD_REQUEST_INFO;
+	} 
+	else if (sscanf(buffer,"set_prop(%d,%d,%ld,%d)\r\n",&device,&prop,&value,&is_auto)==4) {
+	  incoming_command->type = SHMWRAP_CMD_SET_PROP;
+	  incoming_command->payload = malloc(sizeof(camera_property_set_info_t));
+	  camera_property_set_info_t* set_prop;
+	  set_prop = (camera_property_set_info_t*)incoming_command->payload;
+	  set_prop->device_number = device;
+	  set_prop->property_number = prop;
+	  set_prop->Value = value;
+	  set_prop->Auto = is_auto;
+	  printf("got set_prop() command\n");
 	}
+	else if (sscanf(buffer,"set_trig(%d,%d)\r\n",&device,&trig_value)==2) {
+	  incoming_command->type = SHMWRAP_CMD_SET_TRIG;
+	  incoming_command->payload = malloc(sizeof(camera_trigger_set_trig_t));
+	  camera_trigger_set_trig_t* set_trig;
+	  set_trig = (camera_trigger_set_trig_t*)incoming_command->payload;
+	  set_trig->device_number = device;
+	  set_trig->mode = trig_value;
+	}
+	else {
+	  printf("unhandled message\n");
+	  exit(1);
+	}
+	printf("processed message OK\n");
       }
     }
 
 }
 
 void send_buf(shmwrap_state_t *state, const char* buf,int buflen) {
-  //printf("state->mode %d\n",state->mode);
   if (state->mode != SHMWRAP_CONNECTED) {
     printf("error: not connected");
     return;
   }
-  //write(state->client_sockfd,buf,buflen);
   int flags=0;
   send(state->client_sockfd,buf,buflen,flags);
   printf("wrote %d characters\n",buflen);
-  write( 0, "here\n", 5);
-  write( 0, buf, buflen );
-  printf("\n");
 }

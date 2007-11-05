@@ -25,7 +25,9 @@ typedef struct {
 typedef enum {
   SHMWRAP_CMD_NOCOMMAND,
   SHMWRAP_CMD_HELLO,
-  SHMWRAP_CMD_REQUEST_INFO
+  SHMWRAP_CMD_REQUEST_INFO,
+  SHMWRAP_CMD_SET_PROP,
+  SHMWRAP_CMD_SET_TRIG
 } shmwrap_command_type_t;
 
 typedef struct {
@@ -33,10 +35,24 @@ typedef struct {
   void* payload;
 } shmwrap_command_t;
 
+typedef struct {
+  int device_number;
+  int property_number;
+  long Value;
+  int Auto;
+} camera_property_set_info_t;
+
+typedef struct {
+  int device_number;
+  int mode;
+} camera_trigger_set_trig_t;
+
 shmwrap_state_t *create_state(void);
 void destoy_state(shmwrap_state_t *state);
 
 void handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command);
+void cleanup_handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command);
+
 void send_buf(shmwrap_state_t *state, const char* buf,int buflen);
 
 #endif
