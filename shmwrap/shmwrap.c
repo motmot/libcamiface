@@ -43,6 +43,12 @@ double shm_floattime() {
     }									\
   }									\
 
+void print_usage_and_exit(char *prog_name) {
+  printf("usage:\n");
+  printf("  %s [mode_number]\n",prog_name);
+  exit(1);
+}
+
 void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, int h, char * trig_modes_str ) {
   int x;
   //  const char* properties_string="shutter: {'has_auto_mode':1,'max_value':24,'min_value':0,'is_present':0,'has_manual_mode': 1, 'is_scaled_quantity': 0}\r\n";
@@ -113,7 +119,7 @@ void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, 
   
 }
 
-int main() {
+int main(int argc, char** argv) {
   CamContext *cc;
 
   int num_buffers;
@@ -214,6 +220,11 @@ int main() {
   }
 
   mode_number = 0;
+  if (argc>1) {
+    if (1!=sscanf(argv[1],"%d",&mode_number)) {
+      print_usage_and_exit(argv[0]);
+    }
+  }
   printf("\nChoosing mode %d\n",mode_number);
 
   num_buffers = 50;
@@ -244,8 +255,6 @@ int main() {
   for (i=0;i<num_trigger_modes;i++) {
     CamContext_get_trigger_mode_string(cc,i,&(tmp_str3[0]),255);
     _check_error();
-
-    printf("X %d: %s\n",i,read_str);
 
     snprintf(write_str, 255, "%s\"%s\", ", read_str, &(tmp_str3[0]) );
     tmp_str = write_str;
