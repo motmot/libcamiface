@@ -267,6 +267,9 @@ class Camera:
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
                 raise RuntimeError("Camera class is not thread safe!")
+        if c_cam_iface is None:
+            # weird python stuff sometimes causes this to happen
+            return
         c_cam_iface.delete_CamContext(self.cval)
         _check_error()
 
