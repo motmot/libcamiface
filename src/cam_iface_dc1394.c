@@ -892,7 +892,15 @@ void CamContext_get_camera_property_info(CamContext *in_cr,
   case DC1394_FEATURE_TEMPERATURE: info->name = "temperature"; break;
   case DC1394_FEATURE_TRIGGER: info->name = "trigger"; break;
   case DC1394_FEATURE_TRIGGER_DELAY: info->name = "trigger delay"; break;
+  case DC1394_FEATURE_WHITE_SHADING: info->name = "white shading"; break;
   case DC1394_FEATURE_FRAME_RATE: info->name = "frame rate"; break;
+  case DC1394_FEATURE_ZOOM: info->name = "zoom"; break;
+  case DC1394_FEATURE_PAN: info->name = "pan"; break;
+  case DC1394_FEATURE_TILT: info->name = "tilt"; break;
+  case DC1394_FEATURE_OPTICAL_FILTER: info->name = "optical filter"; break;
+  /* 12 reserved features */
+  case DC1394_FEATURE_CAPTURE_SIZE: info->name = "capture size"; break;
+  case DC1394_FEATURE_CAPTURE_QUALITY: info->name = "capture quality"; break;
   default:
     fprintf(stderr,"unknown feature id = %d\n",feature_id);
     cam_iface_error = -1;
