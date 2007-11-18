@@ -1,5 +1,9 @@
 import unittest
-import os
+import os, sys
+import numpy
+
+if sys.platform.startswith('linux'):
+    import cam_iface._cam_iface_shm as cishm
 
 class TestWrapper(unittest.TestCase):
 
@@ -56,10 +60,37 @@ class TestWrapper(unittest.TestCase):
         cam.start_camera()
         buf = cam.grab_next_frame_blocking()
         timestamp = cam.get_last_timestamp()
+
+class TestShm(unittest.TestCase):
+    def test_copy_shm(self):
+        source_manager = cishm.ShmManager(create=True)
+        shape = (5,6)
+        fake_image = numpy.arange(shape[0]*shape[1],dtype=numpy.uint8)
+        fake_image.shape = shape
+        curmsg = source_manager.copy_into_shm(0, fake_image) # copy into shared memory
+        result_new = cishm.get_data_copy(curmsg)
+        assert numpy.allclose( result_new, fake_image)
+
+    def test_copy_shm_preallocated(self):
+        source_manager = cishm.ShmManager(create=True)
+        shape = (5,6)
+        fake_image = numpy.arange(shape[0]*shape[1],dtype=numpy.uint8)
+        fake_image.shape = shape
+        curmsg = source_manager.copy_into_shm(0, fake_image) # copy into shared memory
+        result_preallocated = numpy.empty( shape, dtype=numpy.uint8 )
+        result_preallocated2 = cishm.get_data_copy(curmsg,result_preallocated)
+        assert numpy.allclose( result_preallocated, fake_image )
+        assert result_preallocated2 is result_preallocated
         
 def get_test_suite():
-    ts=unittest.TestSuite((unittest.makeSuite(TestWrapper),))
+    suites = [
+        unittest.makeSuite(TestWrapper),
+        ]
+    if sys.platform.startswith('linux'):
+        suites.append( unittest.makeSuite(TestShm) )
+    ts=unittest.TestSuite(suites)
     return ts
 
 if __name__ == '__main__':
-    unittest.main()
+    ts = get_test_suite()
+    unittest.TextTestRunner().run(ts)

@@ -10,3 +10,6 @@ cdef extern from "sys/shm.h":
     int shmget(key_t key, c_lib.size_t size, int shmflg)
     void *shmat(int shmid, void *shmaddr, int shmflg)
     int SHM_RDONLY
+
+cdef extern from "sys/ipc.h":
+    int IPC_CREAT

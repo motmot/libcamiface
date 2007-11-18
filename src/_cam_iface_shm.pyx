@@ -41,11 +41,23 @@ cdef extern from "shmwrap.h":
 def perror(msg):
     print msg
 
-cdef char* _get_shm_pointer():
+cdef void* add_ptr2(void* base, c_lib.size_t offset):
+    cdef char* ptr
+    cdef char* result
+    ptr = <char*>base
+    result = &(ptr[offset]);
+    return <void*>result;
+
+cdef char* _get_shm_pointer(int create):
     # Get key
     cdef c_lib_shm.key_t key
     cdef int shmid
     cdef char* data
+    cdef int shmflg
+
+    if create:
+        fd = open(shmwrap_ftok_path,"a") # open in append mode
+        fd.close()
     
     key = c_lib_shm.ftok(shmwrap_ftok_path, shmwrap_shm_name)
     
@@ -53,22 +65,67 @@ cdef char* _get_shm_pointer():
         perror("ftok")
         sys.exit(1)
 
-    shmid = c_lib_shm.shmget(key, shm_size, 0644);
+    if create:
+        shmflg = 0644 | c_lib_shm.IPC_CREAT
+        
+    else:
+        shmflg = 0644
+    shmid = c_lib_shm.shmget(key, shm_size, shmflg);
     if shmid==-1:
         perror("shmget")
         sys.exit(1)
-        
-    data = <char*>c_lib_shm.shmat(shmid, <void*>0, c_lib_shm.SHM_RDONLY);
+
+    if create:
+        shmflg = 0
+    else:
+        shmflg = c_lib_shm.SHM_RDONLY
+    data = <char*>c_lib_shm.shmat(shmid, <void*>0, shmflg);
     if data == <char*>(-1):
         perror("shmat")
         sys.exit(1)
 
     return data
-        
+
+class BufferMessage:
+    pass
+
 cdef class ShmManager:
     cdef char *data
-    def __init__(self):
-        self.data = _get_shm_pointer()
+    def __init__(self,create=False):
+        self.data = _get_shm_pointer(create)
+    def copy_into_shm( self, c_lib.size_t offset, buf ):
+        cdef int row
+        cdef PyArrayInterface* inter
+        cdef c_lib.size_t source_stride, dest_stride
+        cdef void* dest_ptr
+        
+        buf = numpy.asarray(buf)
+        assert len(buf.shape)==2
+        assert buf.dtype == numpy.uint8
+        height = buf.shape[0]
+        width = buf.shape[1]
+        dest_stride = width
+        source_stride = buf.strides[0]
+
+        hold_onto_until_done_with_array = buf.__array_struct__ 
+        inter = <PyArrayInterface*>c_python.PyCObject_AsVoidPtr( hold_onto_until_done_with_array )
+        assert inter.two == 2
+
+        # assert (offset + width*size) < sizeof(allocated memory)
+
+
+        dest_ptr = add_ptr2(self.data,offset)
+        
+        for row from 0<=row<height:
+            c_lib.memcpy( add_ptr2(dest_ptr,row*dest_stride),
+                          add_ptr2(inter.data,row*source_stride),
+                          dest_stride )
+        curmsg = BufferMessage()
+        curmsg.width = width
+        curmsg.height = height
+        curmsg.stride = width
+        curmsg.start_offset = offset
+        return curmsg
     
 cdef shmwrap_msg_ready_t _tmp_curmsg 
 shmwrap_msg_ready_t_size = sizeof(_tmp_curmsg)
@@ -77,7 +134,7 @@ shmwrap_frame_ready_port_ = shmwrap_frame_ready_port
 shmwrap_control_port_ = shmwrap_control_port
 
 cdef ShmManager _shm_manager
-_shm_manager = ShmManager()
+_shm_manager = None
 
 class Stuff:
     pass
@@ -102,14 +159,17 @@ def buf2class(buf):
     return result
     
 def get_data_copy(curmsg, optional_preallocated_buf=None):
+    """copy image from shared memory.
+
+If optional_preallocated_buf is given, the image is copied into this,
+which must support the __array_struct__ interface.
+"""
     cdef char* source_ptr
     cdef int size
     cdef unsigned long start_offset
     cdef int row
     cdef int width, height
     cdef int source_stride,dest_stride,rowoffset
-    cdef void* dest_ptr
-    #cdef c_python.Py_ssize_t buflen
     cdef int buflen
     cdef PyArrayInterface* inter
     
@@ -125,6 +185,11 @@ def get_data_copy(curmsg, optional_preallocated_buf=None):
     height = curmsg.height
     source_stride = curmsg.stride
     start_offset = curmsg.start_offset
+
+    global _shm_manager
+    if _shm_manager is None:
+        # initialize shared memory access
+        _shm_manager = ShmManager()
     
     source_ptr = _shm_manager.data + start_offset
     size = height*source_stride
@@ -136,14 +201,9 @@ def get_data_copy(curmsg, optional_preallocated_buf=None):
         inter = <PyArrayInterface*>c_python.PyCObject_AsVoidPtr( hold_onto_until_done_with_array )
         assert inter.two == 2
         
-        #dest_buf = result.data
-        #c_python.PyObject_AsWriteBuffer( dest_buf, &dest_ptr, &buflen)
         for row from 0<=row<height:
-##            c_lib.memcpy( dest_ptr + row*dest_stride,   # dest
-##                          source_ptr+row*source_stride, # src
-##                          width )        # size
-            c_lib.memcpy( inter.data + row*dest_stride,   # dest
-                          source_ptr+row*source_stride, # src
+            c_lib.memcpy( add_ptr2(inter.data,row*dest_stride),   # dest
+                          add_ptr2(source_ptr,row*source_stride), # src
                           width )        # size
     else:
         buf = c_python.PyString_FromStringAndSize( source_ptr, size )
@@ -151,8 +211,3 @@ def get_data_copy(curmsg, optional_preallocated_buf=None):
         result1.shape = curmsg.height, curmsg.stride
         result = result1[:,:curmsg.width]
     return result
-
-
-cdef PyArrayInterface* inter
-
-    

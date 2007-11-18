@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
   length=sizeof(struct sockaddr_in);
 
   // Create path if it doesn't exist
-  fd = fopen(shmwrap_ftok_path,"a");
+  fd = fopen(shmwrap_ftok_path,"a"); // open in append mode
   if (!fd) SHM_FATAL_PERROR(__FILE__,__LINE__);
 
   if (fclose(fd)) SHM_FATAL_PERROR(__FILE__,__LINE__);

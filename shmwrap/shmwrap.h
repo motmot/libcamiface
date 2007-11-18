@@ -1,3 +1,6 @@
+#ifndef CI_SHMWRAP
+#define CI_SHMWRAP
+
 #include <stdint.h>
 
 typedef struct
@@ -26,3 +29,5 @@ typedef struct
 
 // 10 MB
 #define shm_size 6*1024*1024
+
+#endif // ifndef CI_SHMWRAP

@@ -3,6 +3,7 @@
 cdef extern from "stdlib.h":
     ctypedef int size_t
     void *memcpy(void*,void*,size_t)
+    void *memset(void*,int,size_t)
     void *malloc(size_t size)
     void free(void* ptr)
     void exit(int status)
