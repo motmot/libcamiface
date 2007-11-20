@@ -61,8 +61,9 @@ def add_dc1394v2( d ):
 
     test_header_loc = os.path.join(include_dir,'dc1394/control.h')
     if not os.path.exists(test_header_loc):
-        raise PrereqsNotFoundError('libdc1394 (v2) not found at "%s" '
-                                   '- refusing to build'%test_header_loc)
+        raise PrereqsNotFoundError("""libdc1394 (v2) not found at '%s'
+- refusing to build. (You may be interested in the DC1394_PREFIX and
+CAMIFACE_DC1394_STATIC environment variables"""%test_header_loc)
     
     if sys.platform.startswith('darwin'):
         d.setdefault('LINKFLAGS',[]).extend('-framework IOKit -framework CoreFoundation -framework CoreServices'.split())
