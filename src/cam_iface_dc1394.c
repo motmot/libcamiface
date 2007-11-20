@@ -51,14 +51,6 @@ cam_iface_dc1394_feature_list_t *features_by_device_number=NULL;
 
 char *device_name=NULL;
 
-double dc1394_floattime() {
-  struct timeval t;
-  if (gettimeofday(&t, (struct timezone *)NULL) == 0)
-    return (double)t.tv_sec + t.tv_usec*0.000001;
-  else
-    return 0.0;
-}
-
 #define CAM_IFACE_ERROR_FORMAT(m)					\
   snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
 	   "%s (%d): %s\n",__FILE__,__LINE__,(m));
@@ -607,7 +599,6 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   backend_extras->fileno = INVALID_FILENO;
   backend_extras->nfds = 0;
   FD_ZERO(&(backend_extras->fdset));
-  printf("zeroed fdset\n");
 
   backend_extras->device_name=NULL;
   if (backend_extras->device_name!=NULL) {
@@ -800,9 +791,6 @@ void CamContext_start_camera( CamContext *in_cr ) {
 #endif
 
   backend_extras->fileno = dc1394_capture_get_fileno(camera);
-  FD_SET(backend_extras->fileno, &(backend_extras->fdset));
-  printf("set fdset: %d\n",backend_extras->fileno);
-
   backend_extras->nfds = (backend_extras->fileno+1);
 
 }
@@ -1039,26 +1027,22 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr,
   int retval;
   cam_iface_backend_extras* backend_extras;
   int errsv;
-  double tstart, tstop;
 
   CHECK_CC(in_cr);
   camera = cameras[in_cr->device_number];
   backend_extras = (cam_iface_backend_extras*)in_cr->backend_extras;
 
   if (timeout >= 0) {
-    NOT_IMPLEMENTED;
-    return;
-    /* The below does not seem to be working...
     // wait for up to timeout seconds for something to become available on our fileno.
     tv.tv_sec = timeout;
     tv.tv_usec = ((timeout-(float)tv.tv_sec)*1.0e6);
 
-    tstart = dc1394_floattime();
+    // wait on our fileno
+    FD_SET(backend_extras->fileno, &(backend_extras->fdset));
+
     retval = select( backend_extras->nfds, &(backend_extras->fdset), NULL, NULL, &tv );
     errsv = errno;
-    tstop = dc1394_floattime();
 
-    printf("select() duration: %.1f msec\n",(tstop-tstart)*1e3);
     if (retval < 0 ) {
       // some error that we want to deal with
       CAM_IFACE_ERROR_FORMAT("select() error");
@@ -1068,7 +1052,7 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr,
       cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;
       return;
     }
-    */
+    
   }
 
   CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &frame));
