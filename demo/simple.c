@@ -116,15 +116,20 @@ int main(int argc, char** argv) {
   cam_iface_get_num_modes(0, &num_modes);
   _check_error();
 
-  printf("%d mode(s) available\n",num_modes);
+  printf("%d mode(s) available:\n",num_modes);
   
+  mode_number = 0;
+
   for (i=0; i<num_modes; i++) {
     cam_iface_get_mode_string(0,i,mode_string,255);
-    printf("%d: %s\n",i,mode_string);
+    if (strstr(mode_string,"FORMAT7_0")!=NULL) {
+      // pick this mode
+      mode_number = i;
+    }
+    printf("  %d: %s\n",i,mode_string);
   }
 
-  mode_number = 0;
-  printf("\nChoosing mode %d\n",mode_number);
+  printf("Choosing mode %d\n",mode_number);
 
   num_buffers = 5;
 
@@ -187,14 +192,19 @@ int main(int argc, char** argv) {
     printf("will now grab %d frames.\n",do_num_frames);
   }
 
+  /*
+  CamContext_set_trigger_mode_number( cc, 0 );
+  _check_error();
+  */
+
   while (1) {
     if (do_num_frames>=0) {
       do_num_frames--;
       if (do_num_frames<0) break;
     }
 #ifdef USE_COPY
-    //    CamContext_grab_next_frame_blocking(cc,pixels,0.020); // timeout after 20 msec
-    CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
+    CamContext_grab_next_frame_blocking(cc,pixels,0.2); // timeout after 200 msec
+    //CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
       cam_iface_clear_error();
