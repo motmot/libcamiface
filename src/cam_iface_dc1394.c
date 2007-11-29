@@ -23,6 +23,7 @@
 struct cam_iface_dc1394_mode {
   dc1394video_mode_t video_mode;
   dc1394framerate_t framerate;
+  dc1394color_coding_t color_coding;
 };
 typedef struct cam_iface_dc1394_mode cam_iface_dc1394_mode_t;
 
@@ -232,6 +233,7 @@ void cam_iface_startup() {
   dc1394framerates_t framerates;
   dc1394featureset_t features;
   dc1394feature_info_t    *feature_info;
+  dc1394color_codings_t color_codings;
   //dc1394format7mode_t sf7mode;
 
   cameras=NULL;
@@ -309,9 +311,14 @@ void cam_iface_startup() {
       //fprintf(stderr,"mode: %s ",get_dc1394_mode_string(video_modes.modes[i]));
       if (cam_iface_is_video_mode_scalable(video_modes.modes[i])) {
 	// format7
-	modes_by_device_number[device_number].num_modes++; // a single mode entry
 	//dc1394_format7_get_mode_info(cameras[device_number], video_modes.modes[i],&sf7mode);
 	//fprint_dc1394format7mode_t(stderr,&sf7mode);
+	CIDC1394CHK(dc1394_format7_get_color_codings(cameras[device_number],
+						     video_modes.modes[i],
+						     &color_codings));
+	for (j=0;j<color_codings.num;j++) {
+	  modes_by_device_number[device_number].num_modes++; // a single mode entry
+	}
       } else {
 	CIDC1394CHK(dc1394_video_get_supported_framerates(cameras[device_number],
 							  video_modes.modes[i],
@@ -354,11 +361,16 @@ void cam_iface_startup() {
     // enumerate total number of modes ("mode" = dc1394 mode + dc1394 framerate)
     for (i=video_modes.num-1;i>=0;i--) {
       if (cam_iface_is_video_mode_scalable(video_modes.modes[i])) {
-
 	// format7
-	modes_by_device_number[device_number].modes[current_mode].video_mode = video_modes.modes[i];
-	modes_by_device_number[device_number].modes[current_mode].framerate = -1; // format7 - no framerate
-	current_mode++;
+	CIDC1394CHK(dc1394_format7_get_color_codings(cameras[device_number],
+						     video_modes.modes[i],
+						     &color_codings));
+	for (j=0;j<color_codings.num;j++) {
+	  modes_by_device_number[device_number].modes[current_mode].video_mode = video_modes.modes[i];
+	  modes_by_device_number[device_number].modes[current_mode].framerate = -1; // format7 - no framerate
+	  modes_by_device_number[device_number].modes[current_mode].color_coding = color_codings.codings[j];
+	  current_mode++;
+	}
       } else {
 	CIDC1394CHK(dc1394_video_get_supported_framerates(cameras[device_number],
 							  video_modes.modes[i],
@@ -366,6 +378,9 @@ void cam_iface_startup() {
 	for (j=framerates.num-1;j>=0;j--) {
 	  modes_by_device_number[device_number].modes[current_mode].video_mode = video_modes.modes[i];
 	  modes_by_device_number[device_number].modes[current_mode].framerate = framerates.framerates[j];
+	  CIDC1394CHK(dc1394_get_color_coding_from_video_mode(cameras[device_number],
+							      video_modes.modes[i],
+							      &(modes_by_device_number[device_number].modes[current_mode].color_coding)));
 	  current_mode++;
 	}
       }
@@ -483,7 +498,6 @@ void cam_iface_get_mode_string(int device_number,
   char *coding_string, *framerate_string;
   const char *dc1394_mode_string;
   int scalable;
-  dc1394color_coding_t coding;
   uint32_t h_size,v_size;
 
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
@@ -502,10 +516,7 @@ void cam_iface_get_mode_string(int device_number,
     return;
   }
 
-  CIDC1394CHK(dc1394_get_color_coding_from_video_mode(cameras[device_number],
-						      video_mode,
-						      &coding));
-  switch (coding) {
+  switch (modes_by_device_number[device_number].modes[mode_number].color_coding) {
   case DC1394_COLOR_CODING_MONO8:  coding_string = "MONO8";  break;
   case DC1394_COLOR_CODING_YUV411: coding_string = "YUV411"; break;
   case DC1394_COLOR_CODING_YUV422: coding_string = "YUV422"; break;
@@ -575,6 +586,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   }
   video_mode = modes_by_device_number[device_number].modes[mode_number].video_mode;
   framerate = modes_by_device_number[device_number].modes[mode_number].framerate;
+  coding = modes_by_device_number[device_number].modes[mode_number].color_coding;
 
   in_cr = (CamContext*)malloc(sizeof(CamContext));
   if (!in_cr) {
@@ -632,10 +644,13 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
 
   if (!dc1394_is_video_mode_scalable(video_mode)) {
     CIDC1394CHKV(dc1394_video_set_framerate(cameras[device_number], framerate));
+  } else {
+    // format7
+    CIDC1394CHKV(dc1394_format7_set_color_coding(cameras[device_number],
+						 video_mode,
+						 coding));
   }
-  CIDC1394CHKV(dc1394_get_color_coding_from_video_mode(cameras[device_number],
-						       video_mode,
-						       &coding));
+
   switch (coding) {
   case DC1394_COLOR_CODING_MONO8:
     in_cr->coding=CAM_IFACE_MONO8;
@@ -1271,10 +1286,13 @@ void CamContext_set_frame_offset( CamContext *in_cr,
   uint32_t h_unit_pos,  v_unit_pos;
   dc1394color_coding_t coding;
   int restart;
+  cam_iface_backend_extras* backend_extras;
 
   CHECK_CC(in_cr);
+  backend_extras = (cam_iface_backend_extras*)(in_cr->backend_extras);
   camera = cameras[in_cr->device_number];
-  CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
+  video_mode = modes_by_device_number[in_cr->device_number].modes[backend_extras->cam_iface_mode_number].video_mode;
+  coding = modes_by_device_number[in_cr->device_number].modes[backend_extras->cam_iface_mode_number].color_coding;
 
   if (!dc1394_is_video_mode_scalable(video_mode)) {
     CAM_IFACE_ERROR_FORMAT("cannot set frame offset - video mode not scalable");
@@ -1288,10 +1306,6 @@ void CamContext_set_frame_offset( CamContext *in_cr,
   if (!((h_unit_pos==1) && (v_unit_pos==1))) {
     NOT_IMPLEMENTED;
   }
-
-  CIDC1394CHK(dc1394_get_color_coding_from_video_mode(camera,
-						      video_mode,
-						      &coding));
 
   restart = 0;
   if (camera->capture_is_set>0) {
