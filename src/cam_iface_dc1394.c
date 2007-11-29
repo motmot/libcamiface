@@ -1,4 +1,3 @@
-/* $Id: $ */
 /* Backend for libdc1394 v2.0 */
 #include "cam_iface.h"
 
@@ -299,7 +298,7 @@ void cam_iface_startup() {
       }
 
     }
-    
+
     // modes:
     CIDC1394CHK(dc1394_video_get_supported_modes(cameras[device_number],
 						 &video_modes));
@@ -397,7 +396,7 @@ void cam_iface_shutdown() {
 
   if (features_by_device_number!=NULL) {
     free(features_by_device_number);
-  }  
+  }
 
   for (device_number=0;device_number<num_cameras;device_number++) {
     dc1394_free_camera(cameras[device_number]);
@@ -464,7 +463,7 @@ int _get_size_for_video_mode(int device_number,
 
   if (dc1394_is_video_mode_scalable(video_mode)) {
     if (DC1394_SUCCESS!=dc1394_format7_get_max_image_size(cameras[device_number],
-							  video_mode, 
+							  video_mode,
 							  h_size,v_size)) {
       return 0;
     }
@@ -504,7 +503,7 @@ void cam_iface_get_mode_string(int device_number,
   }
 
   CIDC1394CHK(dc1394_get_color_coding_from_video_mode(cameras[device_number],
-						      video_mode, 
+						      video_mode,
 						      &coding));
   switch (coding) {
   case DC1394_COLOR_CODING_MONO8:  coding_string = "MONO8";  break;
@@ -551,7 +550,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   uint32_t h_size,v_size,tmp_depth;
   dc1394color_coding_t coding;
   int scalable;
-  
+
 #ifdef CAM_IFACE_DC1394_SLOWDEBUG
   char mode_string[255];
 
@@ -621,7 +620,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
 
   CIDC1394CHKV(dc1394_video_set_mode(cameras[device_number],video_mode));
   CIDC1394CHKV(dc1394_video_get_mode(cameras[device_number],&test_video_mode));
-  
+
   if (test_video_mode != video_mode) {
     fprintf(stderr,"ERROR while setting video modes\n");
     fprintf(stderr,"  video_mode (desired): %s\n",get_dc1394_mode_string(video_mode));
@@ -630,16 +629,20 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
     CAM_IFACE_ERROR_FORMAT("Video mode set failed. (Camera may report modes it can't use.)");
     return NULL;
   }
-  
+
   if (!dc1394_is_video_mode_scalable(video_mode)) {
     CIDC1394CHKV(dc1394_video_set_framerate(cameras[device_number], framerate));
   }
   CIDC1394CHKV(dc1394_get_color_coding_from_video_mode(cameras[device_number],
-						       video_mode, 
+						       video_mode,
 						       &coding));
   switch (coding) {
-  case DC1394_COLOR_CODING_MONO8:  
-    in_cr->coding=CAM_IFACE_MONO8;  
+  case DC1394_COLOR_CODING_MONO8:
+    in_cr->coding=CAM_IFACE_MONO8;
+    in_cr->depth = 8;
+    break;
+  case DC1394_COLOR_CODING_RAW8:
+    in_cr->coding=CAM_IFACE_RAW8;
     in_cr->depth = 8;
     break;
   case DC1394_COLOR_CODING_YUV411:
@@ -659,13 +662,12 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   case DC1394_COLOR_CODING_RGB16:
   case DC1394_COLOR_CODING_MONO16S:
   case DC1394_COLOR_CODING_RGB16S:
-  case DC1394_COLOR_CODING_RAW8:
   case DC1394_COLOR_CODING_RAW16:
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("Currently unsupported color coding");
     return NULL;
     break;
-  default: 
+  default:
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("Unknown color coding");
     return NULL;
@@ -675,7 +677,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   // This doesn't give 12 for YUV411, so we force our values above.
   //CIDC1394CHKV(dc1394_video_get_data_depth(cameras[device_number], &tmp_depth));
   //in_cr->depth = tmp_depth;
-  
+
   backend_extras->roi_width = backend_extras->max_width;
   backend_extras->roi_height = backend_extras->max_height;
 
@@ -690,10 +692,10 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
 					coding,
 					DC1394_USE_MAX_AVAIL, // use max packet size
 					0, 0, // left, top
-					backend_extras->roi_width, 
+					backend_extras->roi_width,
 					backend_extras->roi_height));  // width, height
   }
-    
+
   backend_extras->num_dma_buffers=NumImageBuffers;
   backend_extras->buffer_size=(backend_extras->roi_width)*(backend_extras->roi_height)*in_cr->depth/8;
 
@@ -706,7 +708,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
 #endif
 
   /*
-  CIDC1394CHKV(dc1394_capture_setup(cameras[in_cr->device_number], 
+  CIDC1394CHKV(dc1394_capture_setup(cameras[in_cr->device_number],
 				    ((cam_iface_backend_extras*)
 				     (in_cr->backend_extras))->num_dma_buffers));
   */
@@ -805,7 +807,6 @@ void CamContext_stop_camera( CamContext *in_cr ) {
 
   if ((backend_extras->fileno) != INVALID_FILENO) {
     FD_CLR(backend_extras->fileno, &(backend_extras->fdset));
-    printf("cleared fdset: %d\n",backend_extras->fileno);
 
     backend_extras->nfds = 0;
   }
@@ -830,7 +831,7 @@ void CamContext_stop_camera( CamContext *in_cr ) {
   */
 }
 
-void CamContext_get_num_camera_properties(CamContext *in_cr, 
+void CamContext_get_num_camera_properties(CamContext *in_cr,
 					  int* num_properties) {
   dc1394featureset_t features;
   dc1394feature_info_t    *feature_info;
@@ -864,7 +865,7 @@ void CamContext_get_camera_property_info(CamContext *in_cr,
   }
 
   feature_id = features_by_device_number[in_cr->device_number].dc1394_feature_ids[property_number];
-  
+
   switch (feature_id) {
   case DC1394_FEATURE_BRIGHTNESS: info->name = "brightness"; break;
   case DC1394_FEATURE_EXPOSURE: info->name = "exposure"; break;
@@ -914,7 +915,7 @@ void CamContext_get_camera_property_info(CamContext *in_cr,
   // general way.
 
   if ((strcmp(camera->vendor,"Basler")==0) &&
-      (strcmp(camera->model,"A602f")==0) && 
+      (strcmp(camera->model,"A602f")==0) &&
       (feature_id==DC1394_FEATURE_SHUTTER)) {
     info->is_scaled_quantity = 1;
     info->scaled_unit_name = "msec";
@@ -958,7 +959,7 @@ void CamContext_get_camera_property(CamContext *in_cr,
 
   CIDC1394CHK(dc1394_feature_get_value(camera, feature_id, &this_val));
   *Value = this_val;
-  
+
   CIDC1394CHK(dc1394_feature_get_mode(camera, feature_id, &this_mode));
   switch (this_mode) {
   case DC1394_FEATURE_MODE_MANUAL: *Auto = 0; break;
@@ -970,7 +971,7 @@ void CamContext_get_camera_property(CamContext *in_cr,
   }
 }
 
-void CamContext_set_camera_property(CamContext *in_cr, 
+void CamContext_set_camera_property(CamContext *in_cr,
 				    int property_number,
 				    long Value,
 				    int Auto ) {
@@ -1003,7 +1004,7 @@ void CamContext_set_camera_property(CamContext *in_cr,
 
   this_val = Value; // cast
   CIDC1394CHK(dc1394_feature_set_value(camera, feature_id, this_val));
-  
+
   if (Auto==0) {
     this_mode = DC1394_FEATURE_MODE_MANUAL;
   } else {
@@ -1012,8 +1013,8 @@ void CamContext_set_camera_property(CamContext *in_cr,
   CIDC1394CHK(dc1394_feature_set_mode(camera, feature_id, this_mode));
 }
 
-void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr, 
-						      unsigned char *out_bytes, 
+void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr,
+						      unsigned char *out_bytes,
 						      intptr_t stride0, float timeout) {
   dc1394camera_t *camera;
   dc1394video_frame_t *frame;
@@ -1052,12 +1053,12 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *in_cr,
       cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;
       return;
     }
-    
+
   }
 
   CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &frame));
   (((cam_iface_backend_extras*)(in_cr->backend_extras))->nframe_hack)+=1;
-  
+
   w = frame->size[0];
   h = frame->size[1];
   depth=in_cr->depth;
@@ -1130,7 +1131,7 @@ void CamContext_get_last_framenumber( CamContext *in_cr, long* framenumber ){
   *framenumber=((cam_iface_backend_extras*)(in_cr->backend_extras))->nframe_hack;
 }
 
-void CamContext_get_num_trigger_modes( CamContext *in_cr, 
+void CamContext_get_num_trigger_modes( CamContext *in_cr,
 				       int *num_exposure_modes ) {
   dc1394camera_t *camera;
   dc1394bool_t has_trigger;
@@ -1200,7 +1201,7 @@ void CamContext_get_trigger_mode_number( CamContext *ccntxt,
   }
 
   CIDC1394CHK(dc1394_feature_get_power(camera,DC1394_FEATURE_TRIGGER,&pwr));
-  
+
   if (!pwr) {
     *exposure_mode_number = 0;
   } else {
@@ -1241,8 +1242,8 @@ void CamContext_set_trigger_mode_number( CamContext *ccntxt,
   CIDC1394CHK(dc1394_feature_set_power(camera, DC1394_FEATURE_TRIGGER, pwr));
   return;
 }
-  
-void CamContext_get_frame_offset( CamContext *in_cr, 
+
+void CamContext_get_frame_offset( CamContext *in_cr,
 				  int *left, int *top ) {
   uint32_t l,t;
   dc1394camera_t *camera;
@@ -1263,7 +1264,7 @@ void CamContext_get_frame_offset( CamContext *in_cr,
   }
 }
 
-void CamContext_set_frame_offset( CamContext *in_cr, 
+void CamContext_set_frame_offset( CamContext *in_cr,
 				  int left, int top ) {
   dc1394camera_t *camera;
   dc1394video_mode_t video_mode;
@@ -1274,7 +1275,7 @@ void CamContext_set_frame_offset( CamContext *in_cr,
   CHECK_CC(in_cr);
   camera = cameras[in_cr->device_number];
   CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
-  
+
   if (!dc1394_is_video_mode_scalable(video_mode)) {
     CAM_IFACE_ERROR_FORMAT("cannot set frame offset - video mode not scalable");
     return;
@@ -1289,9 +1290,9 @@ void CamContext_set_frame_offset( CamContext *in_cr,
   }
 
   CIDC1394CHK(dc1394_get_color_coding_from_video_mode(camera,
-						      video_mode, 
+						      video_mode,
 						      &coding));
-  
+
   restart = 0;
   if (camera->capture_is_set>0) {
     CamContext_stop_camera( in_cr );
@@ -1301,7 +1302,7 @@ void CamContext_set_frame_offset( CamContext *in_cr,
   CIDC1394CHK(dc1394_format7_set_roi(camera, video_mode, coding,
 				     DC1394_USE_MAX_AVAIL, // use max packet size
 				     left, top,
-				     ((cam_iface_backend_extras*)(in_cr->backend_extras))->roi_width, 
+				     ((cam_iface_backend_extras*)(in_cr->backend_extras))->roi_width,
 				     ((cam_iface_backend_extras*)(in_cr->backend_extras))->roi_height));
   if (restart) {
     CamContext_start_camera( in_cr );
@@ -1309,14 +1310,14 @@ void CamContext_set_frame_offset( CamContext *in_cr,
 }
 
 
-void CamContext_get_frame_size( CamContext *in_cr, 
+void CamContext_get_frame_size( CamContext *in_cr,
 				int *width, int *height ) {
   CHECK_CC(in_cr);
   *width=((cam_iface_backend_extras*)(in_cr->backend_extras))->roi_width;
   *height=((cam_iface_backend_extras*)(in_cr->backend_extras))->roi_height;
 }
 
-void CamContext_set_frame_size( CamContext *in_cr, 
+void CamContext_set_frame_size( CamContext *in_cr,
 				int width, int height ) {
   dc1394camera_t *camera;
   dc1394video_mode_t video_mode;
@@ -1337,8 +1338,8 @@ void CamContext_set_frame_size( CamContext *in_cr,
     restart = 1;
   }
   uint32_t h_unit,v_unit;
-  CIDC1394CHK(dc1394_format7_get_unit_size(camera, 
-					   video_mode, 
+  CIDC1394CHK(dc1394_format7_get_unit_size(camera,
+					   video_mode,
 					   &h_unit, &v_unit));
 
   if ((width%h_unit != 0) || (height%v_unit != 0)) {
@@ -1349,11 +1350,11 @@ void CamContext_set_frame_size( CamContext *in_cr,
     return;
   }
 
-  CIDC1394CHK(dc1394_format7_set_image_size(camera, 
-					    video_mode, 
+  CIDC1394CHK(dc1394_format7_set_image_size(camera,
+					    video_mode,
 					    width, height));
 
-  CIDC1394CHK(dc1394_format7_get_image_size(camera, video_mode, 
+  CIDC1394CHK(dc1394_format7_get_image_size(camera, video_mode,
 					    &test_width, &test_height));
 
 
@@ -1378,7 +1379,7 @@ void CamContext_set_frame_size( CamContext *in_cr,
 }
 
 
-void CamContext_get_framerate( CamContext *in_cr, 
+void CamContext_get_framerate( CamContext *in_cr,
 			       float *framerate ) {
   dc1394camera_t *camera;
   uint32_t ppf;
@@ -1393,20 +1394,20 @@ void CamContext_get_framerate( CamContext *in_cr,
   backend_extras = (cam_iface_backend_extras*)(in_cr->backend_extras);
   camera = cameras[in_cr->device_number];
   CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
-  
+
 
   if (cam_iface_is_video_mode_scalable(video_mode)) {
     /* Format 7 */
     CIDC1394CHK(dc1394_format7_get_packet_per_frame(camera,
 						    video_mode,
 						    &ppf));
-    
+
     CIDC1394CHK(dc1394_video_get_iso_speed(camera,&speed));
     switch (speed) {
     case DC1394_ISO_SPEED_400: bus_period = 125e-6; break;
     default: NOT_IMPLEMENTED; break;
     }
-  
+
     *framerate = (1.0/(bus_period*ppf));
   } else {
     framerate_idx = modes_by_device_number[in_cr->device_number].modes[backend_extras->cam_iface_mode_number].framerate;
@@ -1419,7 +1420,7 @@ void CamContext_get_framerate( CamContext *in_cr,
     case DC1394_FRAMERATE_60:    *framerate=60.0; break;
     case DC1394_FRAMERATE_120:   *framerate=120.0; break;
     case DC1394_FRAMERATE_240:   *framerate=240.0; break;
-    default: 
+    default:
       cam_iface_error = -1;
       CAM_IFACE_ERROR_FORMAT("invalid framerate index");
       return;
@@ -1427,7 +1428,7 @@ void CamContext_get_framerate( CamContext *in_cr,
   }
 }
 
-void CamContext_set_framerate( CamContext *in_cr, 
+void CamContext_set_framerate( CamContext *in_cr,
 			       float framerate ) {
   if (!in_cr) {
     cam_iface_error = -1;
@@ -1437,7 +1438,7 @@ void CamContext_set_framerate( CamContext *in_cr,
   NOT_IMPLEMENTED;
 }
 
-void CamContext_get_max_frame_size( CamContext *in_cr, 
+void CamContext_get_max_frame_size( CamContext *in_cr,
 				    int *width, int *height ){
   CHECK_CC(in_cr);
   *width=((cam_iface_backend_extras*)(in_cr->backend_extras))->max_width;
@@ -1450,14 +1451,14 @@ CAM_IFACE_API void CamContext_get_buffer_size( CamContext *in_cr,
   *size=((cam_iface_backend_extras*)(in_cr->backend_extras))->buffer_size;
 }
 
-void CamContext_get_num_framebuffers( CamContext *in_cr, 
+void CamContext_get_num_framebuffers( CamContext *in_cr,
 				      int *num_framebuffers ) {
 
   CHECK_CC(in_cr);
   *num_framebuffers=((cam_iface_backend_extras*)(in_cr->backend_extras))->num_dma_buffers;
 }
 
-void CamContext_set_num_framebuffers( CamContext *in_cr, 
+void CamContext_set_num_framebuffers( CamContext *in_cr,
 				      int num_framebuffers ) {
   CHECK_CC(in_cr);
   NOT_IMPLEMENTED;

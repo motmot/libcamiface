@@ -210,7 +210,7 @@ def _check_error():
     CAM_IFACE_FRAME_TIMEOUT=-392074
     CAM_IFACE_FRAME_DATA_LOST_ERROR=-392075
     CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE=-392076
-    
+
     errnum = c_cam_iface.cam_iface_have_error()
     if errnum != 0:
         err_str=c_cam_iface.cam_iface_get_error_string()
@@ -226,7 +226,7 @@ def _check_error():
             exc_type = CamIFaceError
         c_cam_iface.cam_iface_clear_error()
         raise exc_type(err_str)
-    
+
 def get_driver_name():
     return c_cam_iface.cam_iface_get_driver_name()
 
@@ -314,7 +314,7 @@ class Camera:
                                                         timeout)
         _check_error()
         return buf
-    
+
     def grab_next_frame_into_buf_blocking(self,
                                           buf,
                                           bypass_buffer_checks=False,
@@ -348,7 +348,7 @@ class Camera:
                         h.value)
         self.grab_next_frame_into_buf_blocking(buf,bypass_buffer_checks=bypass_buffer_checks)
         return buf
-        
+
     def get_last_timestamp(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -357,7 +357,7 @@ class Camera:
         c_cam_iface.CamContext_get_last_timestamp(self.cval,ctypes.byref(timestamp))
         _check_error()
         return timestamp.value
-    
+
     def get_last_framenumber(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -375,7 +375,7 @@ class Camera:
         c_cam_iface.CamContext_get_num_camera_properties(self.cval,ctypes.byref(val))
         _check_error()
         return val.value
-    
+
     def get_camera_property_info(self,num):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -397,7 +397,7 @@ class Camera:
                            'scale_gain':info.scale_gain,
                            })
         return result
-    
+
     def set_camera_property(self,
                             property_number,
                             Value,
@@ -410,7 +410,7 @@ class Camera:
                                                    Value,
                                                    Auto )
         _check_error()
-    
+
     def get_camera_property(self,property_number):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -423,7 +423,7 @@ class Camera:
                                                    ctypes.byref(Auto) )
         _check_error()
         return (Value.value, Auto.value)
-    
+
     def get_pixel_depth(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -438,6 +438,8 @@ class Camera:
             return 'UNKNOWN'
         elif self.cval.contents.coding == CAM_IFACE_MONO8:
             return 'MONO8'
+        elif self.cval.contents.coding == CAM_IFACE_RAW8:
+            return 'RAW8'
         elif self.cval.contents.coding == CAM_IFACE_MONO16:
             return 'MONO16'
         elif self.cval.contents.coding == CAM_IFACE_YUV411:
@@ -452,7 +454,7 @@ class Camera:
             return 'ARGB8'
         else:
             raise NotImplementedError("Can't convert pixel coding representation to string")
-        
+
     def get_max_width(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -464,7 +466,7 @@ class Camera:
                                                   ctypes.byref(max_height))
         _check_error()
         return max_width.value
-    
+
     def get_max_height(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -476,7 +478,7 @@ class Camera:
                                                   ctypes.byref(max_height))
         _check_error()
         return max_height.value
-    
+
     def get_frame_offset(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -488,7 +490,7 @@ class Camera:
                                                 ctypes.byref(top))
         _check_error()
         return left.value, top.value
-    
+
     def get_frame_size(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -500,14 +502,14 @@ class Camera:
                                               ctypes.byref(height))
         _check_error()
         return width.value, height.value
-    
+
     def set_frame_offset(self, left, top):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
                 raise RuntimeError("Camera class is not thread safe!")
         c_cam_iface.CamContext_set_frame_offset(self.cval, left, top)
         _check_error()
-        
+
     def set_frame_size(self, width, height):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -524,7 +526,7 @@ class Camera:
                                                      ctypes.byref(num_modes))
         _check_error()
         return num_modes.value
-    
+
     def get_trigger_mode_string(self,mode_number):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -539,7 +541,7 @@ class Camera:
         mode_string = mode_string.value
         mode_string = mode_string.split('\0')[0]
         return mode_string
-    
+
     def get_trigger_mode_number(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -549,7 +551,7 @@ class Camera:
                                                        ctypes.byref(val))
         _check_error()
         return val.value
-    
+
     def set_trigger_mode_number(self,source):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -564,9 +566,9 @@ class Camera:
                 raise RuntimeError("Camera class is not thread safe!")
         framerate = ctypes.c_float(0)
         c_cam_iface.CamContext_get_framerate(self.cval, ctypes.byref(framerate))
-        _check_error()        
+        _check_error()
         return framerate.value
-    
+
     def set_framerate(self, framerate):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -574,7 +576,7 @@ class Camera:
         c_cam_iface.CamContext_set_framerate(self.cval,
                                              framerate)
         _check_error()
-        
+
     def get_num_framebuffers(self):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -584,7 +586,7 @@ class Camera:
                                                     ctypes.byref(val))
         _check_error()
         return val.value
-    
+
     def set_num_framebuffers(self,val):
         if THREAD_DEBUG:
             if self.mythread!=threading.currentThread():
@@ -609,7 +611,7 @@ def test():
         print 'camera info:',get_camera_info(i)
 
         cam = Camera(i,200,7,0,0)
-        
+
         print
 
 ####################################
@@ -626,6 +628,6 @@ def shutdown():
     _check_error()
 
 ####################################
-        
+
 if __name__=='__main__':
     test()
