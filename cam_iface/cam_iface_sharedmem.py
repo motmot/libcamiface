@@ -43,7 +43,7 @@ _camera_state = _GlobalCameraState()
 
 class _CameraProperties:
     def __init__(self,name,prop_str):
-        print name,'prop_str',repr(prop_str)
+        #print name,'prop_str',repr(prop_str)
         #vals = prop_str.split('.')
         self.name = name
         value,auto,prop_info_dict = eval(prop_str)
@@ -105,17 +105,17 @@ def _startup():
     
     _camera_state.set_tcp_control_socket(tcp_control_socket)
 
-    print 'received','='*80
-    print repr(buf)
-    print '='*80
-    print
+    #print 'received','='*80
+    #print repr(buf)
+    #print '='*80
+    #print
     
     # micro parser
     section = None
     cams = {}
     for line in buf.split('\n'):
         line = line.strip()
-        print 'line',repr(line)
+        #print 'line',repr(line)
         if not len(line):
             continue
         if line.startswith('#'):
@@ -127,16 +127,16 @@ def _startup():
             split_idx = line.index(':')
             key = line[:split_idx].strip()
             value = line[(split_idx+1):].strip()
-            print 'value',repr(value)
+            #print 'value',repr(value)
             if value == ['']:
-                print 'compare OK'
+                #print 'compare OK'
                 value = []
             
         if section == '[general]' and key == 'udp_packet_size':
             _camera_state.udp_packet_size = int(value)
         if section == '[general]' and key == 'cameras':
             camera_names = value.split()
-            print 'camera_names',camera_names
+            #print 'camera_names',camera_names
             for cn in camera_names:
                 cams[ '['+cn+']' ] = _Camera(cn)
         if section in cams.keys():
@@ -152,7 +152,7 @@ def _startup():
             elif name == 'trigger_modes':
                 vals = valstr.strip()
                 trigger_modes = eval(vals)
-                print 'trigger_modes',trigger_modes
+                #print 'trigger_modes',trigger_modes
                 cam.set_trigger_modes(trigger_modes)
             else:
                 cam.properties.append( _CameraProperties(name,valstr) )
