@@ -548,8 +548,13 @@ void cam_iface_get_mode_string(int device_number,
   }
 
   dc1394_mode_string = get_dc1394_mode_string(video_mode);
-  snprintf(mode_string,mode_string_maxlen,"%d x %d %s %s %s",
-	   h_size,v_size,dc1394_mode_string,coding_string,framerate_string);
+  if (dc1394_is_video_mode_scalable(video_mode)) {
+    snprintf(mode_string,mode_string_maxlen,"%d x %d %s %s %s",
+	     h_size,v_size,dc1394_mode_string,coding_string,framerate_string);
+  } else {
+    snprintf(mode_string,mode_string_maxlen,"%d x %d %s %s",
+	     h_size,v_size,dc1394_mode_string,framerate_string);
+  }
 }
 
 CamContext * new_CamContext( int device_number, int NumImageBuffers,
