@@ -7,7 +7,7 @@ There is also a Python wrapper of the cam_iface libraries.
 
 = Backend status =
 
-A number of backends are supported. 
+A number of backends are supported.
 
 {{{
 #!html
@@ -112,6 +112,16 @@ development.
 
 The camwire backend is deprecated and will be replaced by the dc1394
 (v2) backend ASAP.
+
+== prosilica_gige ==
+
+Prosilica's PvAPI provides a mechanism to get timestamps from the
+camera. For synchronizing with activities in the real world, it is
+nice to get a real world time. Therefore, the default timestamps
+available with the cam_iface wrapper are the host computer's clock
+value at the time the image was acquired. Note that this is typically
+several milliseconds after the beginning of exposure. This behavior
+can be changed by altering the CIPROSIL_TIME_HOST preprocessor define.
 
 = License =
 
