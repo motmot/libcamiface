@@ -53,6 +53,46 @@ void Sleep(unsigned int time)
 }
 #endif
 
+
+#include <stdio.h>
+#ifdef _WIN32
+#include <Windows.h>
+#include <sys/timeb.h>
+#else
+#include <sys/time.h>
+#endif
+#include <stdlib.h>
+#include <time.h>
+
+// If the following is defined, we get time from the host computer clock.
+#define CIPROSIL_TIME_HOST
+
+#ifdef CIPROSIL_TIME_HOST
+double ciprosil_floattime() {
+#ifdef _WIN32
+#if _MSC_VER == 1310
+  struct _timeb t;
+  _ftime(&t);
+  return (double)t.time + (double)t.millitm * (double)0.001;
+#else
+  struct _timeb t;
+  if (_ftime_s(&t)==0) {
+    return (double)t.time + (double)t.millitm * (double)0.001;
+  }
+  else {
+    return 0.0;
+  }
+#endif
+#else
+  struct timeval t;
+  if (gettimeofday(&t, (struct timezone *)NULL) == 0)
+    return (double)t.tv_sec + t.tv_usec*0.000001;
+  else
+    return 0.0;
+#endif
+}
+#endif // #ifdef CIPROSIL_TIME_HOST
+
 /* globals -- allocate space */
   u_int64_t prev_ts_uint64; //tmp
 
@@ -87,8 +127,12 @@ struct cam_iface_backend_extras {
   tPvFrame** frames;
   int frame_number_currently_waiting_for;
   unsigned long last_framecount;
+#ifndef CIPROSIL_TIME_HOST
   u_int64_t last_timestamp;
   double timestamp_tick;
+#else
+  double last_timestamp;
+#endif // #ifndef CIPROSIL_TIME_HOST
   int exposure_mode_number;
 };
 
@@ -327,20 +371,6 @@ const char* cam_iface_get_api_version() {
 void cam_iface_startup() {
   CIPVCHK(PvInitialize());
   
-  /*
-    // test to see if "<<32" does what I want...
-  unsigned long TimestampLo, TimestampHi;
-  TimestampLo = 0xFFFFFFFF;
-  TimestampHi = 0xFFFFFFFF;
-  u_int64_t ts_uint64;
-  ts_uint64 = (((u_int64_t)TimestampHi)<<32) + (TimestampLo);
-  printf("ts_uint64 0x%llx\n",ts_uint64);
-  printf("ts_uint64 %llu\n",ts_uint64);
-  double tsd;
-  tsd = (double)ts_uint64;
-  printf("tsd %f\n",tsd);
-  */
-
   for (int i=0;i<4;i++) {
     if (PvCameraCount()) { // wait for a camera for 4*250 msec = 1 sec
       break;
@@ -475,9 +505,11 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   CIPVCHKV(PvAttrUint32Get(*handle_ptr,"TotalBytesPerFrame",&FrameSize));
   backend_extras->buf_size = FrameSize; // XXX should check for int overflow...
 
+#ifndef CIPROSIL_TIME_HOST
   tPvUint32 tsf;
   CIPVCHKV(PvAttrUint32Get(*handle_ptr,"TimeStampFrequency",&tsf));
   backend_extras->timestamp_tick = 1.0/((double)tsf);
+#endif // #ifndef CIPROSIL_TIME_HOST
   
   CamContext_set_trigger_mode_number( ccntxt, 0 ); // set to freerun
 
@@ -774,6 +806,7 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
 	   wb);//size
   }
   backend_extras->last_framecount = frame->FrameCount;
+#ifndef CIPROSIL_TIME_HOST
   u_int64_t ts_uint64;
   ts_uint64 = (((u_int64_t)(frame->TimestampHi))<<32) + (frame->TimestampLo);
   int64_t dif64; //tmp
@@ -782,6 +815,10 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
 
   //  DPRINTF("got it                         (ts %llu)    (diff %lld)!\n",ts_uint64,dif64);
   backend_extras->last_timestamp = ts_uint64;
+#else // #ifndef CIPROSIL_TIME_HOST
+  backend_extras->last_timestamp = ciprosil_floattime();
+#endif // #ifndef CIPROSIL_TIME_HOST
+
   tPvErr oldstatus = frame->Status;
 
   //if (requeue_int==0) {
@@ -819,7 +856,13 @@ void CamContext_unpoint_frame( CamContext *ccntxt){
 void CamContext_get_last_timestamp( CamContext *ccntxt, double* timestamp ) {
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->backend_extras);
+
+#ifndef CIPROSIL_TIME_HOST
   *timestamp = (double)(backend_extras->last_timestamp) * backend_extras->timestamp_tick;
+#else // #ifndef CIPROSIL_TIME_HOST
+  *timestamp = backend_extras->last_timestamp;
+#endif // #ifndef CIPROSIL_TIME_HOST
+
 }
 
 void CamContext_get_last_framenumber( CamContext *ccntxt, long* framenumber ){
@@ -1003,53 +1046,5 @@ void CamContext_set_num_framebuffers( CamContext *ccntxt,
 
 
 
-
-#include <stdio.h>
-#ifdef _WIN32
-#include <Windows.h>
-#include <sys/timeb.h>
-#else
-#include <sys/time.h>
-#endif
-#include <stdlib.h>
-#include <time.h>
-
-
-
-double floattime() {
-#ifdef _WIN32
-#if _MSC_VER == 1310
-  struct _timeb t;
-  _ftime(&t);
-  return (double)t.time + (double)t.millitm * (double)0.001;
-#else
-  struct _timeb t;
-  if (_ftime_s(&t)==0) {
-    return (double)t.time + (double)t.millitm * (double)0.001;
-  }
-  else {
-    return 0.0;
-  }
-#endif
-#else
-  struct timeval t;
-  if (gettimeofday(&t, (struct timezone *)NULL) == 0)
-    return (double)t.tv_sec + t.tv_usec*0.000001;
-  else
-    return 0.0;
-#endif
-}
-
-void _check_error() {
-  int err;
-
-  err = cam_iface_have_error();
-  if (err != 0) {
-
-    fprintf(stderr,cam_iface_get_error_string());
-    fprintf(stderr,"\n");
-    exit(1);
-  }
-}
 
 } // closes: extern "C"
