@@ -30,7 +30,10 @@ def add_blank( d ):
 
 def add_system_raw1394( d ):
     d.setdefault('LIBS',[]).append('raw1394')
-    
+
+def add_v4l2( d ):
+    d.setdefault('source',[]).append('src/cam_iface_v4l2.c')
+
 def add_dc1394v2( d ):
     # assume dc1394 is installed to prefix /usr
     dc1394_prefix = os.environ.get('DC1394_PREFIX','/usr')
@@ -42,7 +45,7 @@ def add_dc1394v2( d ):
         static_build = True
 
     lib_dir = os.path.join(dc1394_prefix,'lib') # e.g. /usr/include
-        
+
     if not static_build:
         include_dir = os.path.join(dc1394_prefix,'include') # e.g. /usr/include
         d.setdefault('LIBS',[]).extend(['dc1394'])
@@ -56,7 +59,7 @@ def add_dc1394v2( d ):
             sources = sources + glob.glob(os.path.join(dc1394_prefix,'dc1394/linux/*.c'))
         d.setdefault('source',[]).extend(sources)
         d.setdefault('CPPPATH',[]).extend( [os.path.join(dc1394_prefix,'dc1394')] )
-                                        
+
     d.setdefault('CPPPATH',[]).extend( [include_dir] )
 
     test_header_loc = os.path.join(include_dir,'dc1394/control.h')
@@ -64,17 +67,17 @@ def add_dc1394v2( d ):
         raise PrereqsNotFoundError("""libdc1394 (v2) not found at '%s'
 - refusing to build. (You may be interested in the DC1394_PREFIX and
 CAMIFACE_DC1394_STATIC environment variables"""%test_header_loc)
-    
+
     if sys.platform.startswith('darwin'):
         d.setdefault('LINKFLAGS',[]).extend('-framework IOKit -framework CoreFoundation -framework CoreServices'.split())
     d.setdefault('LIBS',[]).extend(['m'])
-    
+
 def add_system_libdc1394( d ):
     if not os.path.exists('/usr/include/libdc1394/dc1394_control.h'):
         raise PrereqsNotFoundError('libdc1394 not in system headers - refusing to build')
     d.setdefault('LIBS',[]).append('dc1394_control')
 
-def add_openthreads(d):    
+def add_openthreads(d):
     opj = os.path.join
     if 1:
         # system-installed OpenThreads
@@ -100,7 +103,7 @@ def add_prosilica_gige( d ):
             raise PrereqsNotFoundError('Prosilica headers not found')
     else:
         raise NotImplementedError('Need to fixup dependency finding on Windows')
-    
+
     opj = os.path.join
     d.setdefault('source',[]).extend([opj('src','cam_iface_prosilica_gige.cpp'),
                                       ])
@@ -112,7 +115,7 @@ def add_prosilica_gige( d ):
         d.setdefault('CPPDEFINES',{}).update( {'_x86':None} )
     elif arch_name == 'x86_64':
         d.setdefault('CPPDEFINES',{}).update( {'_x64':None} )
-    
+
     if sys.platform.startswith('linux'):
         # _LINUX is defined in Prosilica's examples
         d.setdefault('CPPDEFINES',{}).update( {'_LINUX':None} )
@@ -122,12 +125,12 @@ def add_prosilica_gige( d ):
 	if os.uname()[4] in ['i686']:
 	    d.setdefault('CPPDEFINES',{}).update( {'_x86':None} )
         #d.setdefault('LIBS',[]).append('-lOpenThreads')
-        
+
     elif sys.platform.startswith('win'):
         d.setdefault('CPPDEFINES',{}).update( {'_WINDOWS':None} )
         d.setdefault('CPPPATH',[]).append(opj('Prosilica GigE SDK','inc-pc'))
         d.setdefault('LIBPATH',[]).append( opj('Prosilica GigE SDK','lib-pc'))
-    
+
 def add_camwire( d ):
     d.setdefault('source',[]).extend(['src/cam_iface_camwire.c',
                                       'camwire/src/camwire_1394.c',
@@ -136,7 +139,7 @@ def add_camwire( d ):
     d.setdefault('CPPPATH',[]).append('camwire/src')
     add_system_raw1394(d)
     add_system_libdc1394(d)
-    
+
 def add_dc1394_backend( d ):
     d.setdefault('source',[]).extend(['src/cam_iface_dc1394.c',])
     add_dc1394v2( d )
@@ -144,19 +147,19 @@ def add_dc1394_backend( d ):
         add_system_raw1394( d )
     else:
         d.setdefault('CFLAGS',[]).append('-DDISABLE_TRIGGER_CODE')
-        
+
 def add_quicktime_backend( d ):
     d.setdefault('source',[]).extend(['src/cam_iface_quicktime.c',])
     #add_my_quicktime( d )
     if sys.platform == 'darwin':
         d.setdefault('LINKFLAGS',[]).extend('-framework QuickTime -framework Carbon'.split())
-    
+
 def add_imperx( d ):
     LYNXGIGE_ROOT = r'C:\Program Files\ImperX\LYNX GigE'
 
     if not os.path.exists(LYNXGIGE_ROOT):
         raise PrereqsNotFoundError('imperx not found')
-    
+
     d.setdefault('source',[]).append('src/cam_iface_imperx.cpp')
     VCInstallDir = r'C:\Program Files\Microsoft Visual Studio 8\VC'
     d.setdefault('CPPPATH',[]).extend( [LYNXGIGE_ROOT+r'\Includes\stlport',
@@ -182,13 +185,16 @@ def add_stuff( backend, cam_iface_obj_dict ):
                 'dc1394':add_dc1394_backend,
                 'quicktime':add_quicktime_backend,
                 'imperx':add_imperx,
-                'prosilica_gige':add_prosilica_gige}
+                'prosilica_gige':add_prosilica_gige,
+                'v4l2':add_v4l2,
+                }
     dispatch[backend](cam_iface_obj_dict)
 
 if sys.platform.startswith('linux'):
     BUILD_BACKENDS += ['dc1394']
     BUILD_BACKENDS += ['camwire']
     BUILD_BACKENDS += ['prosilica_gige']
+    #BUILD_BACKENDS += ['v4l2']
 elif sys.platform.startswith('win'):
     BUILD_BACKENDS += ['imperx']
     BUILD_BACKENDS += ['prosilica_gige']
@@ -209,7 +215,7 @@ for backend in BUILD_BACKENDS:
     cam_iface_obj_dict = {}
     #cam_iface_obj_dict['CPPDEFINES']={'CAM_IFACE_DEBUG':None}
     #cam_iface_obj_dict['CFLAGS']=['-O2','-Wall','-ansi','-pedantic']
-    
+
     if 1:
         # compile similarly to Python distutils
         cam_iface_obj_dict.setdefault('CPPDEFINES',{}).update({'NDEBUG':None})
@@ -227,7 +233,7 @@ for backend in BUILD_BACKENDS:
                  '/W3', # Warning Level
                  '/EHsc', # Enable Exception Handling (changed from /GX)
                  ])
-            
+
         # if using GCC (this isn't the right test)
         if sys.platform.startswith('linux'):
             if debug:
@@ -239,7 +245,7 @@ for backend in BUILD_BACKENDS:
             cam_iface_obj_dict.setdefault('CFLAGS',[]).extend(
                 '-O -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc'.split())
             cam_iface_obj_dict.setdefault('LDFLAGSS',[]).extend('-arch i386 -arch ppc'.split())
-            
+
     cam_iface_obj_dict.setdefault('CPPPATH',[]).append('inc')
 
     cam_iface_obj_dict['target']=os.path.join(lib_output_dir,libname)
@@ -251,9 +257,9 @@ for backend in BUILD_BACKENDS:
             backend,str(err))
         print
         continue
-    
+
     built_backends.append(backend)
-    
+
     if sys.platform.startswith('win'):
         if 1:
             # include directory for "windows.h"
@@ -272,16 +278,16 @@ for backend in BUILD_BACKENDS:
             env['LINKFLAGS'] = [env['LINKFLAGS'], '/manifest']
 
             # use manifest tool (mt.exe) after link step for executables
-            env['LINKCOM'] = [env['LINKCOM'], 
+            env['LINKCOM'] = [env['LINKCOM'],
               'mt.exe /nologo /manifest %s /outputresource:$TARGET;1' % os.path.join(lib_output_dir,manifest)]
 
             # use manifest tool (mt.exe) after link step for shared libraries
-            env['SHLINKCOM'] = [env['SHLINKCOM'], 
+            env['SHLINKCOM'] = [env['SHLINKCOM'],
               'mt.exe /nologo /manifest %s /outputresource:$TARGET;#2' % os.path.join(lib_output_dir,manifest)]
 
     cam_iface_shared_lib = env.SharedLibrary(**cam_iface_obj_dict)
     cam_iface_static_lib = env.StaticLibrary(**cam_iface_obj_dict)
-    
+
     cam_iface_external_libs = cam_iface_obj_dict.get('LIBS',[])
     cam_iface_external_libpath = cam_iface_obj_dict.get('LIBPATH',[])
     cam_iface_external_linkflags = cam_iface_obj_dict.get('LINKFLAGS',[])
