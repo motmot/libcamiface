@@ -7,6 +7,7 @@
 #endif
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "cam_iface.h"
 
 double my_floattime() {
@@ -91,11 +92,11 @@ int main(int argc, char** argv) {
       do_num_frames = -1;
     } else if (sscanf(argv[1],"%d",&do_num_frames)==0) {
       show_usage(argv[0]);
-    } 
+    }
   } else {
     do_num_frames = 50;
   }
-      
+
   for (i=0;i<argc;i++) {
     printf("%d: %s\n",i,argv[i]);
   }
@@ -117,7 +118,7 @@ int main(int argc, char** argv) {
   _check_error();
 
   printf("%d mode(s) available:\n",num_modes);
-  
+
   mode_number = 0;
 
   for (i=0; i<num_modes; i++) {
@@ -242,7 +243,7 @@ int main(int argc, char** argv) {
       n_frames = 0;
     }
   }
-  
+
   coding = cc->coding;
 
   printf("\n");
