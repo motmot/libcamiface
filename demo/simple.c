@@ -58,7 +58,7 @@ void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
 
 void show_usage(char * cmd) {
   printf("usage: %s [num_frames]\n",cmd);
-  printf("  where num_frames can be a number of 'forever'\n");
+  printf("  where num_frames can be a number or 'forever'\n");
   exit(1);
 }
 
