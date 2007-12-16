@@ -123,6 +123,15 @@ value at the time the image was acquired. Note that this is typically
 several milliseconds after the beginning of exposure. This behavior
 can be changed by altering the CIPROSIL_TIME_HOST preprocessor define.
 
+Here is an example of setting attributes on the camera using
+Prosilica's command line tools:
+
+{{{
+$ export CAM_IP=192.168.1.63
+$ CamAttr -i $CAM_IP -s StreamBytesPerSecond 123963084
+$ CamAttr -i $CAM_IP -s PacketSize 1500
+}}}
+
 = License =
 
 cam_iface is licensed under the BSD license. See the LICENSE.txt file
