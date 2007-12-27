@@ -124,8 +124,10 @@ int main(int argc, char** argv) {
   for (i=0; i<num_modes; i++) {
     cam_iface_get_mode_string(0,i,mode_string,255);
     if (strstr(mode_string,"FORMAT7_0")!=NULL) {
-      // pick this mode
-      mode_number = i;
+      if (strstr(mode_string,"MONO8")!=NULL) {
+	// pick this mode
+	mode_number = i;
+      }
     }
     printf("  %d: %s\n",i,mode_string);
   }
