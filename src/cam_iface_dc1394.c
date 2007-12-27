@@ -40,7 +40,7 @@ struct cam_iface_dc1394_feature_list {
 typedef struct cam_iface_dc1394_feature_list cam_iface_dc1394_feature_list_t;
 
 /* globals -- allocate space */
-dc1394_t * libdc1394_instance;
+dc1394_t * libdc1394_instance=NULL;
 int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
@@ -243,7 +243,12 @@ void cam_iface_startup() {
 
   num_cameras = list->num;
 
-  cameras=NULL;
+  cameras = malloc( num_cameras*sizeof(dc1394camera_t));
+  if (cameras == NULL) {
+    cam_iface_error = -1;
+    CAM_IFACE_ERROR_FORMAT("error allocating memory");
+    return;
+  }
 
   modes_by_device_number = malloc( num_cameras*sizeof(cam_iface_dc1394_modes_t));
   if (modes_by_device_number == NULL) {
@@ -257,6 +262,16 @@ void cam_iface_startup() {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
     return;
+  }
+
+  // initialize cameras
+  for (device_number=0;device_number<num_cameras;device_number++) {
+    cameras[device_number] = dc1394_camera_new( libdc1394_instance, list->ids[device_number].guid );
+    if (!cameras[device_number]) {
+      cam_iface_error = -1;
+      CAM_IFACE_ERROR_FORMAT("Failed to initialize camera.");
+      return;
+    }
   }
 
   // initialize new structures
