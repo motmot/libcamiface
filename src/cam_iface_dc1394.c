@@ -40,6 +40,7 @@ struct cam_iface_dc1394_feature_list {
 typedef struct cam_iface_dc1394_feature_list cam_iface_dc1394_feature_list_t;
 
 /* globals -- allocate space */
+dc1394_t * libdc1394_instance;
 int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
@@ -69,7 +70,7 @@ char *device_name=NULL;
       snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
 	       "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,	\
 	       m,							\
-	       dc1394_error_strings[m]);				\
+	       dc1394_error_get_string(m));				\
       return;								\
     }									\
   }
@@ -81,7 +82,7 @@ char *device_name=NULL;
       snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
 	       "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,	\
 	       m,							\
-	       dc1394_error_strings[m]);				\
+	       dc1394_error_get_string(m));				\
       return NULL;							\
     }									\
   }
@@ -133,6 +134,7 @@ struct _cam_iface_backend_extras {
   int fileno;
   fd_set fdset;
   int nfds;
+  int capture_is_set;
 };
 typedef struct _cam_iface_backend_extras cam_iface_backend_extras;
 
@@ -234,10 +236,14 @@ void cam_iface_startup() {
   dc1394featureset_t features;
   dc1394feature_info_t    *feature_info;
   dc1394color_codings_t color_codings;
-  //dc1394format7mode_t sf7mode;
+  dc1394camera_list_t * list;
+
+  libdc1394_instance = dc1394_new ();
+  CIDC1394CHK(dc1394_camera_enumerate (libdc1394_instance, &list));
+
+  num_cameras = list->num;
 
   cameras=NULL;
-  CIDC1394CHK(dc1394_find_cameras(&cameras,&num_cameras));
 
   modes_by_device_number = malloc( num_cameras*sizeof(cam_iface_dc1394_modes_t));
   if (modes_by_device_number == NULL) {
@@ -264,7 +270,7 @@ void cam_iface_startup() {
   // fill new structures
   for (device_number=0;device_number<num_cameras;device_number++) {
     // features: pass 1 count num available
-    CIDC1394CHK(dc1394_get_camera_feature_set(cameras[device_number], &features));
+    CIDC1394CHK(dc1394_feature_get_all(cameras[device_number], &features));
     for (i=0; i<DC1394_FEATURE_NUM; i++) {
       feature_info = &(features.feature[i]);
 
@@ -387,6 +393,7 @@ void cam_iface_startup() {
     }
 
   }
+  dc1394_camera_free_list (list);
 }
 
 void cam_iface_shutdown() {
@@ -414,7 +421,7 @@ void cam_iface_shutdown() {
   }
 
   for (device_number=0;device_number<num_cameras;device_number++) {
-    dc1394_free_camera(cameras[device_number]);
+    dc1394_camera_free(cameras[device_number]);
   }
 
   free(cameras);
@@ -437,7 +444,7 @@ void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
   }
   snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->vendor);
   snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->model);
-  snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%llXh", (long long unsigned int)cameras[device_number]->euid_64);
+  snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%llXh", (long long unsigned int)cameras[device_number]->guid);
 }
 
 void cam_iface_get_num_modes(int device_number, int *num_modes) {
@@ -746,15 +753,15 @@ void delete_CamContext(CamContext *in_cr) {
   CIDC1394CHK(dc1394_video_set_transmission(camera,
 					    DC1394_OFF));
 
-  if (camera->capture_is_set>0) {
-    CIDC1394CHK(dc1394_capture_stop(camera));
-  }
-
   backend_extras = (cam_iface_backend_extras*)in_cr->backend_extras;
   if (!backend_extras) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("CamContext->backend_extras NULL");
     return;
+  }
+
+  if (backend_extras->capture_is_set>0) {
+    CIDC1394CHK(dc1394_capture_stop(camera));
   }
 
   free(backend_extras);
@@ -782,7 +789,7 @@ void CamContext_start_camera( CamContext *in_cr ) {
 
   dc1394switch_t pwr;
   CIDC1394CHK(dc1394_video_get_transmission(camera, &pwr));
-  if ((camera->capture_is_set>0) || (pwr==DC1394_ON)) {
+  if (pwr==DC1394_ON) {
     // Stop the camera if it's already started. (XXX Should check if
     // capture parameters are OK, and only restart if they're not.)
     CamContext_stop_camera(in_cr);
@@ -793,15 +800,17 @@ void CamContext_start_camera( CamContext *in_cr ) {
 			     DC1394_CAPTURE_FLAGS_DEFAULT);
 
   if (err==DC1394_IOCTL_FAILURE) {
-    cam_iface_error = -1;						\
+    cam_iface_error = -1;
     snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
-	     "%s (%d): libdc1394 err %d: %s. (Did you request too many DMA buffers?)\n",__FILE__,__LINE__,	\
+	     "%s (%d): libdc1394 err %d: %s. (Did you request too many DMA buffers?)\n",__FILE__,__LINE__, \
 	     err,							\
-	     dc1394_error_strings[err]);				\
+	     dc1394_error_get_string(err));
     return;
   }
 
   CIDC1394CHK(err);
+
+  backend_extras->capture_is_set=1;
 
   /*have the camera start sending data*/
   CIDC1394CHK(dc1394_video_set_transmission(camera,
@@ -835,10 +844,10 @@ void CamContext_stop_camera( CamContext *in_cr ) {
   CIDC1394CHK(dc1394_video_set_transmission(camera,
 					    DC1394_OFF));
 
-  if (camera->capture_is_set>0) {
+  if (backend_extras->capture_is_set>0) {
     CIDC1394CHK(dc1394_capture_stop(camera));
   }
-
+  backend_extras->capture_is_set=0;
 
 #ifdef CAM_IFACE_DEBUG
   fprintf(stdout,"stop_camera 1\n");
@@ -859,6 +868,28 @@ void CamContext_get_num_camera_properties(CamContext *in_cr,
 
   CHECK_CC(in_cr);
   *num_properties = features_by_device_number[in_cr->device_number].num_features;
+}
+
+void feature_has_auto_mode(dc1394feature_modes_t* modes, dc1394bool_t* result){
+  *result = 0;
+  int i;
+  for (i=0; i<(modes->num); i++) {
+    if ((modes->modes[i]) == DC1394_FEATURE_MODE_AUTO) {
+      *result = 1;
+      break;
+    }
+  }
+}
+
+void feature_has_manual_mode(dc1394feature_modes_t* modes, dc1394bool_t* result) {
+  *result = 0;
+  int i;
+  for (i=0; i<(modes->num); i++) {
+    if ((modes->modes[i]) == DC1394_FEATURE_MODE_MANUAL) {
+      *result = 1;
+      break;
+    }
+  }
 }
 
 void CamContext_get_camera_property_info(CamContext *in_cr,
@@ -920,13 +951,13 @@ void CamContext_get_camera_property_info(CamContext *in_cr,
   info->is_present = 1;
 
   feature_info.id = feature_id;
-  CIDC1394CHK(dc1394_get_camera_feature(camera, &feature_info));
+  CIDC1394CHK(dc1394_feature_get(camera, &feature_info));
   info->min_value = feature_info.min;
   info->max_value = feature_info.max;
 
-  CIDC1394CHK(dc1394_feature_has_auto_mode(camera, feature_id, &mybool));
+  feature_has_auto_mode(&(feature_info.modes), &mybool);
   info->has_auto_mode = mybool;
-  CIDC1394CHK(dc1394_feature_has_manual_mode(camera, feature_id, &mybool));
+  feature_has_manual_mode(&(feature_info.modes), &mybool);
   info->has_manual_mode = mybool;
 
   info->is_scaled_quantity = 0;
@@ -1271,8 +1302,8 @@ void CamContext_get_frame_offset( CamContext *in_cr,
 
   CHECK_CC(in_cr);
   camera = cameras[in_cr->device_number];
-  if (cam_iface_is_video_mode_scalable(camera->video_mode)) {
-    CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
+  CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
+  if (cam_iface_is_video_mode_scalable(video_mode)) {
     CIDC1394CHK(dc1394_format7_get_image_position(cameras[in_cr->device_number],
 						  video_mode,
 						  &l, &t));
@@ -1313,7 +1344,7 @@ void CamContext_set_frame_offset( CamContext *in_cr,
   }
 
   restart = 0;
-  if (camera->capture_is_set>0) {
+  if (backend_extras->capture_is_set>0) {
     CamContext_stop_camera( in_cr );
     restart = 1;
   }
@@ -1346,13 +1377,14 @@ void CamContext_set_frame_size( CamContext *in_cr,
 
   restart=0;
   CHECK_CC(in_cr);
+  backend_extras = (cam_iface_backend_extras*)(in_cr->backend_extras);
   camera = cameras[in_cr->device_number];
   CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
   if (!dc1394_is_video_mode_scalable(video_mode)) {
     CAM_IFACE_ERROR_FORMAT("cannot set frame offset - video mode not scalable");
     return;
   }
-  if (camera->capture_is_set>0) {
+  if (backend_extras->capture_is_set>0) {
     CamContext_stop_camera( in_cr );
     restart = 1;
   }
@@ -1391,7 +1423,6 @@ void CamContext_set_frame_size( CamContext *in_cr,
     return;
   }
 
-  backend_extras = (cam_iface_backend_extras*)(in_cr->backend_extras);
   backend_extras->roi_width = test_width;
   backend_extras->roi_height = test_height;
   backend_extras->buffer_size=(backend_extras->roi_width)*(backend_extras->roi_height)*in_cr->depth/8;
@@ -1400,6 +1431,7 @@ void CamContext_set_frame_size( CamContext *in_cr,
 
 void CamContext_get_framerate( CamContext *in_cr,
 			       float *framerate ) {
+
   dc1394camera_t *camera;
   uint32_t ppf;
   dc1394video_mode_t video_mode;
@@ -1416,7 +1448,9 @@ void CamContext_get_framerate( CamContext *in_cr,
 
 
   if (cam_iface_is_video_mode_scalable(video_mode)) {
-    /* Format 7 */
+    NOT_IMPLEMENTED;
+    /*
+    // Format 7
     CIDC1394CHK(dc1394_format7_get_packet_per_frame(camera,
 						    video_mode,
 						    &ppf));
@@ -1428,6 +1462,7 @@ void CamContext_get_framerate( CamContext *in_cr,
     }
 
     *framerate = (1.0/(bus_period*ppf));
+    */
   } else {
     framerate_idx = modes_by_device_number[in_cr->device_number].modes[backend_extras->cam_iface_mode_number].framerate;
     switch (framerate_idx){
