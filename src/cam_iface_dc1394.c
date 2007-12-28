@@ -1463,12 +1463,10 @@ void CamContext_get_framerate( CamContext *in_cr,
 
 
   if (cam_iface_is_video_mode_scalable(video_mode)) {
-    NOT_IMPLEMENTED;
-    /*
     // Format 7
-    CIDC1394CHK(dc1394_format7_get_packet_per_frame(camera,
-						    video_mode,
-						    &ppf));
+    CIDC1394CHK(dc1394_format7_get_packets_per_frame(camera,
+						     video_mode,
+						     &ppf));
 
     CIDC1394CHK(dc1394_video_get_iso_speed(camera,&speed));
     switch (speed) {
@@ -1477,7 +1475,6 @@ void CamContext_get_framerate( CamContext *in_cr,
     }
 
     *framerate = (1.0/(bus_period*ppf));
-    */
   } else {
     framerate_idx = modes_by_device_number[in_cr->device_number].modes[backend_extras->cam_iface_mode_number].framerate;
     switch (framerate_idx){
