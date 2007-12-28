@@ -9,10 +9,10 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <fcntl.h>
-#include <netinet/tcp.h> 
+#include <netinet/tcp.h>
 
 #include "_shmwrap_state.h"
-#include "shmwrap.h"
+#include "cam_iface_shmwrap.h"
 
 shmwrap_state_t *create_state(void) {
   shmwrap_state_t *state;
@@ -26,8 +26,8 @@ shmwrap_state_t *create_state(void) {
 
   // ---------------------------------
 
-  state->server_sockfd = socket(AF_INET, SOCK_STREAM, 0); 
-  if (state->server_sockfd < 0) 
+  state->server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (state->server_sockfd < 0)
     SHM_FATAL_PERROR(__FILE__,__LINE__);
   bzero((char *) &serv_addr, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
@@ -84,9 +84,9 @@ void handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command) 
       // case 2: conncetion attempt made on state->server_sockfd
       if (state->mode == SHMWRAP_AWAITING_CONNECTION) {
 	state->client_sockfd = incoming_sockfd;
-	
+
 	// make socket non-blocking
-	if (fcntl(state->client_sockfd, F_SETFL, O_NONBLOCK) < 0) 
+	if (fcntl(state->client_sockfd, F_SETFL, O_NONBLOCK) < 0)
 	  SHM_FATAL_PERROR(__FILE__,__LINE__);
 
 	/*
@@ -104,7 +104,7 @@ void handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command) 
 	printf("ERROR: connection attempt, but I'm already connected!\n");
       }
     }
-    
+
     if (state->client_sockfd) {
       // control stream exists, check for data
 
@@ -138,13 +138,13 @@ void handle_network(shmwrap_state_t *state,shmwrap_command_t* incoming_command) 
       } else {
 	// case 3: new data
 	printf("Here is the message (len %d): %s\n",n,buffer);
-	
+
 	if (!strcmp(buffer,"hello\r\n")) {
 	  incoming_command->type = SHMWRAP_CMD_HELLO;
 	}
 	else if (!strcmp(buffer,"info\r\n")) {
 	  incoming_command->type = SHMWRAP_CMD_REQUEST_INFO;
-	} 
+	}
 	else if (sscanf(buffer,"set_prop(%d,%d,%ld,%d)\r\n",&device,&prop,&value,&is_auto)==4) {
 	  incoming_command->type = SHMWRAP_CMD_SET_PROP;
 	  incoming_command->payload = malloc(sizeof(camera_property_set_info_t));

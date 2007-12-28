@@ -19,7 +19,7 @@
 #include <fcntl.h>
 
 #include "cam_iface.h"
-#include "shmwrap.h"
+#include "cam_iface_shmwrap.h"
 #include "_shmwrap_state.h"
 
 #undef max
@@ -60,7 +60,7 @@ void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, 
     *buflen = 0;
     return;
   }
-  
+
   char properties_string[1234];
   char str1[1234];
   char str2[1234];
@@ -160,10 +160,10 @@ int main(int argc, char** argv) {
 
   udp_target_addr.sin_family = AF_INET;
   hp = gethostbyname("127.0.0.1");
-  if (hp==0) 
+  if (hp==0)
     SHM_FATAL_PERROR(__FILE__,__LINE__);
 
-  bcopy((char *)hp->h_addr, 
+  bcopy((char *)hp->h_addr,
         (char *)&udp_target_addr.sin_addr,
 	hp->h_length);
   udp_target_addr.sin_port = htons(shmwrap_frame_ready_port);
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
   if (fclose(fd)) SHM_FATAL_PERROR(__FILE__,__LINE__);
 
   // Get key
-  if ((key = ftok(shmwrap_ftok_path, shmwrap_shm_name)) == -1) 
+  if ((key = ftok(shmwrap_ftok_path, shmwrap_shm_name)) == -1)
     SHM_FATAL_PERROR(__FILE__,__LINE__);
 
 
@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
   _check_error();
 
   printf("%d mode(s) available\n",num_modes);
-  
+
   for (i=0; i<num_modes; i++) {
     cam_iface_get_mode_string(0,i,mode_string,255);
     printf("%d: %s\n",i,mode_string);
@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
   char tmp_str2[255];
   char tmp_str3[255];
   char *read_str, *write_str, *tmp_str;
-  
+
   tmp_str1[0] = '(';
   tmp_str1[1] = '\0';
   read_str = &(tmp_str1[0]);
@@ -264,7 +264,7 @@ int main(int argc, char** argv) {
     SHM_FATAL_PERROR(__FILE__,__LINE__);
 
   data = shmat(shmid, (void *)0, 0);
-  if (data == (char *)(-1)) 
+  if (data == (char *)(-1))
     SHM_FATAL_PERROR(__FILE__,__LINE__);
 
   CamContext_get_num_camera_properties(cc,&num_props);
@@ -397,12 +397,12 @@ int main(int argc, char** argv) {
     curmsg.timestamp = last_timestamp;
     curmsg.start_offset = offset;
     curmsg.stride = width;
-    
+
     sendnumber++;
 
     n=sendto(sock_udp_fast,&curmsg,
 	     sizeof(curmsg),0,(struct sockaddr *)&udp_target_addr,length);
-    if (n < 0) 
+    if (n < 0)
       SHM_FATAL_PERROR(__FILE__,__LINE__);
     if (n!=sizeof(curmsg)) {
       printf("n!=sizeof(curmsg)\n");
