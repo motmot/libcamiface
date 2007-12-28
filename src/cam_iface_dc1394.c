@@ -139,7 +139,7 @@ struct _cam_iface_backend_extras {
 typedef struct _cam_iface_backend_extras cam_iface_backend_extras;
 
 const char *cam_iface_get_driver_name() {
-  return "libdc1394";
+  return "dc1394";
 }
 
 void cam_iface_clear_error() {
