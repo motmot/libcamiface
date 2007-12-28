@@ -1,0 +1,36 @@
+Source: camiface
+Maintainer: Andrew Straw <strawman@astraw.com>
+Section: utils
+Priority: extra
+Build-Depends: debhelper (>= 5.0.38), g++, scons, libdc1394-2-dev, libprosilica-gige-dev
+Standards-Version: 3.7.2
+
+Package: libcamiface
+Architecture: any
+Depends: ${shlibs:Depends}, libprosilica-gige0
+Recommends:
+Suggests: coriander
+Description: cross-platform cross-backend camera driver (library)
+ cam_iface is the core package of several in the motmot
+ repository that are involved with digital camera acquisition
+ and analysis
+
+Package: libcamiface-dev
+Architecture: any
+Depends: ${shlibs:Depends}, libprosilica-gige0
+Recommends:
+Suggests: coriander
+Description: cross-platform cross-backend camera driver (development files)
+ cam_iface is the core package of several in the motmot
+ repository that are involved with digital camera acquisition
+ and analysis
+
+Package: camiface
+Architecture: any
+Depends: ${shlibs:Depends}, libprosilica-gige0
+Recommends:
+Suggests: coriander
+Description: cross-platform cross-backend camera driver
+ cam_iface is the core package of several in the motmot
+ repository that are involved with digital camera acquisition
+ and analysis

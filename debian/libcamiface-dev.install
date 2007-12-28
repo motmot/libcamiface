@@ -1,0 +1,2 @@
+lib/*.a usr/lib
+inc/cam_iface.h usr/include
