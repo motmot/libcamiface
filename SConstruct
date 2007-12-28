@@ -1,11 +1,12 @@
 #emacs, this is -*-Python-*- mode
 import sys, os, glob
-#import subprocess
 
-# run with "scons debug=1" to enable debug symbols
+# Run with "scons debug=1" to enable debug symbols.
+# Run with "scons -c" to clean.
 
 # On Windows, cam_iface could probably work with gcc, but hasn't been
-# ported yet. (It works fine on linux.)
+# ported yet. I've used MSVC to date. (GCC works fine on linux and Mac
+# OS X.)
 
 debug = int(ARGUMENTS.get('debug', 0))
 
@@ -192,7 +193,7 @@ def add_stuff( backend, cam_iface_obj_dict ):
 
 if sys.platform.startswith('linux'):
     BUILD_BACKENDS += ['dc1394']
-    BUILD_BACKENDS += ['camwire']
+#    BUILD_BACKENDS += ['camwire']
     BUILD_BACKENDS += ['prosilica_gige']
     #BUILD_BACKENDS += ['v4l2']
 elif sys.platform.startswith('win'):
@@ -208,7 +209,8 @@ for backend in BUILD_BACKENDS:
 
     libname='cam_iface_%s'%backend
     #lib_output_dir = '.'
-    lib_output_dir = 'cam_iface'
+    lib_output_dir = 'lib'
+    bin_output_dir = 'bin'
     cam_iface_external_libpath = ['#%s'%lib_output_dir]
     cam_iface_external_cpppath = []
 
@@ -304,7 +306,7 @@ for backend in BUILD_BACKENDS:
            'cam_iface_external_libpath','cam_iface_external_cpppath',
            'cam_iface_external_linkflags',
            'cam_iface_static_lib','cam_iface_shared_lib',
-           'cam_iface_env_kwargs')
+           'cam_iface_env_kwargs','bin_output_dir')
     SConscript( 'demo/SConscript' )
     SConscript( 'shmwrap/SConscript' )
 
@@ -312,7 +314,7 @@ for backend in BUILD_BACKENDS:
 if 1:
     # XXX Need to convert this to scons way of building products -- this file is not erased with "scons -c".
     mydir = '.'#os.path.split(__file__)[0]
-    fname = os.path.join( mydir, 'ctypes_backends.txt')
+    fname = os.path.join( mydir, 'backends.txt')
     fd = open( fname, mode='wb')
     for backend in built_backends:
         fd.write( backend + '\n')
