@@ -17,7 +17,7 @@ Description: cross-platform cross-backend camera driver (library)
 
 Package: libcamiface-dev
 Architecture: any
-Depends: ${shlibs:Depends}, libprosilica-gige0
+Depends: ${shlibs:Depends}, libprosilica-gige0, libcamiface, camiface
 Recommends:
 Suggests: coriander
 Description: cross-platform cross-backend camera driver (development files)
