@@ -193,7 +193,7 @@ def add_stuff( backend, cam_iface_obj_dict ):
 
 if sys.platform.startswith('linux'):
     BUILD_BACKENDS += ['dc1394']
-#    BUILD_BACKENDS += ['camwire']
+    BUILD_BACKENDS += ['camwire']
     BUILD_BACKENDS += ['prosilica_gige']
     #BUILD_BACKENDS += ['v4l2']
 elif sys.platform.startswith('win'):
