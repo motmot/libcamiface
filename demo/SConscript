@@ -22,3 +22,18 @@ env.Program(target=os.path.join(bin_output_dir,'simple_%s'%backend),
             CPPPATH=['../inc'],
             LINKFLAGS=cam_iface_external_linkflags,
             **cam_iface_env_kwargs)
+
+multicam_obj = env.Object(target='multi-cam-%s'%backend,
+                        source=['multi-cam.c'],
+                        LIBS=cam_iface_external_libs+[cam_iface_static_lib],
+                        LIBPATH=cam_iface_external_libpath,
+                        CPPPATH=['../inc']+cam_iface_external_cpppath,
+                        LINKFLAGS=cam_iface_external_linkflags,
+                        **cam_iface_env_kwargs)
+env.Program(target=os.path.join(bin_output_dir,'multi-cam-%s'%backend),
+            source=multicam_obj,
+            LIBS=cam_iface_external_libs+[cam_iface_static_lib],
+            LIBPATH=cam_iface_external_libpath,
+            CPPPATH=['../inc'],
+            LINKFLAGS=cam_iface_external_linkflags,
+            **cam_iface_env_kwargs)
