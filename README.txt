@@ -3,7 +3,7 @@
 cam_iface ("camera interface") is a C API that provides a camera and OS
 independent image acquisition framework.
 
-There is also a Python wrapper of the cam_iface libraries.
+There is also a Python wrapper ([wiki:pycamiface]) of the cam_iface libraries.
 
 = Backend status =
 
@@ -95,18 +95,7 @@ cd /home/somebody/blah/blah/cam_iface
 scons
 }}}
 
-== B. Build and install Python wrapper ==
-
-{{{
-python setup.py install
-}}}
-
 = Backend notes =
-
-There are currently 2 ways that Python can access the backends:
-through ctypes and through Pyrex-based wrappers. ctypes is the future
-and the Pyrex wrappers are legacy. Please use ctypes for future
-development.
 
 == camwire ==
 
