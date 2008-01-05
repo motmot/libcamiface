@@ -1,3 +1,9 @@
+camiface (0.4.1~dev386-0ads1) gutsy; urgency=low
+
+  * New release
+
+ -- Andrew Straw <strawman@astraw.com>  Sat, 05 Jan 2008 11:07:46 -0800
+
 camiface (0.4.dev341-0ads1) gutsy; urgency=low
 
   * New release
