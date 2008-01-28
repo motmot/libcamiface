@@ -85,6 +85,7 @@ int main(int argc, char** argv) {
   int width, height;
   int do_num_frames;
   CameraPixelCoding coding;
+  cam_iface_constructor_func_t new_CamContext;
 
   char save_fname[100];
 
@@ -159,6 +160,7 @@ int main(int argc, char** argv) {
 
     num_buffers = 5;
 
+    new_CamContext = cam_iface_get_constructor_func(camno);
     cc[camno] = new_CamContext(camno,num_buffers,mode_number);
     _check_error();
 

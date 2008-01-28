@@ -4,6 +4,7 @@ build: build-stamp
 build-stamp:
 	touch $@
 	scons
+	python setup.py build_ext --inplace
 	touch $@
 
 clean:
@@ -11,7 +12,7 @@ clean:
 	dh_testroot
 	scons -c
 	rm -f *-stamp
-	rm -rf dist build
+	rm -rf dist build lib/libcam_iface_*.a lib/libcam_iface_*.so demo/bin shmwrap/bin
 	rm backends.txt
 	dh_clean
 

@@ -21,19 +21,38 @@ if sys.platform.startswith('win'):
     elif 'VCINSTALLDIR' in os.environ: # VC8
         HAVE_MANIFEST_TOOL=True
 
-BUILD_BACKENDS = ['blank']
-#BUILD_BACKENDS = []
+BUILD_BACKENDS = ['unity','pynet'] # also 'blank'
 
 class PrereqsNotFoundError(Exception): pass
 
 def add_blank( d ):
-    d.setdefault('source',[]).append('src/cam_iface_blank.c')
+    d.setdefault('source',[]).extend(['src/cam_iface_blank.c',
+                                      ])
+
+def add_unity( d ):
+    d.setdefault('source',[]).extend(['src/cam_iface_unity.c',
+                                      ])
+    # this will need to be updated for other platforms
+    prefix = '/usr/lib/lib'
+    suffix = '.so'
+    d.setdefault('CPPDEFINES',{}).update( {'UNITY_BACKEND_PREFIX':r'"\"%s\""'%prefix,
+                                           'UNITY_BACKEND_SUFFIX':r'"\"%s\""'%suffix,
+                                           } )
+    d.setdefault('LIBS',[]).append('dl')
+
+def add_pynet( d ):
+    d.setdefault('source',[]).extend(['src/cam_iface_pynet.c',
+                                      ])
+    d.setdefault('CPPPATH',[]).extend( ['/usr/include/python2.5'] )
+    d.setdefault('LIBS',[]).append('python2.5')
+    d.setdefault('LIBPATH',[]).extend( ['/usr/lib/python2.5/config/'] )
 
 def add_system_raw1394( d ):
     d.setdefault('LIBS',[]).append('raw1394')
 
 def add_v4l2( d ):
-    d.setdefault('source',[]).append('src/cam_iface_v4l2.c')
+    d.setdefault('source',[]).extend(['src/cam_iface_v4l2.c',
+                                      ])
 
 def add_dc1394v2( d ):
     # assume dc1394 is installed to prefix /usr
@@ -142,7 +161,8 @@ def add_camwire( d ):
     add_system_libdc1394(d)
 
 def add_dc1394_backend( d ):
-    d.setdefault('source',[]).extend(['src/cam_iface_dc1394.c',])
+    d.setdefault('source',[]).extend(['src/cam_iface_dc1394.c',
+                                      ])
     add_dc1394v2( d )
     if not sys.platform.startswith('darwin'):
         add_system_raw1394( d )
@@ -150,7 +170,8 @@ def add_dc1394_backend( d ):
         d.setdefault('CFLAGS',[]).append('-DDISABLE_TRIGGER_CODE')
 
 def add_quicktime_backend( d ):
-    d.setdefault('source',[]).extend(['src/cam_iface_quicktime.c',])
+    d.setdefault('source',[]).extend(['src/cam_iface_quicktime.c',
+                                      ])
     #add_my_quicktime( d )
     if sys.platform == 'darwin':
         d.setdefault('LINKFLAGS',[]).extend('-framework QuickTime -framework Carbon'.split())
@@ -161,7 +182,8 @@ def add_imperx( d ):
     if not os.path.exists(LYNXGIGE_ROOT):
         raise PrereqsNotFoundError('imperx not found')
 
-    d.setdefault('source',[]).append('src/cam_iface_imperx.cpp')
+    d.setdefault('source',[]).extend(['src/cam_iface_imperx.cpp',
+                                      ])
     VCInstallDir = r'C:\Program Files\Microsoft Visual Studio 8\VC'
     d.setdefault('CPPPATH',[]).extend( [LYNXGIGE_ROOT+r'\Includes\stlport',
                           os.path.join(VCInstallDir,'include'),
@@ -181,7 +203,9 @@ def add_imperx( d ):
                                })
 
 def add_stuff( backend, cam_iface_obj_dict ):
-    dispatch = {'blank':add_blank,
+    dispatch = {'unity':add_unity,
+                'blank':add_blank,
+                'pynet':add_pynet,
                 'camwire':add_camwire,
                 'dc1394':add_dc1394_backend,
                 'quicktime':add_quicktime_backend,
@@ -193,7 +217,7 @@ def add_stuff( backend, cam_iface_obj_dict ):
 
 if sys.platform.startswith('linux'):
     BUILD_BACKENDS += ['dc1394']
-    BUILD_BACKENDS += ['camwire']
+    #BUILD_BACKENDS += ['camwire']
     BUILD_BACKENDS += ['prosilica_gige']
     #BUILD_BACKENDS += ['v4l2']
 elif sys.platform.startswith('win'):
@@ -204,8 +228,13 @@ if sys.platform.startswith('darwin'):
     BUILD_BACKENDS += ['quicktime']
 
 built_backends = []
+env = Environment(ENV = os.environ)
+common_obj = env.SharedObject(source=['src/cam_iface_common.c'],
+                              CPPPATH=['inc'],
+                              )
+
 for backend in BUILD_BACKENDS:
-    env = Environment(ENV = os.environ)
+    print 'building backend',backend
 
     libname='cam_iface_%s'%backend
     #lib_output_dir = '.'
@@ -259,7 +288,7 @@ for backend in BUILD_BACKENDS:
             backend,str(err))
         print
         continue
-
+    cam_iface_obj_dict.setdefault('source',[]).append(common_obj)
     built_backends.append(backend)
 
     if sys.platform.startswith('win'):

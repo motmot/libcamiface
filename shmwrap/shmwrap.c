@@ -21,6 +21,7 @@
 #include "cam_iface.h"
 #include "cam_iface_shmwrap.h"
 #include "_shmwrap_state.h"
+#include "_shmwrap_state.c"
 
 #undef max
 #define max(x,y) ((x) > (y) ? (x) : (y))
@@ -150,6 +151,7 @@ int main(int argc, char** argv) {
 
   double last_timestamp;
   camera_property_set_info_t *set_prop_buf;
+  cam_iface_constructor_func_t new_CamContext;
 
   sock_udp_fast= socket(AF_INET, SOCK_DGRAM, 0);
   if (sock_udp_fast < 0) SHM_FATAL_PERROR(__FILE__,__LINE__);
@@ -217,6 +219,7 @@ int main(int argc, char** argv) {
 
   num_buffers = 50;
 
+  new_CamContext = cam_iface_get_constructor_func(0);
   cc = new_CamContext(0,num_buffers,mode_number);
   _check_error();
 

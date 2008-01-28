@@ -18,7 +18,7 @@
 #define BUF_LOW_MARK		0.1
 #define BUF_HIGH_MARK		0.9
 
-typedef struct 
+typedef struct
 {
     enum {stopped, running} activity;
     enum {continuous, single} acqtype;
@@ -62,7 +62,7 @@ char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN];
 	     "%s (%d): no CamContext specified (NULL argument)\n",	\
 	     __FILE__,__LINE__);					\
     return;								\
-  }									
+  }
 
 Camwire_handle *handle_array = NULL;
 int num_cameras;
@@ -79,7 +79,7 @@ static void wait_frametime(const Camwire_handle c_handle,
 {
     float framerate, frameperiod;
     struct timespec nap;
-    
+
     camwire_get_framerate(c_handle, &framerate);
     frameperiod = multiple/framerate;
     nap.tv_sec = frameperiod;
@@ -207,34 +207,33 @@ void cam_iface_get_mode_string(int device_number,
   snprintf(mode_string,mode_string_maxlen,"(set in camwire configuration file)");
 }
 
-CamContext * new_CamContext( int device_number, int NumImageBuffers,
-			     int mode_number) {
-  CamContext *ccntxt = NULL;
+void CamContext_CamContext( CamContext * ccntxt,
+			    int device_number, int NumImageBuffers,
+			    int mode_number) {
   Camwire_handle c_handle = NULL;
   Camwire_pixel camwire_coding;
   cam_iface_backend_extras* backend_extras;
   dc1394bool_t iso_en;
 
-  ccntxt = malloc(sizeof(CamContext));
   if (!ccntxt) {
     cam_iface_error = -1;
-    CAM_IFACE_ERROR_FORMAT("malloc failed");
-    return NULL;
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
+    return;
   }
 
   /* initialize */
   ccntxt->cam = (void *)NULL;
-  
+
   if (device_number >= num_cameras) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("requested too high camera number");
-    return NULL;
+    return;
   }
-  
+
   if (mode_number != 0) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("mode_number must be 0 for camwire backend");
-    return NULL;
+    return;
   }
 
   ccntxt->device_number = device_number;
@@ -244,7 +243,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   if (c_handle == NULL) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("c_handle is NULL");
-    return NULL;
+    return;
   }
 
   if (c_handle==NULL) {
@@ -255,7 +254,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
 						&iso_en)) {
       cam_iface_error = -1;
       CAM_IFACE_ERROR_FORMAT("error getting ISO status");
-      return NULL;
+      return;
     }
   }
 
@@ -270,7 +269,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
       "installed, that /dev/raw1394 and /dev/video1394/0 are setup,\n"\
       "and that the camwire .conf file is available.\n"\
       "(Then try again.)");
-    return NULL;
+    return;
   }
 
   ccntxt->cam = (void *)c_handle;
@@ -279,11 +278,11 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("malloc failed");
-    return NULL;
+    return;
   }
   backend_extras = (cam_iface_backend_extras*)ccntxt->backend_extras;
 
-  camwire_get_frame_size(ccntxt->cam, &backend_extras->max_width, 
+  camwire_get_frame_size(ccntxt->cam, &backend_extras->max_width,
 			 &backend_extras->max_height);
   camwire_get_frame_size(ccntxt->cam, &backend_extras->roi_width,
 			 &backend_extras->roi_height);
@@ -305,13 +304,11 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
       CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error setting num framebuffers");
-    return NULL;
+    return;
   }
-
-  return ccntxt;
 }
 
-void delete_CamContext(CamContext *ccntxt) {
+void CamContext_close(CamContext *ccntxt) {
   Camwire_handle c_handle;
 
   if (!ccntxt) {
@@ -321,7 +318,7 @@ void delete_CamContext(CamContext *ccntxt) {
   }
 
   c_handle = ccntxt->cam;
-  
+
   if (c_handle != NULL) {
     camwire_set_run_stop(c_handle, 0);
     wait_frametime(c_handle, SAFE_FRAME_PERIOD);
@@ -330,7 +327,6 @@ void delete_CamContext(CamContext *ccntxt) {
   camwire_destroy(c_handle);
   camwire_bus_destroy();
   free(ccntxt->backend_extras);
-  free(ccntxt);
 }
 
 void CamContext_start_camera( CamContext *ccntxt ) {
@@ -343,7 +339,7 @@ void CamContext_start_camera( CamContext *ccntxt ) {
   }
 
   c_handle = ccntxt->cam;
-  
+
   if (camwire_set_run_stop(c_handle, 1) != CAMWIRE_SUCCESS)
     {
       cam_iface_error = -1;
@@ -363,7 +359,7 @@ void CamContext_stop_camera( CamContext *ccntxt ) {
   }
 
   c_handle = ccntxt->cam;
-  
+
   if (camwire_set_run_stop(c_handle, 0) != CAMWIRE_SUCCESS)
     {
       cam_iface_error = -1;
@@ -386,7 +382,7 @@ typedef enum {
 #define cam_iface_camwire_property_max               cic_gain
 #define cam_iface_camwire_property_num (cam_iface_camwire_property_max-cam_iface_camwire_property_min+1)
 
-void CamContext_get_num_camera_properties(CamContext *ccntxt, 
+void CamContext_get_num_camera_properties(CamContext *ccntxt,
 					  int* num_properties) {
   if (!ccntxt) {
     cam_iface_error = -1;
@@ -411,24 +407,24 @@ void CamContext_get_camera_property_info(CamContext *ccntxt,
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
 
   switch (property_number) {
   case cic_shutter: info->name = "shutter"; feature = FEATURE_SHUTTER; break;
   case cic_gain: info->name = "gain"; feature = FEATURE_GAIN; break;
   case cic_brightness: info->name = "brightness"; feature = FEATURE_BRIGHTNESS; break;
-  default:     
+  default:
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("unknown property_number");
     return;
   }
-  
+
   retval = dc1394_is_feature_present(
-				     (raw1394handle_t)camwire_bus_get_port(c_handle), 
+				     (raw1394handle_t)camwire_bus_get_port(c_handle),
 				     (nodeid_t)camwire_bus_get_node(c_handle),
 				     feature, &tmp);
-  
+
   if (DC1394_SUCCESS != retval) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error getting property_number present status");
@@ -439,7 +435,7 @@ void CamContext_get_camera_property_info(CamContext *ccntxt,
   retval = dc1394_get_min_value((raw1394handle_t)camwire_bus_get_port(c_handle),
 				(nodeid_t)camwire_bus_get_node(c_handle),
 				feature, &tmp);
-  
+
   if (DC1394_SUCCESS != retval) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error getting property_number min");
@@ -448,11 +444,11 @@ void CamContext_get_camera_property_info(CamContext *ccntxt,
 
   info->min_value = (long)tmp;
 
-  
+
   retval = dc1394_get_max_value((raw1394handle_t)camwire_bus_get_port(c_handle),
 				(nodeid_t)camwire_bus_get_node(c_handle),
 				feature, &tmp);
-  
+
   if (DC1394_SUCCESS != retval) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error getting property_number max");
@@ -464,7 +460,7 @@ void CamContext_get_camera_property_info(CamContext *ccntxt,
   retval = dc1394_has_auto_mode((raw1394handle_t)camwire_bus_get_port(c_handle),
 				(nodeid_t)camwire_bus_get_node(c_handle),
 				feature, &tmp2);
-  
+
   if (DC1394_SUCCESS != retval) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error getting property_number auto");
@@ -476,13 +472,13 @@ void CamContext_get_camera_property_info(CamContext *ccntxt,
   retval = dc1394_has_manual_mode((raw1394handle_t)camwire_bus_get_port(c_handle),
 				  (nodeid_t)camwire_bus_get_node(c_handle),
 				  feature, &tmp2);
-  
+
   if (DC1394_SUCCESS != retval) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error getting property_number manual");
     return;
   }
-  
+
   info->has_manual_mode = (int)tmp2;
 
   info->is_scaled_quantity = 0;
@@ -520,20 +516,20 @@ void CamContext_get_camera_property(CamContext *ccntxt,
   }
 
   c_handle = ccntxt->cam;
-  
+
   switch (property_number) {
-  case cic_shutter: 
-    get_function = &dc1394_get_shutter; 
-    feature = FEATURE_SHUTTER; 
+  case cic_shutter:
+    get_function = &dc1394_get_shutter;
+    feature = FEATURE_SHUTTER;
     break;
-  case cic_gain: 
-    get_function = &dc1394_get_gain; 
-    feature = FEATURE_GAIN; 
+  case cic_gain:
+    get_function = &dc1394_get_gain;
+    feature = FEATURE_GAIN;
     break;
-  case cic_brightness: 
+  case cic_brightness:
     get_function = &dc1394_get_brightness;
     feature = FEATURE_BRIGHTNESS; break;
-  default:     
+  default:
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("unknown property_number");
     return;
@@ -549,7 +545,7 @@ void CamContext_get_camera_property(CamContext *ccntxt,
     return;
   }
   *Value = (long)tmp;
-  
+
   retval = dc1394_is_feature_auto(
 				  (raw1394handle_t)camwire_bus_get_port(c_handle),
 				  (nodeid_t)camwire_bus_get_node(c_handle),
@@ -560,7 +556,7 @@ void CamContext_get_camera_property(CamContext *ccntxt,
     return;
   }
   *Auto = (long)tmp2;
-  
+
   return;
 }
 
@@ -587,7 +583,7 @@ Camwire_state *get_shadow_state(const Camwire_handle c_handle)
     return( internal_status->current_set);
 }
 
-void CamContext_set_camera_property(CamContext *ccntxt, 
+void CamContext_set_camera_property(CamContext *ccntxt,
 				    int property_number,
 				    long Value,
 				    int Auto ) {
@@ -608,20 +604,20 @@ void CamContext_set_camera_property(CamContext *ccntxt,
   }
 
   c_handle = ccntxt->cam;
-  
+
   switch (property_number) {
-  case cic_shutter: 
-    set_function = &dc1394_set_shutter; 
-    feature = FEATURE_SHUTTER; 
+  case cic_shutter:
+    set_function = &dc1394_set_shutter;
+    feature = FEATURE_SHUTTER;
     break;
-  case cic_gain: 
-    set_function = &dc1394_set_gain; 
-    feature = FEATURE_GAIN; 
+  case cic_gain:
+    set_function = &dc1394_set_gain;
+    feature = FEATURE_GAIN;
     break;
-  case cic_brightness: 
+  case cic_brightness:
     set_function = &dc1394_set_brightness;
     feature = FEATURE_BRIGHTNESS; break;
-  default:     
+  default:
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("unknown property_number");
     return;
@@ -649,8 +645,8 @@ void CamContext_set_camera_property(CamContext *ccntxt,
   return;
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *ccntxt, 
-					  unsigned char *out_bytes, 
+void CamContext_grab_next_frame_blocking( CamContext *ccntxt,
+					  unsigned char *out_bytes,
 					  float timeout ) {
   Camwire_handle c_handle;
   int buffer_err;
@@ -684,9 +680,9 @@ void CamContext_grab_next_frame_blocking( CamContext *ccntxt,
 
 }
 
-void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, 
-						      unsigned char *out_bytes, 
-						      intptr_t stride0, 
+void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
+						      unsigned char *out_bytes,
+						      intptr_t stride0,
 						      float timeout ) {
   Camwire_handle c_handle;
   int buffer_err;
@@ -720,8 +716,8 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
 
 }
 
-void CamContext_point_next_frame_blocking( CamContext *ccntxt, 
-					   unsigned char **buf_ptr, 
+void CamContext_point_next_frame_blocking( CamContext *ccntxt,
+					   unsigned char **buf_ptr,
 					   float timeout){
   Camwire_handle c_handle;
 
@@ -787,7 +783,7 @@ void CamContext_get_last_timestamp( CamContext *ccntxt, double* timestamp ) {
 }
 
 void CamContext_get_last_framenumber( CamContext *ccntxt, long* framenumber ){
-					   
+
   Camwire_handle c_handle;
 
   if (!ccntxt) {
@@ -807,7 +803,7 @@ void CamContext_get_last_framenumber( CamContext *ccntxt, long* framenumber ){
   return;
 }
 
-void CamContext_get_num_trigger_modes( CamContext *ccntxt, 
+void CamContext_get_num_trigger_modes( CamContext *ccntxt,
 				       int *num_exposure_modes ) {
   Camwire_handle c_handle;
   dc1394bool_t has_trigger;
@@ -891,7 +887,7 @@ void CamContext_get_trigger_mode_number( CamContext *ccntxt,
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
 
   if (DC1394_SUCCESS != dc1394_is_feature_present((raw1394handle_t)camwire_bus_get_port(c_handle),
@@ -902,7 +898,7 @@ void CamContext_get_trigger_mode_number( CamContext *ccntxt,
     CAM_IFACE_ERROR_FORMAT("error getting trigger availability");
     return;
   }
-  
+
   if (!has_trigger) {
     return 0;
   }
@@ -912,7 +908,7 @@ void CamContext_get_trigger_mode_number( CamContext *ccntxt,
     CAM_IFACE_ERROR_FORMAT("error calling camwire_get_trigger_source");
     return;
   }
-  
+
   if (!exttrig) {
     *exposure_mode_number = 0;
   } else {
@@ -927,13 +923,13 @@ void CamContext_set_trigger_mode_number( CamContext *ccntxt,
   Camwire_handle c_handle;
   int exttrig;
   dc1394bool_t has_trigger;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
 
   if (DC1394_SUCCESS != dc1394_is_feature_present((raw1394handle_t)camwire_bus_get_port(c_handle),
@@ -975,18 +971,18 @@ void CamContext_set_trigger_mode_number( CamContext *ccntxt,
   return;
 }
 
-void CamContext_get_frame_offset( CamContext *ccntxt, 
+void CamContext_get_frame_offset( CamContext *ccntxt,
 				  int *left, int *top ) {
   Camwire_handle c_handle;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
-  
+
   if (camwire_get_frame_offset(c_handle, left, top) != CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error calling camwire_get_frame_offset");
@@ -997,18 +993,18 @@ void CamContext_get_frame_offset( CamContext *ccntxt,
 
 }
 
-void CamContext_set_frame_offset( CamContext *ccntxt, 
+void CamContext_set_frame_offset( CamContext *ccntxt,
 				  int left, int top ) {
   Camwire_handle c_handle;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
-  
+
   if (camwire_set_frame_offset(c_handle, left, top) != CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error calling camwire_set_frame_offset");
@@ -1020,18 +1016,18 @@ void CamContext_set_frame_offset( CamContext *ccntxt,
 }
 
 
-void CamContext_get_frame_size( CamContext *ccntxt, 
+void CamContext_get_frame_size( CamContext *ccntxt,
 				int *width, int *height ) {
   Camwire_handle c_handle;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
-  
+
   if (camwire_get_frame_size(c_handle, width, height) != CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error calling camwire_get_frame_size");
@@ -1042,18 +1038,18 @@ void CamContext_get_frame_size( CamContext *ccntxt,
 
 }
 
-void CamContext_set_frame_size( CamContext *ccntxt, 
+void CamContext_set_frame_size( CamContext *ccntxt,
 				int width, int height ) {
   Camwire_handle c_handle;
   Camwire_state set;
   cam_iface_backend_extras* backend_extras;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
   backend_extras = (cam_iface_backend_extras*)ccntxt->backend_extras;
 
@@ -1062,7 +1058,7 @@ void CamContext_set_frame_size( CamContext *ccntxt,
     CAM_IFACE_ERROR_FORMAT("error calling camwire_set_state");
     return;
   }
- 
+
   if (camwire_set_frame_size(c_handle, width, height) != CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error calling camwire_set_frame_size");
@@ -1076,16 +1072,16 @@ void CamContext_set_frame_size( CamContext *ccntxt,
 
 }
 
-void CamContext_get_max_frame_size( CamContext *ccntxt, 
+void CamContext_get_max_frame_size( CamContext *ccntxt,
 				    int *width, int *height ){
   cam_iface_backend_extras* backend_extras;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   backend_extras = (cam_iface_backend_extras*)ccntxt->backend_extras;
   *width = backend_extras->max_width;
   *height = backend_extras->max_height;
@@ -1094,29 +1090,29 @@ void CamContext_get_max_frame_size( CamContext *ccntxt,
 void CamContext_get_buffer_size( CamContext *ccntxt,
 				 int *size) {
   cam_iface_backend_extras* backend_extras;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   backend_extras = (cam_iface_backend_extras*)ccntxt->backend_extras;
   *size = backend_extras->buffer_size;
 }
 
-void CamContext_get_framerate( CamContext *ccntxt, 
+void CamContext_get_framerate( CamContext *ccntxt,
 			       float *framerate ) {
   Camwire_handle c_handle;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
-  
+
   if (camwire_get_framerate(c_handle, framerate) != CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error calling camwire_get_framerate");
@@ -1127,18 +1123,18 @@ void CamContext_get_framerate( CamContext *ccntxt,
 
 }
 
-void CamContext_set_framerate( CamContext *ccntxt, 
+void CamContext_set_framerate( CamContext *ccntxt,
 			       float framerate ) {
   Camwire_handle c_handle;
-  
+
   if (!ccntxt) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
     return;
   }
-  
+
   c_handle = ccntxt->cam;
-  
+
   if (camwire_set_framerate(c_handle, framerate) != CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error calling camwire_set_framerate");
@@ -1149,14 +1145,14 @@ void CamContext_set_framerate( CamContext *ccntxt,
 
 }
 
-void CamContext_get_num_framebuffers( CamContext *ccntxt, 
+void CamContext_get_num_framebuffers( CamContext *ccntxt,
 				      int *num_framebuffers ) {
   Camwire_handle c_handle;
 
   ASSERT_CAM_CONTEXT_DEFINED(ccntxt);
-  
+
   c_handle = ccntxt->cam;
-  
+
   if (camwire_get_num_framebuffers(c_handle, num_framebuffers) != CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error calling camwire_get_num_framebuffers");
@@ -1167,14 +1163,14 @@ void CamContext_get_num_framebuffers( CamContext *ccntxt,
 
 }
 
-void CamContext_set_num_framebuffers( CamContext *ccntxt, 
+void CamContext_set_num_framebuffers( CamContext *ccntxt,
 				      int num_framebuffers ) {
   Camwire_handle c_handle;
 
   ASSERT_CAM_CONTEXT_DEFINED(ccntxt);
-  
+
   c_handle = ccntxt->cam;
-  
+
   if (camwire_set_num_framebuffers(c_handle, num_framebuffers) != CAMWIRE_SUCCESS) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("error calling camwire_set_num_framebuffers");

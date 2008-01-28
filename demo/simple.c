@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   CamContext *cc;
   unsigned char *pixels;
 
-  int num_buffers;
+  int device_number,ncams,num_buffers;
 
   double last_fps_print, now, t_diff;
   double fps;
@@ -83,6 +83,8 @@ int main(int argc, char** argv) {
   int width, height;
   int do_num_frames;
   CameraPixelCoding coding;
+  cam_iface_constructor_func_t new_CamContext;
+  Camwire_id cam_info_struct;
 
   cam_iface_startup_with_version_check();
   _check_error();
@@ -102,8 +104,10 @@ int main(int argc, char** argv) {
   }
   printf("using driver %s\n",cam_iface_get_driver_name());
 
-  if (cam_iface_get_num_cameras()<1) {
-    _check_error();
+  ncams = cam_iface_get_num_cameras();
+  _check_error();
+
+  if (ncams<1) {
 
     printf("no cameras found, will now exit\n");
 
@@ -114,7 +118,20 @@ int main(int argc, char** argv) {
   }
   _check_error();
 
-  cam_iface_get_num_modes(0, &num_modes);
+  printf("%d camera(s) found.\n",ncams);
+  for (i=0; i<ncams; i++) {
+    cam_iface_get_camera_info(i, &cam_info_struct);
+    printf("  camera %d:\n",i);
+    printf("    vendor: %s\n",cam_info_struct.vendor);
+    printf("    model: %s\n",cam_info_struct.model);
+    printf("    chip: %s\n",cam_info_struct.chip);
+  }
+
+  device_number = ncams-1;
+
+  printf("choosing camera %d\n",device_number);
+
+  cam_iface_get_num_modes(device_number, &num_modes);
   _check_error();
 
   printf("%d mode(s) available:\n",num_modes);
@@ -122,7 +139,7 @@ int main(int argc, char** argv) {
   mode_number = 0;
 
   for (i=0; i<num_modes; i++) {
-    cam_iface_get_mode_string(0,i,mode_string,255);
+    cam_iface_get_mode_string(device_number,i,mode_string,255);
     if (strstr(mode_string,"FORMAT7_0")!=NULL) {
       if (strstr(mode_string,"MONO8")!=NULL) {
 	// pick this mode
@@ -136,7 +153,8 @@ int main(int argc, char** argv) {
 
   num_buffers = 5;
 
-  cc = new_CamContext(0,num_buffers,mode_number);
+  new_CamContext = cam_iface_get_constructor_func(device_number);
+  cc = new_CamContext(device_number,num_buffers,mode_number);
   _check_error();
 
   CamContext_get_frame_size(cc, &width, &height);

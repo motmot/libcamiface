@@ -1,1 +1,3 @@
 lib/*.so usr/lib
+_pynet.so usr/share/libcamiface
+src/pynetx.py usr/share/libcamiface

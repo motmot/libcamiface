@@ -87,6 +87,7 @@ int main(int argc, char** argv) {
   int do_num_frames;
   CameraPixelCoding coding;
   IplImage *cvframe = 0;
+  cam_iface_constructor_func_t new_CamContext;
 
   cam_iface_startup_with_version_check();
   _check_error();
@@ -140,6 +141,7 @@ int main(int argc, char** argv) {
 
   num_buffers = 5;
 
+  new_CamContext = cam_iface_get_constructor_func(0);
   cc = new_CamContext(0,num_buffers,mode_number);
   _check_error();
 

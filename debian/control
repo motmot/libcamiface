@@ -2,12 +2,12 @@ Source: camiface
 Maintainer: Andrew Straw <strawman@astraw.com>
 Section: utils
 Priority: extra
-Build-Depends: debhelper (>= 5.0.38), g++, scons, libdc1394-2-dev (>= 2.0.0~rc9), libprosilica-gige-dev, libdc1394-dev, libhighgui-dev
+Build-Depends: debhelper (>= 5.0.38), g++, scons, libdc1394-22-dev, libprosilica-gige-dev, libhighgui-dev
 Standards-Version: 3.7.2
 
 Package: libcamiface
 Architecture: any
-Depends: ${shlibs:Depends}, libprosilica-gige0
+Depends: ${shlibs:Depends}, libprosilica-gige0, libdc1394-22-utils
 Recommends:
 Suggests: coriander
 Description: cross-platform cross-backend camera driver (library)
