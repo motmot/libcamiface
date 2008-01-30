@@ -73,23 +73,23 @@ CamContext_functable._fields_ = [
     ('get_camera_property', CFUNCTYPE( None, PTR_CCpynet_t, c_int, POINTER(c_long), POINTER(c_int))),
     ('set_camera_property',CFUNCTYPE( None, PTR_CCpynet_t, c_int, c_long, c_int)),
     ('grab_next_frame_blocking',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_ubyte), c_float)),
-    ('grab_next_frame_blocking_with_stride',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('point_next_frame_blocking',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('unpoint_frame',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('get_last_timestamp',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('get_last_framenumber',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('get_num_trigger_modes',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('get_trigger_mode_string',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('get_trigger_mode_number',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('set_trigger_mode_number',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('get_frame_offset',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('set_frame_offset',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
+    ('grab_next_frame_blocking_with_stride',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_ubyte), intptr_t, c_float)),
+    ('point_next_frame_blocking',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(POINTER(c_ubyte)), c_float)),
+    ('unpoint_frame',CFUNCTYPE( None, PTR_CCpynet_t)),
+    ('get_last_timestamp',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_double))),
+    ('get_last_framenumber',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_long))),
+    ('get_num_trigger_modes',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int))),
+    ('get_trigger_mode_string',CFUNCTYPE( None, PTR_CCpynet_t, c_int, c_char_p, c_int)),
+    ('get_trigger_mode_number',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int))),
+    ('set_trigger_mode_number',CFUNCTYPE( None, PTR_CCpynet_t, c_int)),
+    ('get_frame_offset',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int), POINTER(c_int))),
+    ('set_frame_offset',CFUNCTYPE( None, PTR_CCpynet_t, c_int, c_int)),
     ('get_frame_size',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int), POINTER(c_int))),
-    ('set_frame_size',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('get_max_frame_size',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
+    ('set_frame_size',CFUNCTYPE( None, PTR_CCpynet_t, c_int, c_int)),
+    ('get_max_frame_size',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int), POINTER(c_int))),
     ('get_buffer_size',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int))),
-    ('get_framerate',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
-    ('set_framerate',CFUNCTYPE( None, PTR_CCpynet_t)), ## XX incomplete
+    ('get_framerate',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_float))),
+    ('set_framerate',CFUNCTYPE( None, PTR_CCpynet_t, c_float)),
     ('get_num_framebuffers',CFUNCTYPE( None, PTR_CCpynet_t,POINTER(c_int))),
     ('set_num_framebuffers',CFUNCTYPE( None, PTR_CCpynet_t,c_int)),
     ]
@@ -190,7 +190,12 @@ class CamContextPy(object):
 
     @cinfo( [(OUTPUT,set_ptr_contents), (OUTPUT, set_ptr_contents)] )
     def get_frame_size(self):
-        width,height=10,10
+        width,height=640,480
+        return width,height
+
+    @cinfo( [(OUTPUT,set_ptr_contents), (OUTPUT, set_ptr_contents)] )
+    def get_max_frame_size(self):
+        width,height=640,480
         return width,height
 
     @cinfo( [(INPUT,None)])
