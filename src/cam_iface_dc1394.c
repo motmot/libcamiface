@@ -361,6 +361,11 @@ void cam_iface_startup() {
   dc1394camera_list_t * list;
 
   libdc1394_instance = dc1394_new ();
+
+  // Disable printouts of error messages - we are pretty good about
+  // checking return codes, so this should be fine.
+  CIDC1394CHK(dc1394_log_register_handler(DC1394_LOG_ERROR,NULL,NULL));
+
   CIDC1394CHK(dc1394_camera_enumerate (libdc1394_instance, &list));
 
   num_cameras = list->num;
@@ -1504,9 +1509,8 @@ void CCdc1394_set_frame_offset( CCdc1394 *this,
 					       video_mode,
 					       &h_unit_pos,
 					       &v_unit_pos));
-  if (!((h_unit_pos==1) && (v_unit_pos==1))) {
-    NOT_IMPLEMENTED;
-  }
+  left = left/h_unit_pos * h_unit_pos;
+  top = left/v_unit_pos * v_unit_pos;
 
   restart = 0;
   if (backend_extras->capture_is_set>0) {
