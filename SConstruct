@@ -269,6 +269,13 @@ for backend in BUILD_BACKENDS:
         if sys.platform.startswith('linux'):
             if debug:
                 cam_iface_obj_dict.setdefault('CCFLAGS',[]).extend(['-g','-O0'])
+            else:
+                cam_iface_obj_dict.setdefault('CFLAGS',[]).extend(['-O2','-fPIE',
+                                                                   '-D_FORTIFY_SOURCE=2',])
+            # added in GCC 4.1(?)
+            cam_iface_obj_dict.setdefault('CFLAGS',[]).extend(['-fstack-protector'])
+            cam_iface_obj_dict.setdefault('LDFLAGSS',[]).extend(['-Wl,zrelro'])
+                                                               
 
         # if using darwin/MacOS X
         if sys.platform.startswith('darwin'):
