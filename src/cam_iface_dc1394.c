@@ -11,7 +11,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 #include <sys/select.h>
 #include <errno.h>
@@ -1650,12 +1650,52 @@ void CCdc1394_get_framerate( CCdc1394 *this,
 
 void CCdc1394_set_framerate( CCdc1394 *this,
 			     float framerate ) {
-  if (!this) {
-    cam_iface_error = -1;
-    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");
-    return;
+  dc1394camera_t *camera;
+  int num_packets, denominator;
+  uint64_t total_bytes;
+  uint32_t packet_size;
+  dc1394video_mode_t video_mode;
+  unsigned int speed;
+  float bus_period;
+  int restart = 0;
+
+  cam_iface_backend_extras* backend_extras;
+
+  CHECK_CC(this);
+  backend_extras = (cam_iface_backend_extras*)(this->inherited.backend_extras);
+  camera = cameras[this->inherited.device_number];
+  CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
+
+  if (cam_iface_is_video_mode_scalable(video_mode)) {
+    if (backend_extras->capture_is_set>0) {
+      CCdc1394_stop_camera( this );
+      restart = 1;
+    }
+    // Format 7
+
+    // see http://damien.douxchamps.net/ieee1394/libdc1394/v2.x/faq/#How_can_I_work_out_the_packet_size_for_a_wanted_frame_rate
+
+    CIDC1394CHK(dc1394_video_get_iso_speed(camera,&speed));
+    switch (speed) {
+    case DC1394_ISO_SPEED_400: bus_period = 125e-6; break;
+    default: NOT_IMPLEMENTED; break;
+    }
+
+    num_packets = (int) (1.0/(bus_period*framerate) + 0.5);
+
+    denominator = num_packets*8;
+    CIDC1394CHK(dc1394_format7_get_total_bytes(camera, video_mode, &total_bytes));
+    packet_size = (total_bytes + denominator - 1)/denominator;
+
+    CIDC1394CHK(dc1394_format7_set_packet_size(camera, video_mode, packet_size));
+
+    if (restart) {
+      CCdc1394_start_camera( this );
+    }
+  } else {
+    NOT_IMPLEMENTED;
+    // should call dc1394_video_set_framerate()
   }
-  NOT_IMPLEMENTED;
 }
 
 void CCdc1394_get_max_frame_size( CCdc1394 *this,
