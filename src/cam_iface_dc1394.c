@@ -18,6 +18,7 @@
 
 #undef CAM_IFACE_DC1394_SLOWDEBUG
 #define INVALID_FILENO 0
+#define DELAY 50000
 
 struct CCdc1394; // forward declaration
 
@@ -1658,6 +1659,7 @@ void CCdc1394_set_framerate( CCdc1394 *this,
   unsigned int speed;
   float bus_period;
   int restart = 0;
+  unsigned int min_bytes, max_bytes;
 
   cam_iface_backend_extras* backend_extras;
 
@@ -1681,13 +1683,24 @@ void CCdc1394_set_framerate( CCdc1394 *this,
     default: NOT_IMPLEMENTED; break;
     }
 
-    num_packets = (int) (1.0/(bus_period*framerate) + 0.5);
+    CIDC1394CHK(dc1394_format7_get_packet_parameters(camera, video_mode, &min_bytes, &max_bytes));
 
-    denominator = num_packets*8;
+
+    num_packets = (int) (1.0/(bus_period*framerate) + 0.5);
+    denominator = num_packets;
     CIDC1394CHK(dc1394_format7_get_total_bytes(camera, video_mode, &total_bytes));
     packet_size = (total_bytes + denominator - 1)/denominator;
 
+    packet_size = packet_size >= min_bytes ? packet_size : min_bytes;
+    packet_size = packet_size <= max_bytes ? packet_size : max_bytes;
+
+    // make packet_size integer multiple of min_bytes
+    packet_size = ((packet_size + min_bytes - 1)/min_bytes)*min_bytes;
+
     CIDC1394CHK(dc1394_format7_set_packet_size(camera, video_mode, packet_size));
+    CIDC1394CHK(dc1394_format7_get_packet_size(camera, video_mode, &packet_size));
+
+    usleep(DELAY);
 
     if (restart) {
       CCdc1394_start_camera( this );
