@@ -1273,11 +1273,11 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 
   err=dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &frame);
   if (err==-9) {
-    cam_iface_error = CAM_IFACE_FRAME_DATA_MISSING_ERROR; // Not really, but temporarily while we see if we can deal with IOCTL errors this way.
+    cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
     CAM_IFACE_ERROR_FORMAT("IOCTL error (-9) in libdc1394");
     return;
   } else {
-    CIDC1394CHK(err); // XXX TODO: be robust against IOCTL failure (dc1394 -9)
+    CIDC1394CHK(err);
   }
   (((cam_iface_backend_extras*)(this->inherited.backend_extras))->nframe_hack)+=1;
 

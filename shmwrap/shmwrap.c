@@ -364,20 +364,29 @@ int main(int argc, char** argv) {
     //CamContext_grab_next_frame_blocking(cc,pixels,0.02f); // block for 20 msec
     CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // block forever
     errnum = cam_iface_have_error();
-    if (errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) {
+    switch (errnum) {
+    case CAM_IFACE_FRAME_DATA_MISSING_ERROR:
       cam_iface_clear_error();
       fprintf(stdout,"M");
       fflush(stdout);
       framenumber++;
-    } else if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
+      break;
+    case CAM_IFACE_FRAME_TIMEOUT:
       cam_iface_clear_error();
       fprintf(stdout,"T");
       fflush(stdout);
-    } else {
+      break;
+    case CAM_IFACE_FRAME_INTERRUPTED_SYSCALL:
+      cam_iface_clear_error();
+      fprintf(stdout,"I");
+      fflush(stdout);
+      break;
+    default:
       _check_error();
       fprintf(stdout,".");
       fflush(stdout);
       framenumber++;
+      break;
     }
 
     if ((errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) | (errnum == CAM_IFACE_FRAME_TIMEOUT))

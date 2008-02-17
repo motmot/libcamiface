@@ -71,6 +71,7 @@ CAM_IFACE_API const char * cam_iface_get_error_string(void);
 #define CAM_IFACE_FRAME_DATA_LOST_ERROR -392075
 #define CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE -392076
 #define CAM_IFACE_OTHER_ERROR -392077
+#define CAM_IFACE_FRAME_INTERRUPTED_SYSCALL -392078
 #define CAM_IFACE_GENERIC_ERROR -1
 
 CAM_IFACE_API const char* cam_iface_get_api_version();
