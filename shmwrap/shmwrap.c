@@ -52,7 +52,7 @@ double shm_floattime() {
 
 void print_usage_and_exit(char *prog_name) {
   printf("usage:\n");
-  printf("  %s [mode_number]\n",prog_name);
+  printf("  %s [camera_number] [mode_number]\nIf only one option is given, camera_number is assumed to be 0.",prog_name);
   exit(1);
 }
 
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
   int num_modes, num_props;
   const char** mode_strings;
   char mode_string[255];
-  int i,mode_number;
+  int i,mode_number,camera_number;
   CameraPropertyInfo cam_props;
   long prop_value;
   int prop_auto;
@@ -232,28 +232,40 @@ int main(int argc, char** argv) {
   }
   _check_error();
 
-  cam_iface_get_num_modes(0, &num_modes);
+  camera_number = 0;
+  mode_number = 0;
+
+  if (argc==2) {
+    if (1!=sscanf(argv[1],"%d",&mode_number)) {
+      print_usage_and_exit(argv[0]);
+    }
+  } else if (argc==3) {
+    if (1!=sscanf(argv[1],"%d",&camera_number)) {
+      print_usage_and_exit(argv[0]);
+    }
+    if (1!=sscanf(argv[2],"%d",&mode_number)) {
+      print_usage_and_exit(argv[0]);
+    }
+  }
+
+  printf("Using camera %d\n",camera_number);
+
+  cam_iface_get_num_modes(camera_number, &num_modes);
   _check_error();
 
   printf("%d mode(s) available\n",num_modes);
 
   for (i=0; i<num_modes; i++) {
-    cam_iface_get_mode_string(0,i,mode_string,255);
+    cam_iface_get_mode_string(camera_number,i,mode_string,255);
     printf("%d: %s\n",i,mode_string);
   }
 
-  mode_number = 0;
-  if (argc>1) {
-    if (1!=sscanf(argv[1],"%d",&mode_number)) {
-      print_usage_and_exit(argv[0]);
-    }
-  }
   printf("\nChoosing mode %d\n",mode_number);
 
   num_buffers = 50;
 
-  new_CamContext = cam_iface_get_constructor_func(0);
-  cc = new_CamContext(0,num_buffers,mode_number);
+  new_CamContext = cam_iface_get_constructor_func(camera_number);
+  cc = new_CamContext(camera_number,num_buffers,mode_number);
   _check_error();
 
   CamContext_get_frame_size(cc, &width, &height);
