@@ -437,7 +437,7 @@ int main(int argc, char** argv) {
       break;
     }
 
-    if ((errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) | (errnum == CAM_IFACE_FRAME_TIMEOUT))
+    if ((errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) | (errnum == CAM_IFACE_FRAME_TIMEOUT) | (errnum == CAM_IFACE_FRAME_INTERRUPTED_SYSCALL))
       continue;
 
     //printf(" %02x %02x %02x %02x %02x\n",pixels[0],pixels[1],pixels[2],pixels[3],pixels[4]);
