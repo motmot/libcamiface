@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include "cam_iface.h"
 #include "cam_iface_shmwrap.h"
@@ -25,6 +26,9 @@
 
 #undef max
 #define max(x,y) ((x) > (y) ? (x) : (y))
+
+/* global variable */
+static CamContext *cc = NULL;
 
 double shm_floattime() {
   struct timeval t;
@@ -107,8 +111,19 @@ void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, 
 
 }
 
+void sigint_handler(int sig)
+{
+  if (cc != NULL) {
+    CamContext_stop_camera(cc);
+    _check_error();
+  }
+  cam_iface_shutdown();
+
+  signal(SIGINT, SIG_DFL); /* restore default handler */
+  kill(getpid(), SIGINT);
+}
+
 int main(int argc, char** argv) {
-  CamContext *cc;
 
   int num_buffers;
   int num_shm_buffers;
@@ -181,9 +196,10 @@ int main(int argc, char** argv) {
   if ((key = ftok(shmwrap_ftok_path, shmwrap_shm_name)) == -1)
     SHM_FATAL_PERROR(__FILE__,__LINE__);
 
-
   cam_iface_startup_with_version_check();
   _check_error();
+
+  signal(SIGINT, sigint_handler); /* Catch Ctrl-C */
 
   printf("using driver %s\n",cam_iface_get_driver_name());
 
