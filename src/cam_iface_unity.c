@@ -128,7 +128,7 @@ void cam_iface_startup(void) {
   int* libhandle;
   struct backend_info_t* this_backend_info;
   char *full_backend_name;
-  int i, next_num_cameras;
+  int i, j, next_num_cameras;
 
   num_cameras = 0;
 
@@ -137,24 +137,43 @@ void cam_iface_startup(void) {
     this_backend_info->name = backend_names[i];
     this_backend_info->started = 0;
 
-    full_backend_name = (char*)malloc( 256*sizeof(char) );
-    snprintf(full_backend_name,256,UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+    for (j=0; j<2; j++) {
 
-    // RTLD_GLOBAL needed for embedded Python to work. (For examples, see pythoncall.c
-    // and pymplug.c.)
+      full_backend_name = (char*)malloc( 256*sizeof(char) );
+      switch (j) {
+      case 0:
+	/* Check pwd first */
+	snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+	break;
+      case 1:
+	/* Next check system-install prefix */
+	snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+	break;
+      }
 
-    libhandle = dlopen(full_backend_name, RTLD_NOW | RTLD_GLOBAL );
+      // RTLD_GLOBAL needed for embedded Python to work. (For examples, see pythoncall.c
+      // and pymplug.c.)
+
+      libhandle = dlopen(full_backend_name, RTLD_NOW | RTLD_GLOBAL );
+      if (libhandle==NULL) {
+	/*
+	  cam_iface_error = -1;
+	  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,
+	  "%s (%d): dlopen() error when attempting to open backend '%s' (at %s)\n",__FILE__,__LINE__,
+	  backend_names[i],full_backend_name);
+	*/
+	this_backend_info->cam_start_idx = num_cameras;
+	this_backend_info->cam_stop_idx = num_cameras;
+	free(full_backend_name);
+	continue;
+      } else {
+	free(full_backend_name);
+	break; // found backend, stop searching
+      }
+    }
+
     if (libhandle==NULL) {
-      /*
-      cam_iface_error = -1;
-      snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,
-	       "%s (%d): dlopen() error when attempting to open backend '%s' (at %s)\n",__FILE__,__LINE__,
-	       backend_names[i],full_backend_name);
-      */
-      this_backend_info->cam_start_idx = num_cameras;
-      this_backend_info->cam_stop_idx = num_cameras;
-      continue;
-      //return;
+      continue; //  no backend loaded
     }
 
     LOAD_DLSYM(this_backend_info->have_error,"cam_iface_have_error");
