@@ -27,6 +27,8 @@
 #undef max
 #define max(x,y) ((x) > (y) ? (x) : (y))
 
+#define MAX_SHM_STRLEN 3000
+
 /* global variable */
 static CamContext *cc = NULL;
 
@@ -54,25 +56,27 @@ void print_usage_and_exit(char *prog_name) {
   exit(1);
 }
 
-void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, int h, char * trig_modes_str ) {
-  int x;
+int malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, int h, char * trig_modes_str ) {
   //  const char* properties_string="shutter: {'has_auto_mode':1,'max_value':24,'min_value':0,'is_present':0,'has_manual_mode': 1, 'is_scaled_quantity': 0}\r\n";
 
 
-  x = 1000;
-  *info_buffer=(char*)malloc(x);
+  *info_buffer=(char*)malloc(MAX_SHM_STRLEN);
   if (*info_buffer==NULL) {
     *buflen = 0;
-    return;
+    return -1;
   }
 
-  char properties_string[1234];
-  char str1[1234];
-  char str2[1234];
+  char properties_string[MAX_SHM_STRLEN];
+  char str1[MAX_SHM_STRLEN];
+  char str2[MAX_SHM_STRLEN];
   char* write_str, *read_str, *tmp_str;
 
   read_str = &(str2[0]);
-  snprintf(read_str,1234,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nwidth: %d\r\nheight: %d\r\ntrigger_modes: %s\r\n",sizeof(shmwrap_msg_ready_t),w,h,trig_modes_str);
+  *buflen = snprintf(read_str,MAX_SHM_STRLEN,"[general]\r\ncameras: cam1\r\nudp_packet_size: %d\r\n[cam1]\r\nwidth: %d\r\nheight: %d\r\ntrigger_modes: %s\r\n",sizeof(shmwrap_msg_ready_t),w,h,trig_modes_str);
+  if ((*buflen) >= MAX_SHM_STRLEN) {
+    /* error - info bigger than buffer */
+    return -1;
+  }
 
   int num_properties;
   CamContext_get_num_camera_properties(cc,&num_properties);
@@ -93,12 +97,20 @@ void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, 
     _check_error();
 
     // XXX no scaled quantity support yet
-    snprintf(&(properties_string[0]),1234,
-	     "%s: %d, %d, {'name':'%s', 'is_present':%d, 'min_value':%d, 'max_value':%d, 'has_auto_mode':%d, 'has_manual_mode':%d, 'is_scaled_quantity':0}\r\n",
-	     info.name, value, autoprop, info.name, info.is_present, info.min_value, info.max_value, info.has_auto_mode, info.has_manual_mode);
+    *buflen = snprintf(&(properties_string[0]),MAX_SHM_STRLEN,
+		       "%s: %d, %d, {'name':'%s', 'is_present':%d, 'min_value':%d, 'max_value':%d, 'has_auto_mode':%d, 'has_manual_mode':%d, 'is_scaled_quantity':0}\r\n",
+		       info.name, value, autoprop, info.name, info.is_present, info.min_value, info.max_value, info.has_auto_mode, info.has_manual_mode);
+    if ((*buflen) >= MAX_SHM_STRLEN) {
+      /* error - info bigger than buffer */
+      return -1;
+    }
 
     //"shutter: {'has_auto_mode':1,'max_value':24,'min_value':0,'is_present':0,'has_manual_mode': 1, 'is_scaled_quantity': 0}\r\n";
-    *buflen = snprintf(write_str,1234,"%s%s",read_str,properties_string);
+    *buflen = snprintf(write_str,MAX_SHM_STRLEN,"%s%s",read_str,properties_string);
+    if ((*buflen) >= MAX_SHM_STRLEN) {
+      /* error - info bigger than buffer */
+      return -1;
+    }
 
     // swap buffers
     tmp_str = read_str;
@@ -107,8 +119,13 @@ void malloc_info_buffer( CamContext *cc, char**info_buffer, int* buflen, int w, 
 
   }
 
-  *buflen = snprintf(*info_buffer,x,"%s",read_str);
+  *buflen = snprintf(*info_buffer,MAX_SHM_STRLEN,"%s",read_str);
+  if ((*buflen) >= MAX_SHM_STRLEN) {
+    /* error - info bigger than buffer */
+    return -1;
+  }
 
+  return 0;
 }
 
 void sigint_handler(int sig)
@@ -335,7 +352,10 @@ int main(int argc, char** argv) {
     case SHMWRAP_CMD_HELLO:
       break;
     case SHMWRAP_CMD_REQUEST_INFO:
-      malloc_info_buffer( cc, &info_buffer, &buflen, max_width, max_height, write_str );
+      if (malloc_info_buffer( cc, &info_buffer, &buflen, max_width, max_height, write_str )) {
+	printf("error calling malloc_info_buffer()\n");
+	exit(1);
+      }
       send_buf(mystate, info_buffer, buflen);
       free((void*)info_buffer);
       info_buffer=NULL;
