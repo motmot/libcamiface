@@ -46,6 +46,22 @@ PTR_CCpynet_t = ctypes.POINTER( CCpynet )
 PTR_CamContext_functable_t = ctypes.POINTER( CamContext_functable )
 PTR_CameraPropertyInfo_t = ctypes.POINTER( CameraPropertyInfo )
 
+
+# modified from numpy:
+def _getintp_ctype():
+    char = numpy.dtype('p').char
+    if (char == 'i'):
+        val = ctypes.c_int
+    elif char == 'l':
+        val = ctypes.c_long
+    elif char == 'q':
+        val = ctypes.c_longlong
+    else:
+        raise ValueError, "confused about intp->ctypes."
+    _getintp_ctype.cache = val
+    return val
+intptr_type = _getintp_ctype()
+
 cam_iface_constructor_func_t = CFUNCTYPE( PTR_CamContext_t, ctypes.c_int, ctypes.c_int, ctypes.c_int )
 
 CamContext._fields_ = [
@@ -73,7 +89,7 @@ CamContext_functable._fields_ = [
     ('get_camera_property', CFUNCTYPE( None, PTR_CCpynet_t, c_int, POINTER(c_long), POINTER(c_int))),
     ('set_camera_property',CFUNCTYPE( None, PTR_CCpynet_t, c_int, c_long, c_int)),
     ('grab_next_frame_blocking',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_ubyte), c_float)),
-    ('grab_next_frame_blocking_with_stride',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_ubyte), intptr_t, c_float)),
+    ('grab_next_frame_blocking_with_stride',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_ubyte), intptr_type, c_float)),
     ('point_next_frame_blocking',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(POINTER(c_ubyte)), c_float)),
     ('unpoint_frame',CFUNCTYPE( None, PTR_CCpynet_t)),
     ('get_last_timestamp',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_double))),
@@ -171,10 +187,7 @@ def get_camera_info(device_number):
             }
 
 def get_num_cameras():
-    if int(os.environ.get('PYNET_ENABLED','0')):
-        return 1
-    else:
-        return 0
+    return 1
 
 def get_num_modes(device_number):
     return 1

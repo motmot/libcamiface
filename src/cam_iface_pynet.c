@@ -196,6 +196,7 @@ extern void cam_iface_startup() {
 
   PyRun_SimpleString("import sys\n"
 		     "sys.path.insert(0,'/usr/share/libcamiface')\n"
+		     "sys.path.insert(0,'.')\n"
 		     );
 
   // PySys_SetArgv(1,&argv0); // This crashes if running in interpreter.
