@@ -1,6 +1,4 @@
-cam_iface is licensed under the BSD license (see below). Note that
-cam_iface is also distributed with camwire and cmu1394, which have
-their own licenses, listed below.
+cam_iface is licensed under the BSD license.
 
 cam_face license
 ================
@@ -36,18 +34,3 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-camwire license
-===============
-
-Camwire is licensed under the GNU Lesser General Public License (short
-LGPL, see file COPYING in the source distribution).  Other files in the
-source distribution not belonging to but being part of the build
-procedure of Camwire are under their own licenses, as stated at the top
-of the individual files.
-
-cmu1394 license
-===============
-
-cmu1394 is licensed under the GNU Lesser General Public License (short
-LGPL, see file lglp.txt in the source distribution).
