@@ -9,6 +9,20 @@ import numpy
 if int(os.environ.get('PYNET_SHOWPATH','0')):
     print 'pynet sys.path', sys.path
 
+module_name = os.environ.get('PYNET_IMPLEMENTATION_MODULE',None)
+if module_name is None:
+    raise RuntimeError('The implementation of pynet must be specified '
+                       'by the PYNET_IMPLEMENTATION_MODULE environment '
+                       'variable')
+
+def my_import(name):
+    mod = __import__(name)
+    components = name.split('.')
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
+module = my_import( module_name )
+
 global keepalive, pycmap
 pycmap = {}
 
@@ -180,65 +194,54 @@ class cinfo:
 
 # implementation #########################
 
-def get_camera_info(device_number):
-    return {'vendor':'(python: no vendor)',
-            'model':'(python: no model)',
-            'chip':'(python: no chip)',
-            }
+def get_camera_info(*args,**kw):
+    return module.get_camera_info(*args,**kw)
 
-def get_num_cameras():
-    return 1
+def get_num_cameras(*args,**kw):
+    return module.get_num_cameras(*args,**kw)
 
-def get_num_modes(device_number):
-    return 1
+def get_num_modes(*args,**kw):
+    return module.get_num_modes(*args,**kw)
 
-def get_mode_string(device_number, mode_number):
-    return "(default Python mode string)"
+def get_mode_string(*args,**kw):
+    return module.get_mode_string(*args,**kw)
 
 class CamContextPy(object):
-    def __init__(self, coding=None, depth=None, device_number=None):
-        self.coding = 1 # CAM_IFACE_MONO8
-        self.depth = 8
-        self.device_number = device_number
+    def __init__(self, *args, **kw):
+        self.me = module.CamContextPy(*args,**kw)
 
     @cinfo( [(OUTPUT,set_ptr_contents), (OUTPUT, set_ptr_contents)] )
-    def get_frame_size(self):
-        width,height=640,480
-        return width,height
+    def get_frame_size(self, *args, **kw):
+        return self.me.get_frame_size(*args,**kw)
 
     @cinfo( [(OUTPUT,set_ptr_contents), (OUTPUT, set_ptr_contents)] )
-    def get_max_frame_size(self):
-        width,height=640,480
-        return width,height
+    def get_max_frame_size(self, *args, **kw):
+        return self.me.get_max_frame_size(*args,**kw)
 
     @cinfo( [(INPUT,None)])
-    def set_num_framebuffers(self,n):
-        self._num_framebuffers = n
+    def set_num_framebuffers(self, *args, **kw):
+        return self.me.set_num_framebuffers(*args,**kw)
 
     @cinfo( [(OUTPUT,set_ptr_contents)])
-    def get_num_framebuffers(self):
-        return self._num_framebuffers
+    def get_num_framebuffers(self, *args, **kw):
+        return self.me.get_num_framebuffers(*args,**kw)
 
     @cinfo( [(OUTPUT,set_ptr_contents)])
-    def get_num_camera_properties(self):
-        return 0
+    def get_num_camera_properties(self, *args, **kw):
+        return self.me.get_num_camera_properties(*args,**kw)
 
     @cinfo( [(OUTPUT,set_ptr_contents)])
-    def get_buffer_size(self):
-        w,h = self.get_frame_size()
-        return w*h*self.depth//8
+    def get_buffer_size(self, *args, **kw):
+        return self.me.get_buffer_size(*args,**kw)
 
     @cinfo([])
-    def start_camera(self):
-        return
+    def start_camera(self, *args, **kw):
+        return self.me.start_camera(*args,**kw)
 
     # XXX TODO: make INPUTOUTPUT type and framebuffer should be it
     @cinfo([(OUTPUT,convert_framebuffer),(INPUT,None)])
-    def grab_next_frame_blocking(self,timeout):
-        #print 'grabbing...'
-        w,h = self.get_frame_size()
-        assert self.depth==8
-        return numpy.zeros( (h,w), dtype=numpy.uint8 )
+    def grab_next_frame_blocking(self, *args, **kw):
+        return self.me.grab_next_frame_blocking(*args,**kw)
 
 def new_CamContextPy(CCpynet_inst,device_number,NumImageBuffers,mode_number ):
     # this is called with the CamContextpynet malloced, but it's job is to fill it
@@ -248,9 +251,9 @@ def new_CamContextPy(CCpynet_inst,device_number,NumImageBuffers,mode_number ):
     self = CamContextPy(device_number = device_number)
     self.set_num_framebuffers( NumImageBuffers )
 
-    this.contents.inherited.coding = self.coding
-    this.contents.inherited.depth = self.depth
-    this.contents.inherited.device_number = self.device_number
+    this.contents.inherited.coding = self.me.coding
+    this.contents.inherited.depth = self.me.depth
+    this.contents.inherited.device_number = self.me.device_number
     this.contents.self = self
     keepalive.append( (this, self) )
 
