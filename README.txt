@@ -124,6 +124,4 @@ $ CamAttr -i $CAM_IP -s PacketSize 1500
 = License =
 
 cam_iface is licensed under the BSD license. See the LICENSE.txt file
-for the full description. Note that cam_iface is also distributed with
-other open source code packages, which have their own licenses, also
-listed in LICENSE.txt.
+for the full description.
