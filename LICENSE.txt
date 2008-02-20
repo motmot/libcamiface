@@ -1,8 +1,3 @@
-cam_iface is licensed under the BSD license.
-
-cam_face license
-================
-
 Copyright (c) 2004-2008, California Institute of Technology. All
 rights reserved.
 
