@@ -173,8 +173,6 @@ dc1394camera_t **cameras = NULL;
 cam_iface_dc1394_modes_t *modes_by_device_number=NULL;
 cam_iface_dc1394_feature_list_t *features_by_device_number=NULL;
 
-char *device_name=NULL;
-
 #define CAM_IFACE_ERROR_FORMAT(m)					\
   snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
 	   "%s (%d): %s\n",__FILE__,__LINE__,(m));
@@ -788,11 +786,10 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   backend_extras->nfds = 0;
   FD_ZERO(&(backend_extras->fdset));
 
+  CIDC1394CHK(dc1394_capture_stop(camera));
+  backend_extras->capture_is_set=0;
+
   backend_extras->device_name=NULL;
-  if (backend_extras->device_name!=NULL) {
-    CIDC1394CHK(dc1394_capture_set_device_filename(cameras[device_number],
-						    backend_extras->device_name));
-  }
 
   CIDC1394CHK(dc1394_video_set_iso_speed(cameras[device_number], DC1394_ISO_SPEED_400));
 
