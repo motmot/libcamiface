@@ -786,7 +786,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   backend_extras->nfds = 0;
   FD_ZERO(&(backend_extras->fdset));
 
-  CIDC1394CHK(dc1394_capture_stop(camera));
+  CIDC1394CHK(dc1394_capture_stop(cameras[device_number]));
   backend_extras->capture_is_set=0;
 
   backend_extras->device_name=NULL;
