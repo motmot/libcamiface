@@ -237,8 +237,6 @@ int cam_iface_is_video_mode_scalable(dc1394video_mode_t video_mode)
 /* internal structures for dc1394 implementation */
 
 struct _cam_iface_backend_extras {
-  char *device_name;
-
   int cam_iface_mode_number; // different than DC1934 mode number
 
   int max_width;       // maximum buffer width
@@ -786,10 +784,9 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   backend_extras->nfds = 0;
   FD_ZERO(&(backend_extras->fdset));
 
-  CIDC1394CHK(dc1394_capture_stop(cameras[device_number]));
+  CIDC1394CHK(dc1394_video_set_transmission(cameras[device_number],
+					    DC1394_OFF));
   backend_extras->capture_is_set=0;
-
-  backend_extras->device_name=NULL;
 
   CIDC1394CHK(dc1394_video_set_iso_speed(cameras[device_number], DC1394_ISO_SPEED_400));
 
