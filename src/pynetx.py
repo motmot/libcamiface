@@ -9,6 +9,8 @@ import numpy
 if int(os.environ.get('PYNET_SHOWPATH','0')):
     print 'pynet sys.path', sys.path
 
+PYNET_DEBUG_CALLS=int(os.environ.get('PYNET_DEBUG_CALLS','0'))
+
 module_name = os.environ.get('PYNET_IMPLEMENTATION_MODULE',None)
 if module_name is None:
     raise RuntimeError('The implementation of pynet must be specified '
@@ -109,7 +111,7 @@ CamContext_functable._fields_ = [
     ('get_last_timestamp',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_double))),
     ('get_last_framenumber',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_long))),
     ('get_num_trigger_modes',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int))),
-    ('get_trigger_mode_string',CFUNCTYPE( None, PTR_CCpynet_t, c_int, c_char_p, c_int)),
+    ('get_trigger_mode_string',CFUNCTYPE( None, PTR_CCpynet_t, c_int, POINTER(c_char), c_int)),
     ('get_trigger_mode_number',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int))),
     ('set_trigger_mode_number',CFUNCTYPE( None, PTR_CCpynet_t, c_int)),
     ('get_frame_offset',CFUNCTYPE( None, PTR_CCpynet_t, POINTER(c_int), POINTER(c_int))),
@@ -145,10 +147,15 @@ def convert_framebuffer(cval,pyval):
     stride0 = pyval.strides[0]
     bufsize = stride0*h
     # XXX TODO not finished
-
+def copy_string_to_C(cval0, cval1, pyval):
+    #cval0 is a char*
+    #cval1 is a length
+    #pyval is a string
+    cval0[0] = '\0' # XXX TODO not finished - null string
 
 INPUT = 'input'
 OUTPUT = 'output'
+OUTPUT2 = 'output2' # consumes 2 C arguments
 
 class generate_func(object):
     def __init__(self,name,ios):
@@ -156,9 +163,18 @@ class generate_func(object):
         self.ios = ios
         self.method = getattr(CamContextPy,self.name)
     def __call__(self,*args):
-        #print 'calling 1',self.name
+        if PYNET_DEBUG_CALLS:
+            print 'calling 1',self.name
+            print ' with args',args
         newargs = []
-        for cidx, (DIRECTION, transform_func) in enumerate(self.ios):
+        next_cidx = 0
+        for (DIRECTION, transform_func) in self.ios:
+            cidx = next_cidx
+            if DIRECTION==OUTPUT2:
+                next_cidx = cidx+2
+            else:
+                next_cidx = cidx+1
+
             if DIRECTION==INPUT:
                 #print 'cidx',cidx
                 if transform_func is None:
@@ -166,22 +182,37 @@ class generate_func(object):
                 else:
                     pyval = transform_func( args[cidx] )
                 newargs.append( pyval )
-        #print 'calling 2',self.name
+
+        if PYNET_DEBUG_CALLS:
+            print 'calling 2',self.name
         results = self.method(*newargs)
         if not isinstance(results,tuple):
             # contain result within a tuple for indexing as sequence
             results = (results,)
         pyidx = 0
-        #print 'self.name, results:',self.name, results
-        for cidx, (DIRECTION, transform_func) in enumerate(self.ios):
+        if PYNET_DEBUG_CALLS:
+            print 'self.name, results, ios:',self.name, results, self.ios
+        next_cidx = 0
+        for (DIRECTION, transform_func) in self.ios:
+            cidx = next_cidx
+            if DIRECTION==OUTPUT2:
+                next_cidx = cidx+2
+            else:
+                next_cidx = cidx+1
+            if PYNET_DEBUG_CALLS:
+                print 'cidx,pyidx,args,transform_func:',cidx,pyidx,args,transform_func
             if DIRECTION==OUTPUT:
-                #print 'cidx,pyidx,args,transform_func:',cidx,pyidx,args,transform_func
                 if transform_func is None:
                     args[cidx] = results[pyidx]
                 else:
                     transform_func( args[cidx], results[pyidx] )
                 pyidx += 1
-        #print 'done'
+            elif DIRECTION==OUTPUT2:
+                assert transform_func is not None
+                transform_func( args[cidx], args[cidx+1], results[pyidx] )
+                pyidx += 1
+        if PYNET_DEBUG_CALLS:
+            print 'done'
 
 #########################################################
 
@@ -233,6 +264,14 @@ class CamContextPy(object):
     @cinfo( [(OUTPUT,set_ptr_contents)])
     def get_buffer_size(self, *args, **kw):
         return self.me.get_buffer_size(*args,**kw)
+
+    @cinfo([(OUTPUT,set_ptr_contents)])
+    def get_num_trigger_modes(self, *args, **kw):
+        return self.me.get_num_trigger_modes(*args, **kw)
+
+    @cinfo([(INPUT,None),(OUTPUT2,copy_string_to_C)])
+    def get_trigger_mode_string(self, *args, **kw):
+        return self.me.get_trigger_mode_string(*args, **kw)
 
     @cinfo([])
     def start_camera(self, *args, **kw):
