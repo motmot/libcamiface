@@ -345,7 +345,6 @@ const char* get_dc1394_mode_string(dc1394video_mode_t mode) {
 }
 
 void cam_iface_startup() {
-  //extern void cam_iface_startup() {
   int device_number,i,j,current_mode,feature_number;
   dc1394video_modes_t video_modes;
   dc1394framerates_t framerates;
