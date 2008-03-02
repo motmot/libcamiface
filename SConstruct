@@ -45,9 +45,26 @@ def add_unity( d ):
 def add_pynet( d ):
     d.setdefault('source',[]).extend(['src/cam_iface_pynet.c',
                                       ])
-    d.setdefault('CPPPATH',[]).extend( ['/usr/include/python2.5'] )
-    d.setdefault('LIBS',[]).append('python2.5')
-    d.setdefault('LIBPATH',[]).extend( ['/usr/lib/python2.5/config/'] )
+    if True:
+    #if not debug:
+        d.setdefault('CPPPATH',[]).extend( ['/usr/include/python2.5'] )
+        d.setdefault('LIBS',[]).append('python2.5')
+        d.setdefault('LIBPATH',[]).extend( ['/usr/lib/python2.5/config/'] )
+    else:
+        # Grr, I can't get this to work.
+        if 0:
+            d.setdefault('source',[]).extend(['/usr/lib/python2.5/config_d/libpython2.5.a',
+                                              ])
+        d.setdefault('CPPPATH',[]).extend( ['/usr/include/python2.5_d/'] )
+        d.setdefault('CFLAGS',[]).extend( ['-DPy_DEBUG','-fno-strict-aliasing','-g','-Wall','-Wstrict-prototypes'] )
+        d.setdefault('LIBS',[]).extend(['pthread','dl','util','m','python2.5'])
+        d.setdefault('LIBPATH',[]).extend( [#'/usr/lib/debug/usr/lib/',
+                                            '/usr/lib/python2.5/config_d/',
+                                            ] )
+        if 0:
+            d.setdefault('LINKFLAGS',[]).extend([
+                '-Wl,--verbose',
+                ])
 
 def add_system_raw1394( d ):
     d.setdefault('LIBS',[]).append('raw1394')
