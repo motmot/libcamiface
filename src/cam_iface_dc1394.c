@@ -719,6 +719,10 @@ CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
     CCdc1394_CCdc1394( this,
 		       device_number, NumImageBuffers,
 		       mode_number);
+    if (cam_iface_error) {
+      free(this);
+      return NULL;
+    }
   }
   return this;
 }
@@ -739,7 +743,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   int scalable;
 
   // call parent
-  CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number); // XXX cast error?
+  CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
   this->inherited.vmt = (CamContext_functable*)&CCdc1394_vmt;
 
 #ifdef CAM_IFACE_DC1394_SLOWDEBUG
