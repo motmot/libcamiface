@@ -129,6 +129,7 @@ void cam_iface_startup(void) {
   struct backend_info_t* this_backend_info;
   char *full_backend_name;
   int i, j, next_num_cameras;
+  char *envvar;
 
   num_cameras = 0;
 
@@ -137,15 +138,25 @@ void cam_iface_startup(void) {
     this_backend_info->name = backend_names[i];
     this_backend_info->started = 0;
 
-    for (j=0; j<2; j++) {
+    for (j=0; j<3; j++) {
 
       full_backend_name = (char*)malloc( 256*sizeof(char) );
       switch (j) {
       case 0:
-	/* Check pwd first */
-	snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+	/* Check environment variables first */
+	envvar = getenv("UNITY_BACKEND_DIR");
+	if (envvar != NULL) {
+	  snprintf(full_backend_name,256,"%s/" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,
+		   envvar,backend_names[i]);
+	} else {
+	  snprintf(full_backend_name,256,"");
+	}
 	break;
       case 1:
+	/* Check pwd next */
+	snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+	break;
+      case 2:
 	/* Next check system-install prefix */
 	snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
 	break;
