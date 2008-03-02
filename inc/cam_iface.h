@@ -74,7 +74,7 @@ CAM_IFACE_API const char * cam_iface_get_error_string(void);
 #define CAM_IFACE_FRAME_INTERRUPTED_SYSCALL -392078
 #define CAM_IFACE_GENERIC_ERROR -1
 
-CAM_IFACE_API const char* cam_iface_get_api_version();
+CAM_IFACE_API const char* cam_iface_get_api_version(void);
 CAM_IFACE_API void cam_iface_startup(void); /* call cam_iface_startup_with_version_check() */
 CAM_IFACE_API void cam_iface_shutdown(void);
 
