@@ -50,3 +50,10 @@ class CamContextPy(object):
         w,h = self.get_frame_size()
         assert self.depth==8
         return numpy.zeros( (h,w), dtype=numpy.uint8 )
+
+    def get_num_trigger_modes(self):
+        return 1
+
+    def get_trigger_mode_string(self,n):
+        return "<trigger mode string %d>"%n
+
