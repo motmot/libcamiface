@@ -137,6 +137,14 @@ cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,"%s (%d): %s\n
     return;								\
   }
 
+#define CHECK_PYI(m)							\
+  if (!(m)) {								\
+    PyErr_Print();							\
+    cam_iface_error = -1;						\
+    CAM_IFACE_ERROR_FORMAT("Python exception");				\
+    return cam_iface_error;						\
+  }
+
 #define CAM_IFACE_THROW_ERROR(m)			\
   {							\
     cam_iface_error = -1;				\
@@ -149,7 +157,8 @@ cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,"%s (%d): %s\n
   CAM_IFACE_ERROR_FORMAT("Function not implemented.");			\
   return;
 
-double ci_pynet_floattime() {
+double ci_pynet_floattime(void);
+double ci_pynet_floattime(void) {
   struct timeval t;
   if (gettimeofday(&t, (struct timezone *)NULL) == 0)
     return (double)t.tv_sec + t.tv_usec*0.000001;
@@ -169,7 +178,9 @@ void cam_iface_clear_error() {
 
 int cam_iface_have_error() {
   if (py_initialized) {
-    if (PyErr_Occurred()) { CHECK_PY(NULL); }
+    if (PyErr_Occurred()) {
+      CHECK_PYI(NULL);
+    }
   }
   return cam_iface_error;
 }
@@ -182,7 +193,7 @@ const char* cam_iface_get_api_version() {
   return CAM_IFACE_API_VERSION;
 }
 
-extern void cam_iface_startup() {
+void cam_iface_startup() {
   PyObject* _set_vmt_ptr_func=NULL;
   PyObject* tmp=NULL;
   PyObject* arglist=NULL;
@@ -269,24 +280,24 @@ extern void cam_iface_shutdown() {
 
 
 int cam_iface_get_num_cameras() {
-  PyObject *pValue, *pModulePy;
+  PyObject *pValue;
   int result;
 
-  CHECK_PY(py_get_num_cameras);
+  CHECK_PYI(py_get_num_cameras);
   pValue = PyObject_CallObject(py_get_num_cameras, NULL);
-  CHECK_PY(pValue);
+  CHECK_PYI(pValue);
 
   result = (int)PyInt_AsLong(pValue);
-  if (PyErr_Occurred()) { CHECK_PY(NULL); }
+  if (PyErr_Occurred()) { CHECK_PYI(NULL); }
   Py_DECREF(pValue);
   return result;
 }
 
 void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
-  PyObject *pValue, *pModulePy, *arglist;
-  char* newstring;
-  Py_ssize_t length;
-  int result;
+  PyObject *pValue, *arglist;
+  //  char* newstring;
+  //  Py_ssize_t length;
+  //  int result;
 
   CHECK_PY(py_get_camera_info);
 
@@ -309,7 +320,7 @@ void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
 
 
 void cam_iface_get_num_modes(int device_number, int *num_modes) {
-  PyObject *pValue, *pModulePy, *arglist;
+  PyObject *pValue, *arglist;
   int result;
 
   CHECK_PY(py_get_num_modes);
@@ -331,10 +342,10 @@ void cam_iface_get_mode_string(int device_number,
 			       int mode_number,
 			       char* mode_string,
 			       int mode_string_maxlen) {
-  PyObject *pValue, *pModulePy, *arglist;
+  PyObject *pValue, *arglist;
   char* newstring;
   Py_ssize_t length;
-  int result;
+  //  int result;
 
   CHECK_PY(py_get_num_modes);
   printf("pynet get_mode_string called\n");
