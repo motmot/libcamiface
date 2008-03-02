@@ -229,10 +229,48 @@ if sys.platform.startswith('darwin'):
     BUILD_BACKENDS += ['dc1394']
     BUILD_BACKENDS += ['quicktime']
 
+if 1:
+    CFLAGS = []
+    CCFLAGS = []
+    LDFLAGS = []
+
+    # if using MSVC (this isn't the right test)
+    if sys.platform.startswith('win'):
+        CCFLAGS.extend(
+            ['/c',  # Compile Without Linking
+             '/nologo',
+             '/Ox', # Full Optimization
+             '/MD', # Use Run-Time Library
+             '/W3', # Warning Level
+             '/EHsc', # Enable Exception Handling (changed from /GX)
+             ])
+
+    # if using GCC (this isn't the right test)
+    if sys.platform.startswith('linux'):
+        if debug:
+            CFLAGS.extend( ['-g','-O0'])
+        else:
+            CFLAGS.extend(['-O2',
+                           '-D_FORTIFY_SOURCE=2',])
+
+        # added in GCC 4.1(?)
+        CFLAGS.extend(['-fstack-protector'])
+        LDFLAGS.extend(['-Wl,zrelro'])
+
+    # if using darwin/MacOS X
+    if sys.platform.startswith('darwin'):
+        # build universal binaries (see http://developer.apple.com/technotes/tn2005/tn2137.html)
+        CFLAGS.extend(
+            '-O -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc'.split())
+        LDFLAGS.extend('-arch i386 -arch ppc'.split())
+
 built_backends = []
 env = Environment(ENV = os.environ)
 common_obj = env.SharedObject(source=['src/cam_iface_common.c'],
                               CPPPATH=['inc'],
+                              CFLAGS=CFLAGS,
+                              CCFLAGS=CCFLAGS,
+                              LDFLAGS=LDFLAGS,
                               )
 
 for backend in BUILD_BACKENDS:
@@ -253,38 +291,11 @@ for backend in BUILD_BACKENDS:
         # compile similarly to Python distutils
         cam_iface_obj_dict.setdefault('CPPDEFINES',{}).update({'NDEBUG':None})
 
-        # if using MSVC (this isn't the right test)
         if sys.platform.startswith('win'):
             cam_iface_obj_dict['CPPDEFINES'].update({'CAM_IFACE_DLL':None,
                                                      'CAM_IFACE_EXPORTS':None,
                                                      })
-            cam_iface_obj_dict.setdefault('CCFLAGS',[]).extend(
-                ['/c',  # Compile Without Linking
-                 '/nologo',
-                 '/Ox', # Full Optimization
-                 '/MD', # Use Run-Time Library
-                 '/W3', # Warning Level
-                 '/EHsc', # Enable Exception Handling (changed from /GX)
-                 ])
-
-        # if using GCC (this isn't the right test)
-        if sys.platform.startswith('linux'):
-            if debug:
-                cam_iface_obj_dict.setdefault('CCFLAGS',[]).extend(['-g','-O0'])
-            else:
-                cam_iface_obj_dict.setdefault('CFLAGS',[]).extend(['-O2',
-                                                                   '-D_FORTIFY_SOURCE=2',])
-            # added in GCC 4.1(?)
-            cam_iface_obj_dict.setdefault('CFLAGS',[]).extend(['-fstack-protector'])
-            cam_iface_obj_dict.setdefault('LDFLAGSS',[]).extend(['-Wl,zrelro'])
-
-
-        # if using darwin/MacOS X
-        if sys.platform.startswith('darwin'):
-            # build universal binaries (see http://developer.apple.com/technotes/tn2005/tn2137.html)
-            cam_iface_obj_dict.setdefault('CFLAGS',[]).extend(
-                '-O -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc'.split())
-            cam_iface_obj_dict.setdefault('LDFLAGSS',[]).extend('-arch i386 -arch ppc'.split())
+        cam_iface_obj_dict.setdefault('CCFLAGS',[]).extend(CCFLAGS)
 
     cam_iface_obj_dict.setdefault('CPPPATH',[]).append('inc')
 
@@ -298,6 +309,9 @@ for backend in BUILD_BACKENDS:
         print
         continue
     cam_iface_obj_dict.setdefault('source',[]).append(common_obj)
+    cam_iface_obj_dict.setdefault('CFLAGS',[]).extend(CFLAGS)
+    cam_iface_obj_dict.setdefault('CCFLAGS',[]).extend(CCFLAGS)
+    cam_iface_obj_dict.setdefault('LDFLAGS',[]).extend(LDFLAGS)
     built_backends.append(backend)
 
     if sys.platform.startswith('win'):
@@ -332,6 +346,9 @@ for backend in BUILD_BACKENDS:
     cam_iface_external_libpath = cam_iface_obj_dict.get('LIBPATH',[])
     cam_iface_external_linkflags = cam_iface_obj_dict.get('LINKFLAGS',[])
 
+    cam_iface_external_cflags = cam_iface_obj_dict.get('CFLAGS',[])
+    cam_iface_external_ccflags = cam_iface_obj_dict.get('CCFLAGS',[])
+
     # --------------------------------------
     #
     # Done building cam_iface
@@ -344,7 +361,9 @@ for backend in BUILD_BACKENDS:
            'cam_iface_external_libpath','cam_iface_external_cpppath',
            'cam_iface_external_linkflags',
            'cam_iface_static_lib','cam_iface_shared_lib',
-           'cam_iface_env_kwargs','bin_output_dir')
+           'cam_iface_env_kwargs','bin_output_dir',
+           'cam_iface_external_cflags', 'cam_iface_external_ccflags',
+           )
     SConscript( 'demo/SConscript' )
     SConscript( 'shmwrap/SConscript' )
 
