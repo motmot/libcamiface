@@ -223,7 +223,7 @@ const char* cam_iface_get_api_version() {
   return CAM_IFACE_API_VERSION;
 }
 
-extern void cam_iface_startup() {
+void cam_iface_startup() {
 #define civ4l2_strlen 100
   int i;
   int fd;
@@ -242,7 +242,7 @@ extern void cam_iface_startup() {
   }
 }
 
-extern void cam_iface_shutdown() {
+void cam_iface_shutdown() {
 }
 
 
