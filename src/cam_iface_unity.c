@@ -130,6 +130,7 @@ void cam_iface_startup(void) {
   char *full_backend_name;
   int i, j, next_num_cameras;
   char *envvar;
+  int try_this_name;
 
   num_cameras = 0;
 
@@ -141,6 +142,7 @@ void cam_iface_startup(void) {
     for (j=0; j<3; j++) {
 
       full_backend_name = (char*)malloc( 256*sizeof(char) );
+      try_this_name = 1;
       switch (j) {
       case 0:
 	/* Check environment variables first */
@@ -149,6 +151,7 @@ void cam_iface_startup(void) {
 	  snprintf(full_backend_name,256,"%s/" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,
 		   envvar,backend_names[i]);
 	} else {
+	  try_this_name = 0;
 	  snprintf(full_backend_name,256,"");
 	}
 	break;
@@ -162,22 +165,28 @@ void cam_iface_startup(void) {
 	break;
       }
 
+      if (!try_this_name)
+	continue;
+
       // RTLD_GLOBAL needed for embedded Python to work. (For examples, see pythoncall.c
       // and pymplug.c.)
 
+      if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+	fprintf(stderr,"%s: %d: attempting to open: %s\n",__FILE__,__LINE__,full_backend_name);
+      }
       libhandle = dlopen(full_backend_name, RTLD_NOW | RTLD_GLOBAL );
       if (libhandle==NULL) {
-	/*
-	  cam_iface_error = -1;
-	  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,
-	  "%s (%d): dlopen() error when attempting to open backend '%s' (at %s)\n",__FILE__,__LINE__,
-	  backend_names[i],full_backend_name);
-	*/
+	if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+	  fprintf(stderr,"%s: %d: Failed.\n",__FILE__,__LINE__,full_backend_name);
+	}
 	this_backend_info->cam_start_idx = num_cameras;
 	this_backend_info->cam_stop_idx = num_cameras;
 	free(full_backend_name);
 	continue;
       } else {
+	if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+	  fprintf(stderr,"%s: %d: OK\n",__FILE__,__LINE__,full_backend_name);
+	}
 	free(full_backend_name);
 	break; // found backend, stop searching
       }
