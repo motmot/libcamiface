@@ -7,7 +7,7 @@ Standards-Version: 3.7.2
 
 Package: libcamiface
 Architecture: any
-Depends: ${shlibs:Depends}, libprosilica-gige0, libdc1394-22-utils
+Depends: ${shlibs:Depends}, libprosilica-gige0
 Recommends:
 Suggests: coriander
 Description: cross-platform cross-backend camera driver (library)
