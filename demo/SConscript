@@ -45,7 +45,7 @@ if 1:
                 **cam_iface_env_kwargs)
 
 ###
-if 1:
+if 0:
     cvlibs = ['cv','highgui']
 
     opencv_obj = env.Object(target='opencv_%s'%backend,
