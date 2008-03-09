@@ -1180,6 +1180,7 @@ void CCdc1394_set_camera_property(CCdc1394 *this,
 
   if (feature_id == DC1394_FEATURE_WHITE_BALANCE ) {
     // we don't support multi-value features.
+    fprintf(stderr,"not setting camera white balance (%s, line %d)",__FILE__,__LINE__);
     return;
   }
 
@@ -1213,37 +1214,50 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   CHECK_CC(this);
   camera = cameras[this->inherited.device_number];
 
+  // wait on our fileno
+  FD_SET(this->fileno, &(this->fdset));
+
   if (timeout >= 0) {
     // wait for up to timeout seconds for something to become available on our fileno.
     tv.tv_sec = timeout;
     tv.tv_usec = ((timeout-(float)tv.tv_sec)*1.0e6);
-
-    // wait on our fileno
-    FD_SET(this->fileno, &(this->fdset));
-
     retval = select( this->nfds, &(this->fdset), NULL, NULL, &tv );
-    errsv = errno;
+  } else {
+    retval = select( this->nfds, &(this->fdset), NULL, NULL, NULL );
+  }
 
-    if (retval < 0 ) {
+  errsv = errno;
+
+  if (retval < 0 ) {
+    if (errsv==EINTR) {
+      cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
+      CAM_IFACE_ERROR_FORMAT("Interrupted syscall (EINTR)");
+      return;
+    } else {
       // some error that we want to deal with
+      cam_iface_error = -1;
       CAM_IFACE_ERROR_FORMAT("select() error");
       return;
-    } else if (retval==0) {
-      // timeout exceeded
-      cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;
-      return;
     }
-
-  }
-
-  err=dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &frame);
-  if (err==-9) {
-    cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
-    CAM_IFACE_ERROR_FORMAT("IOCTL error (-9) in libdc1394");
+  } else if (retval==0) {
+    // timeout exceeded
+    cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;
+    CAM_IFACE_ERROR_FORMAT("timeout exceeded");
     return;
-  } else {
-    CIDC1394CHK(err);
   }
+
+  // Poll here even thought user wants to block -- we blocked above
+  // using select(), and this lets us handle EINTR.
+
+  CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &frame));
+
+  if (frame==NULL) {
+    // No error, but no frame: polling ioctl call returned with EINTR.
+    cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
+    CAM_IFACE_ERROR_FORMAT("Interrupted syscall (EINTR)");
+    return;
+  }
+
   (this->nframe_hack)+=1;
 
   w = frame->size[0];
