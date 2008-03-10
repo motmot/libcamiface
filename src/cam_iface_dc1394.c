@@ -725,7 +725,9 @@ CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
 
 void delete_CCdc1394( CCdc1394 *this ) {
   CCdc1394_close(this);
+  this->inherited.vmt = NULL;
   free(this);
+  this = NULL;
 }
 
 void CCdc1394_CCdc1394( CCdc1394 *this,
