@@ -1216,74 +1216,44 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   CHECK_CC(this);
   camera = cameras[this->inherited.device_number];
 
-#ifndef DC1394_EINTR
-#define DC1394_EINTR DC1394_IOCTL_FAILURE
-#endif
+  // wait on our fileno
+  FD_SET(this->fileno, &(this->fdset));
 
-  if (timeout < 0) {
-    while (1) {
-      err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &frame);
-      if (err!=DC1394_EINTR) {
-	CIDC1394CHK(err); // return if there's a real error
-	break; // break out of infinite loop
-      }
-    }
+  if (timeout >= 0) {
+    // wait for up to timeout seconds for something to become available on our fileno.
+    tv.tv_sec = timeout;
+    tv.tv_usec = ((timeout-(float)tv.tv_sec)*1.0e6);
+    retval = select( this->nfds, &(this->fdset), NULL, NULL, &tv );
   } else {
+    retval = select( this->nfds, &(this->fdset), NULL, NULL, NULL );
+  }
 
-    // Check for waiting frame before blocking on select. (This is
-    // an attempt to work around an apparent bug whereby select doesn't
-    // fire when multiple cameras are in use.)
+  errsv = errno;
 
-    CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &frame));
-    if (frame==NULL) {
-      //nothing waiting
-
-      // wait on our fileno
-      FD_SET(this->fileno, &(this->fdset));
-
-      if (timeout >= 0) {
-	// wait for up to timeout seconds for something to become available on our fileno.
-	tv.tv_sec = timeout;
-	tv.tv_usec = ((timeout-(float)tv.tv_sec)*1.0e6);
-	retval = select( this->nfds, &(this->fdset), NULL, NULL, &tv );
-      } else {
-	retval = select( this->nfds, &(this->fdset), NULL, NULL, NULL );
-      }
-
-      errsv = errno;
-
-      if (retval < 0 ) {
-	if (errsv==EINTR) {
-	  cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
-	  CAM_IFACE_ERROR_FORMAT("Interrupted syscall (EINTR)");
-	  return;
-	} else {
-	  // some error that we want to deal with
-	  cam_iface_error = -1;
-	  CAM_IFACE_ERROR_FORMAT("select() error");
-	  return;
-	}
-      } else if (retval==0) {
-	// timeout exceeded
-	cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;
-	CAM_IFACE_ERROR_FORMAT("timeout exceeded");
-	return;
-      }
-
-      // Poll here even thought user wants to block -- we blocked above
-      // using select(), and this lets us handle EINTR.
-
-      CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &frame));
-    } // closes poll frame == NULL above
-  } // closes else timeout < 0
-
-  if (frame==NULL) {
-    if (timeout < 0) {
-      // No error, but no frame: polling ioctl call returned with EINTR.
+  if (retval < 0 ) {
+    if (errsv==EINTR) {
+      cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
+      CAM_IFACE_ERROR_FORMAT("Interrupted syscall (EINTR)");
+      return;
+    } else {
+      // some error that we want to deal with
       cam_iface_error = -1;
-      CAM_IFACE_ERROR_FORMAT("No error, but no frame on infinite block");
+      CAM_IFACE_ERROR_FORMAT("select() error");
       return;
     }
+  } else if (retval==0) {
+    // timeout exceeded
+    cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;
+    CAM_IFACE_ERROR_FORMAT("timeout exceeded");
+    return;
+  }
+
+  // Poll here even thought user wants to block -- we blocked above
+  // using select(), and this lets us handle EINTR.
+
+  CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &frame));
+
+  if (frame==NULL) {
     // No error, but no frame: polling ioctl call returned with EINTR.
     cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
     CAM_IFACE_ERROR_FORMAT("Interrupted syscall (EINTR)");
