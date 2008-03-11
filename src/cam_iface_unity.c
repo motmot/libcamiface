@@ -22,9 +22,9 @@ struct backend_info_t {
 
 /* globals -- allocate space */
 int num_cameras;
-int cam_iface_error = 0;
+__thread int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
+__thread char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 #define NUM_BACKENDS 2
 char *backend_names[NUM_BACKENDS] = {"dc1394","prosilica_gige"};

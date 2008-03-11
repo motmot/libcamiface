@@ -220,10 +220,10 @@ double ciprosil_floattime() {
 /* globals -- allocate space */
   u_int64_t prev_ts_uint64; //tmp
 
-static int cam_iface_error;
+__thread int cam_iface_error;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-static char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN];
-static char cam_iface_backend_string[CAM_IFACE_MAX_ERROR_LEN];
+__thread char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN];
+__thread char cam_iface_backend_string[CAM_IFACE_MAX_ERROR_LEN];
 
 #define PV_MAX_ENUM_LEN 32
 
@@ -472,7 +472,7 @@ const char *cam_iface_get_driver_name() {
   unsigned long major, minor;
   PvVersion(&major,&minor);
   cam_iface_snprintf(cam_iface_backend_string,CAM_IFACE_MAX_ERROR_LEN,
-		     "prosilica_gige (%lu.%lu)");
+		     "prosilica_gige (%lu.%lu)",major,minor);
   return cam_iface_backend_string;
 }
 
