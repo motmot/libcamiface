@@ -39,7 +39,8 @@ static int backends_started = 0;
   if (this_backend_info->have_error()) {			\
     cam_iface_error = this_backend_info->have_error();		\
     snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
-	     "%s",this_backend_info->get_error_string());	\
+	     "unity backend error (%s %d): %s",__FILE__,	\
+	     __LINE__,this_backend_info->get_error_string());	\
     return;							\
   }
 
@@ -163,6 +164,10 @@ void cam_iface_startup(void) {
 	/* Next check system-install prefix */
 	snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
 	break;
+      default:
+	cam_iface_error=-1;
+	CAM_IFACE_ERROR_FORMAT("error in switch statement");
+	return;
       }
 
       if (!try_this_name)
@@ -209,7 +214,17 @@ void cam_iface_startup(void) {
     LOAD_DLSYM(this_backend_info->get_constructor_func,"cam_iface_get_constructor_func");
 
     this_backend_info->startup();
-    CHECK_CI_ERR();
+    if (this_backend_info->have_error()) {
+      if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+	fprintf(stderr,"%s: %d: %s (loaded from %s) backend startup() had error '%s'\n",
+		__FILE__,__LINE__,
+		this_backend_info->name,
+		full_backend_name,
+		this_backend_info->get_error_string());
+      }
+      continue; //  backend startup had error
+    }
+
     this_backend_info->started = 1;
 
     next_num_cameras = num_cameras + this_backend_info->get_num_cameras();
