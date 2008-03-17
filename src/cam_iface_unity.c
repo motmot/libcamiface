@@ -242,6 +242,9 @@ void cam_iface_startup(void) {
 	      __FILE__,__LINE__,this_backend_info->have_error);
     }
 
+    this_backend_info->clear_error();
+    CHECK_CI_ERR();
+
     this_backend_info->startup();
     if (this_backend_info->have_error()) {
       if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
