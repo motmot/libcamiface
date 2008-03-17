@@ -220,7 +220,7 @@ double ciprosil_floattime() {
 /* globals -- allocate space */
   u_int64_t prev_ts_uint64; //tmp
 
-__thread int cam_iface_error;
+__thread int cam_iface_error=0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 __thread char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN];
 __thread char cam_iface_backend_string[CAM_IFACE_MAX_ERROR_LEN];
