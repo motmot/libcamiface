@@ -140,6 +140,15 @@ void cam_iface_startup(void) {
     this_backend_info->name = backend_names[i];
     this_backend_info->started = 0;
 
+    if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+      fprintf(stderr,"%s: %d: this_backend_info = %p\n",
+	      __FILE__,__LINE__,this_backend_info);
+      fprintf(stderr,"%s: %d: this_backend_info->name = %s\n",
+	      __FILE__,__LINE__,this_backend_info->name);
+      fprintf(stderr,"%s: %d: this_backend_info->started = %d\n",
+	      __FILE__,__LINE__,this_backend_info->started);
+    }
+
     for (j=0; j<3; j++) {
 
       full_backend_name = (char*)malloc( 256*sizeof(char) );
@@ -170,8 +179,10 @@ void cam_iface_startup(void) {
 	return;
       }
 
-      if (!try_this_name)
+      if (!try_this_name) {
+	free(full_backend_name);
 	continue;
+      }
 
       // RTLD_GLOBAL needed for embedded Python to work. (For examples, see pythoncall.c
       // and pymplug.c.)
@@ -190,7 +201,9 @@ void cam_iface_startup(void) {
 	continue;
       } else {
 	if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
-	  fprintf(stderr,"%s: %d: OK\n",__FILE__,__LINE__,full_backend_name);
+	  fprintf(stderr,"%s: %d: %s OK, libhandle = %p\n",
+		  __FILE__,__LINE__,
+		  full_backend_name,libhandle);
 	}
 	free(full_backend_name);
 	break; // found backend, stop searching
@@ -199,6 +212,11 @@ void cam_iface_startup(void) {
 
     if (libhandle==NULL) {
       continue; //  no backend loaded
+    }
+
+    if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+      fprintf(stderr,"%s: %d: Loading symbols from libhandle %p\n",
+	      __FILE__,__LINE__,libhandle);
     }
 
     LOAD_DLSYM(this_backend_info->have_error,"cam_iface_have_error");
@@ -213,13 +231,23 @@ void cam_iface_startup(void) {
     LOAD_DLSYM(this_backend_info->get_mode_string,"cam_iface_get_mode_string");
     LOAD_DLSYM(this_backend_info->get_constructor_func,"cam_iface_get_constructor_func");
 
+    if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+      fprintf(stderr,"%s: %d: this_backend_info = %p\n",
+	      __FILE__,__LINE__,this_backend_info);
+      fprintf(stderr,"%s: %d: this_backend_info->name = %s\n",
+	      __FILE__,__LINE__,this_backend_info->name);
+      fprintf(stderr,"%s: %d: this_backend_info->started = %d\n",
+	      __FILE__,__LINE__,this_backend_info->started);
+      fprintf(stderr,"%s: %d: this_backend_info->have_error = %p\n",
+	      __FILE__,__LINE__,this_backend_info->have_error);
+    }
+
     this_backend_info->startup();
     if (this_backend_info->have_error()) {
       if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
-	fprintf(stderr,"%s: %d: %s (loaded from %s) backend startup() had error '%s'\n",
+	fprintf(stderr,"%s: %d: %s backend startup() had error '%s'\n",
 		__FILE__,__LINE__,
 		this_backend_info->name,
-		full_backend_name,
 		this_backend_info->get_error_string());
       }
       continue; //  backend startup had error
