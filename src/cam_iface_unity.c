@@ -21,14 +21,23 @@ struct backend_info_t {
 };
 
 /* globals -- allocate space */
-int num_cameras;
-__thread int cam_iface_error = 0;
+int num_cameras = 0;
+
+// See the following for a hint on how to make thread thread-local without __thread.
+// http://lists.apple.com/archives/Xcode-users/2006/Jun/msg00551.html
+#ifdef __APPLE__
+#define myTLS
+#else
+#define myTLS __thread
+#endif
+
+myTLS int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-__thread char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
+myTLS char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 #define NUM_BACKENDS 2
 char *backend_names[NUM_BACKENDS] = {"dc1394","prosilica_gige"};
-struct backend_info_t backend_info[NUM_BACKENDS];
+struct backend_info_t backend_info[NUM_BACKENDS] = {};
 static int backends_started = 0;
 
 #define CAM_IFACE_ERROR_FORMAT(m)					\
