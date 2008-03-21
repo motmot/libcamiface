@@ -15,9 +15,149 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+struct CCquicktime; // forward declaration
+
+// keep functable in sync across backends
+typedef struct {
+  cam_iface_constructor_func_t construct;
+  void (*destruct)(struct CamContext*);
+
+  void (*CCquicktime)(struct CCquicktime*,int,int,int);
+  void (*close)(struct CCquicktime*);
+  void (*start_camera)(struct CCquicktime*);
+  void (*stop_camera)(struct CCquicktime*);
+  void (*get_num_camera_properties)(struct CCquicktime*,int*);
+  void (*get_camera_property_info)(struct CCquicktime*,
+				   int,
+				   CameraPropertyInfo*);
+  void (*get_camera_property)(struct CCquicktime*,int,long*,int*);
+  void (*set_camera_property)(struct CCquicktime*,int,long,int);
+  void (*grab_next_frame_blocking)(struct CCquicktime*,
+				   unsigned char*,
+				   float);
+  void (*grab_next_frame_blocking_with_stride)(struct CCquicktime*,
+					       unsigned char*,
+					       intptr_t,
+					       float);
+  void (*point_next_frame_blocking)(struct CCquicktime*,unsigned char**,float);
+  void (*unpoint_frame)(struct CCquicktime*);
+  void (*get_last_timestamp)(struct CCquicktime*,double*);
+  void (*get_last_framenumber)(struct CCquicktime*,long*);
+  void (*get_num_trigger_modes)(struct CCquicktime*,int*);
+  void (*get_trigger_mode_string)(struct CCquicktime*,int,char*,int);
+  void (*get_trigger_mode_number)(struct CCquicktime*,int*);
+  void (*set_trigger_mode_number)(struct CCquicktime*,int);
+  void (*get_frame_offset)(struct CCquicktime*,int*,int*);
+  void (*set_frame_offset)(struct CCquicktime*,int,int);
+  void (*get_frame_size)(struct CCquicktime*,int*,int*);
+  void (*set_frame_size)(struct CCquicktime*,int,int);
+  void (*get_max_frame_size)(struct CCquicktime*,int*,int*);
+  void (*get_buffer_size)(struct CCquicktime*,int*);
+  void (*get_framerate)(struct CCquicktime*,float*);
+  void (*set_framerate)(struct CCquicktime*,float);
+  void (*get_num_framebuffers)(struct CCquicktime*,int*);
+  void (*set_num_framebuffers)(struct CCquicktime*,int);
+} CCquicktime_functable;
+
+typedef struct CCquicktime {
+  CamContext inherited;
+
+  GWorldPtr gworld; // offscreen gworld
+  SGChannel sg_video_channel;
+  Rect rect;
+  TimeValue last_timestamp;
+  long last_framenumber;
+  int buffer_size;
+  ImageSequence decompression_sequence;
+
+  /* These are private parameters to be used in DataProc and SGIdle caller only! */
+  int image_was_copied;
+  intptr_t stride0;
+  unsigned char * image_buf;
+} CCquicktime;
+
+// forward declarations
+CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
+			      int mode_number);
+void delete_CCquicktime(struct CCquicktime*);
+
+void CCquicktime_CCquicktime(struct CCquicktime*,int,int,int);
+void CCquicktime_close(struct CCquicktime*);
+void CCquicktime_start_camera(struct CCquicktime*);
+void CCquicktime_stop_camera(struct CCquicktime*);
+void CCquicktime_get_num_camera_properties(struct CCquicktime*,int*);
+void CCquicktime_get_camera_property_info(struct CCquicktime*,
+			      int,
+			      CameraPropertyInfo*);
+void CCquicktime_get_camera_property(struct CCquicktime*,int,long*,int*);
+void CCquicktime_set_camera_property(struct CCquicktime*,int,long,int);
+void CCquicktime_grab_next_frame_blocking(struct CCquicktime*,
+			      unsigned char*,
+			      float);
+void CCquicktime_grab_next_frame_blocking_with_stride(struct CCquicktime*,
+					  unsigned char*,
+					  intptr_t,
+					  float);
+void CCquicktime_point_next_frame_blocking(struct CCquicktime*,unsigned char**,float);
+void CCquicktime_unpoint_frame(struct CCquicktime*);
+void CCquicktime_get_last_timestamp(struct CCquicktime*,double*);
+void CCquicktime_get_last_framenumber(struct CCquicktime*,long*);
+void CCquicktime_get_num_trigger_modes(struct CCquicktime*,int*);
+void CCquicktime_get_trigger_mode_string(struct CCquicktime*,int,char*,int);
+void CCquicktime_get_trigger_mode_number(struct CCquicktime*,int*);
+void CCquicktime_set_trigger_mode_number(struct CCquicktime*,int);
+void CCquicktime_get_frame_offset(struct CCquicktime*,int*,int*);
+void CCquicktime_set_frame_offset(struct CCquicktime*,int,int);
+void CCquicktime_get_frame_size(struct CCquicktime*,int*,int*);
+void CCquicktime_set_frame_size(struct CCquicktime*,int,int);
+void CCquicktime_get_max_frame_size(struct CCquicktime*,int*,int*);
+void CCquicktime_get_buffer_size(struct CCquicktime*,int*);
+void CCquicktime_get_framerate(struct CCquicktime*,float*);
+void CCquicktime_set_framerate(struct CCquicktime*,float);
+void CCquicktime_get_num_framebuffers(struct CCquicktime*,int*);
+void CCquicktime_set_num_framebuffers(struct CCquicktime*,int);
+
+CCquicktime_functable CCquicktime_vmt = {
+  (cam_iface_constructor_func_t)CCquicktime_construct,
+  (void (*)(CamContext*))delete_CCquicktime,
+  CCquicktime_CCquicktime,
+  CCquicktime_close,
+  CCquicktime_start_camera,
+  CCquicktime_stop_camera,
+  CCquicktime_get_num_camera_properties,
+  CCquicktime_get_camera_property_info,
+  CCquicktime_get_camera_property,
+  CCquicktime_set_camera_property,
+  CCquicktime_grab_next_frame_blocking,
+  CCquicktime_grab_next_frame_blocking_with_stride,
+  CCquicktime_point_next_frame_blocking,
+  CCquicktime_unpoint_frame,
+  CCquicktime_get_last_timestamp,
+  CCquicktime_get_last_framenumber,
+  CCquicktime_get_num_trigger_modes,
+  CCquicktime_get_trigger_mode_string,
+  CCquicktime_get_trigger_mode_number,
+  CCquicktime_set_trigger_mode_number,
+  CCquicktime_get_frame_offset,
+  CCquicktime_set_frame_offset,
+  CCquicktime_get_frame_size,
+  CCquicktime_set_frame_size,
+  CCquicktime_get_max_frame_size,
+  CCquicktime_get_buffer_size,
+  CCquicktime_get_framerate,
+  CCquicktime_set_framerate,
+  CCquicktime_get_num_framebuffers,
+  CCquicktime_set_num_framebuffers
+};
+
+
 /* typedefs */
 
 /* globals */
+
+// See the following for a hint on how to make thread thread-local without __thread.
+// http://lists.apple.com/archives/Xcode-users/2006/Jun/msg00551.html
+
 int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
@@ -74,13 +214,6 @@ void do_qt_error(OSErr err,char* file,int line) {
     }									\
 }
 
-#define CHK_QT_VOID(m) {						\
-    if ((m)!=noErr) {							\
-      do_qt_error(m,__FILE__,__LINE__);					\
-      return NULL;							\
-    }									\
-  }
-
 #define CHECK_CC(m)							\
   if (!(m)) {								\
     cam_iface_error = -1;						\
@@ -101,23 +234,6 @@ void do_qt_error(OSErr err,char* file,int line) {
   CAM_IFACE_ERROR_FORMAT("not yet implemented");	\
   return;
 
-
-struct _cam_iface_backend_extras {
-  GWorldPtr gworld; // offscreen gworld
-  SGChannel sg_video_channel;
-  Rect rect;
-  TimeValue last_timestamp;
-  long last_framenumber;
-  int buffer_size;
-  ImageSequence decompression_sequence;
-
-  /* These are private parameters to be used in DataProc and SGIdle caller only! */
-  int image_was_copied;
-  intptr_t stride0;
-  unsigned char * image_buf;
-};
-
-typedef struct _cam_iface_backend_extras cam_iface_backend_extras;
 
 const char *cam_iface_get_driver_name() {
   return "QuickTime SequenceGrabber";
@@ -167,12 +283,12 @@ OSErr handle_frame_func(SGChannel chan, Rect *source_rect, GWorldPtr gworldptr, 
 }
 
 pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset, 
-			  long chRefCon, TimeValue time, short writeType, 
-			  long refCon) {
+				   long chRefCon, TimeValue time, short writeType, 
+				   long refCon) {
   /* This is called within SGIdle */
   ComponentResult err;
   CodecFlags ignore;
-  cam_iface_backend_extras* be=(cam_iface_backend_extras*)refCon;
+  CCquicktime* be=(CCquicktime*)refCon;
   unsigned char* pucs;
   Rect bounds;
 
@@ -324,12 +440,48 @@ void cam_iface_get_mode_string(int device_number,
   snprintf(mode_string,mode_string_maxlen,"default mode");
 }
 
-CamContext * new_CamContext( int device_number, int NumImageBuffers,
-			     int mode_number) {
-  CamContext *in_cr = NULL;
+
+cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number) {
+  return (CamContext* (*)(int, int, int))CCquicktime_construct;
+}
+
+CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
+				    int mode_number) {
+  CCquicktime* this=NULL;
+
+  this = malloc(sizeof(CCquicktime));
+  if (this==NULL) {
+    cam_iface_error = -1;
+    CAM_IFACE_ERROR_FORMAT("error allocating memory");
+  } else {
+    CCquicktime_CCquicktime( this,
+			     device_number, NumImageBuffers,
+			     mode_number);
+    if (cam_iface_error) {
+      free(this);
+      return NULL;
+    }
+  }
+  return this;
+}
+
+void delete_CCquicktime( CCquicktime *this ) {
+  CCquicktime_close(this);
+  this->inherited.vmt = NULL;
+  free(this);
+  this = NULL;
+}
+
+void CCquicktime_CCquicktime( CCquicktime* in_cr,
+			      int device_number, int NumImageBuffers,
+			      int mode_number) {
   SeqGrabComponent cam;
   Component sgCompID;
   OSErr err;
+
+  // call parent
+  CamContext_CamContext((CamContext*)in_cr,device_number,NumImageBuffers,mode_number);
+  in_cr->inherited.vmt = (CamContext_functable*)&CCquicktime_vmt;
 
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   CAM_IFACE_CHECK_MODE_NUMBER(mode_number);
@@ -341,194 +493,177 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
     cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("Sequence Grabber could not be opened"); return;
   }
 
-  in_cr = (CamContext*)malloc(sizeof(CamContext));
-  if (!in_cr) {
-    cam_iface_error = -1;
-    CAM_IFACE_ERROR_FORMAT("malloc failed");
-    return NULL;
-  }
+  in_cr->inherited.cam = (void *)cam;
 
-  in_cr->cam = (void *)cam;
-  in_cr->backend_extras = malloc(sizeof(cam_iface_backend_extras));
-  cam_iface_backend_extras* be=in_cr->backend_extras;
-  if (be==NULL) {
-    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("malloc error"); return;
-  }
-
-  be->gworld=NULL;
+  in_cr->gworld=NULL;
   err = SGInitialize(cam);
-  CHK_QT_VOID(err); 
+  CHK_QT(err); 
 
   err = SGSetDataRef(cam, 0, 0, seqGrabDontMakeMovie);
-  CHK_QT_VOID(err); 
+  CHK_QT(err); 
 
-  err = SGNewChannel(cam, VideoMediaType, &(be->sg_video_channel));
-  CHK_QT_VOID(err); 
+  err = SGNewChannel(cam, VideoMediaType, &(in_cr->sg_video_channel));
+  CHK_QT(err); 
 
-  be->rect.left=0;
-  be->rect.top=0;
-  be->rect.right=640;
-  be->rect.bottom=480;
+  in_cr->rect.left=0;
+  in_cr->rect.top=0;
+  in_cr->rect.right=640;
+  in_cr->rect.bottom=480;
 
-  be->last_framenumber = -1;
+  in_cr->last_framenumber = -1;
 
-  in_cr->device_number=device_number;
+  in_cr->inherited.device_number=device_number;
 
-  err = SGSetChannelBounds(be->sg_video_channel, &(be->rect));
-  CHK_QT_VOID(err); 
+  err = SGSetChannelBounds(in_cr->sg_video_channel, &(in_cr->rect));
+  CHK_QT(err); 
 
 #if 0
   in_cr->coding = CAM_IFACE_ARGB8;
   in_cr->depth=32;
-  err = QTNewGWorld( &(be->gworld), 
+  err = QTNewGWorld( &(in_cr->gworld), 
 		     k32ARGBPixelFormat,// let Mac do conversion to RGB
-		     &(be->rect),
+		     &(in_cr->rect),
 		     0, NULL, 0);
-  CHK_QT_VOID(err); 
+  CHK_QT(err); 
 #else
-  in_cr->coding = CAM_IFACE_YUV422,
-  in_cr->depth=16;
-  err = QTNewGWorld( &(be->gworld), 
+  in_cr->inherited.coding = CAM_IFACE_YUV422,
+  in_cr->inherited.depth=16;
+  err = QTNewGWorld( &(in_cr->gworld), 
 		     k422YpCbCr8PixelFormat,
-		     &(be->rect),
+		     &(in_cr->rect),
 		     0, NULL, 0);
-  CHK_QT_VOID(err); 
+  CHK_QT(err); 
 #endif
   
-  PixMapHandle pix = GetGWorldPixMap(be->gworld); // XXX deprecated call
+  PixMapHandle pix = GetGWorldPixMap(in_cr->gworld); // XXX deprecated call
   int width_bytes = GetPixRowBytes(pix); // XXX deprecated call
-  int height = be->rect.bottom;
-  be->buffer_size = width_bytes*height;
+  int height = in_cr->rect.bottom;
+  in_cr->buffer_size = width_bytes*height;
 
-  err = SGSetGWorld(cam, be->gworld, NULL);
-  CHK_QT_VOID(err); 
+  err = SGSetGWorld(cam, in_cr->gworld, NULL);
+  CHK_QT(err); 
   
-  err = SGSetChannelUsage(be->sg_video_channel, seqGrabRecord);
-  CHK_QT_VOID(err);
+  err = SGSetChannelUsage(in_cr->sg_video_channel, seqGrabRecord);
+  CHK_QT(err);
 
-  err = SGSetDataProc(cam, NewSGDataUPP(process_data_callback), (long)be);
-  CHK_QT_VOID(err); 
+  err = SGSetDataProc(cam, NewSGDataUPP(process_data_callback), (long)in_cr);
+  CHK_QT(err); 
 
   err = SGPrepare(cam,false,true);
-  CHK_QT_VOID(err); 
+  CHK_QT(err); 
 
-  err = handle_frame_func(be->sg_video_channel, &(be->rect), be->gworld, &(be->decompression_sequence));
-  CHK_QT_VOID(err); 
+  err = handle_frame_func(in_cr->sg_video_channel, &(in_cr->rect), in_cr->gworld, &(in_cr->decompression_sequence));
+  CHK_QT(err); 
 
   return in_cr;
 }
 
-void delete_CamContext(CamContext *in_cr) {
+void CCquicktime_close( CCquicktime *in_cr) {
   CHECK_CC(in_cr);
-  if ((in_cr->backend_extras)!=NULL) {
-    free( in_cr->backend_extras );
-    in_cr->backend_extras=NULL;
-  }
   if (in_cr!=NULL) {
     free( in_cr );
     in_cr=NULL;
   }
 }
 
-void CamContext_get_frame_size( CamContext *in_cr, 
-				int *width, int *height ) {
+void CCquicktime_get_frame_size( CCquicktime *in_cr, 
+				 int *width, int *height ) {
   CHECK_CC(in_cr);
-  *width=((cam_iface_backend_extras*)(in_cr->backend_extras))->rect.right;
-  *height=((cam_iface_backend_extras*)(in_cr->backend_extras))->rect.bottom;
+  *width=in_cr->rect.right;
+  *height=in_cr->rect.bottom;
 }
 
-void CamContext_set_frame_size( CamContext *in_cr, 
-				int width, int height ) {
+void CCquicktime_set_frame_size( CCquicktime *in_cr, 
+				 int width, int height ) {
   CHECK_CC(in_cr);
-  if (width!=((cam_iface_backend_extras*)(in_cr->backend_extras))->rect.right) {
+  if (width!=in_cr->rect.right) {
     cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame width cannot be changed"); return;
   }
-  if (height!=((cam_iface_backend_extras*)(in_cr->backend_extras))->rect.bottom) {
+  if (height!=in_cr->rect.bottom) {
     cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame height cannot be changed"); return;
   }
 }
 
-CAM_IFACE_API void CamContext_get_max_frame_size( CamContext *in_cr, 
-						  int *width, 
-						  int *height ) {
+CAM_IFACE_API void CCquicktime_get_max_frame_size( CCquicktime *in_cr, 
+						   int *width, 
+						   int *height ) {
   CHECK_CC(in_cr);
-  *width=((cam_iface_backend_extras*)(in_cr->backend_extras))->rect.right;
-  *height=((cam_iface_backend_extras*)(in_cr->backend_extras))->rect.bottom;
+  *width=in_cr->rect.right;
+  *height=in_cr->rect.bottom;
 }
 
-void CamContext_get_num_camera_properties(CamContext *in_cr, 
-					  int* num_properties) {
+void CCquicktime_get_num_camera_properties(CCquicktime *in_cr, 
+					   int* num_properties) {
   CHECK_CC(in_cr);
-  num_properties = 0;
+  *num_properties = 0;
+  printf("returning 0 props\n");
 }
 
-void CamContext_get_camera_property_info(CamContext *in_cr,
-					 int property_number,
-					 CameraPropertyInfo *info) {
+void CCquicktime_get_camera_property_info(CCquicktime *in_cr,
+					  int property_number,
+					  CameraPropertyInfo *info) {
   NOT_IMPLEMENTED;
 }
 
-void CamContext_get_camera_property(CamContext *in_cr,
-				    int property_number,
-				    long* Value,
-				    int* Auto ) {
+void CCquicktime_get_camera_property(CCquicktime *in_cr,
+				     int property_number,
+				     long* Value,
+				     int* Auto ) {
   NOT_IMPLEMENTED;
 }
 
-void CamContext_set_camera_property(CamContext *in_cr, 
-				    int property_number,
-				    long Value,
-				    int Auto ) {
+void CCquicktime_set_camera_property(CCquicktime *in_cr, 
+				     int property_number,
+				     long Value,
+				     int Auto ) {
   NOT_IMPLEMENTED;
 }
 
-CAM_IFACE_API void CamContext_get_buffer_size( CamContext *in_cr,
-					       int *size) {
+CAM_IFACE_API void CCquicktime_get_buffer_size( CCquicktime *in_cr,
+						int *size) {
   CHECK_CC(in_cr);
-  *size=((cam_iface_backend_extras*)(in_cr->backend_extras))->buffer_size;
+  *size=in_cr->buffer_size;
 }
 
-void CamContext_start_camera( CamContext *in_cr ) {
+void CCquicktime_start_camera( CCquicktime *in_cr ) {
   OSErr err;
   CHECK_CC(in_cr);
-  err = SGStartRecord(in_cr->cam);
+  err = SGStartRecord(in_cr->inherited.cam);
   CHK_QT(err); 
 }
 
-void CamContext_stop_camera( CamContext *in_cr ) {
+void CCquicktime_stop_camera( CCquicktime *in_cr ) {
   OSErr err;
   CHECK_CC(in_cr);
-  err = SGStop(in_cr->cam);
+  err = SGStop(in_cr->inherited.cam);
   CHK_QT(err); 
 }
 
-void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt, 
-						      unsigned char *out_bytes, 
-						      intptr_t stride0,
-						      float timeout) {
+void CCquicktime_grab_next_frame_blocking_with_stride( CCquicktime *ccntxt, 
+						       unsigned char *out_bytes, 
+						       intptr_t stride0,
+						       float timeout) {
   SeqGrabComponent cam;
   OSErr err=noErr;
-  cam_iface_backend_extras* be;
 
   CHECK_CC(ccntxt);
-  cam = ccntxt->cam;
-  be = ccntxt->backend_extras;
+  cam = ccntxt->inherited.cam;
 
   if (timeout >= 0) {
     NOT_IMPLEMENTED;
     return;
   }
 
-  be->image_was_copied = 0;
-  be->stride0 = stride0;
-  be->image_buf = out_bytes;
+  ccntxt->image_was_copied = 0;
+  ccntxt->stride0 = stride0;
+  ccntxt->image_buf = out_bytes;
   
   while(1) {
     err = SGIdle(cam); // this will call our callback
     CHK_QT(err); 
 
     // check for image
-    if (be->image_was_copied) {
+    if (ccntxt->image_was_copied) {
       // we've got one
       break;
     } else {
@@ -538,40 +673,46 @@ void CamContext_grab_next_frame_blocking_with_stride( CamContext *ccntxt,
   }
 }
 
-void CamContext_grab_next_frame_blocking( CamContext *ccntxt, 
-					  unsigned char *out_bytes, 
-					  float timeout ) {
-  cam_iface_backend_extras* be;
+void CCquicktime_grab_next_frame_blocking( CCquicktime *ccntxt, 
+					   unsigned char *out_bytes, 
+					   float timeout ) {
   intptr_t stride0;
 
   CHECK_CC(ccntxt);
 
-  be = ccntxt->backend_extras;
-  stride0 = be->rect.right*(ccntxt->depth/8);
-  CamContext_grab_next_frame_blocking_with_stride( ccntxt, out_bytes, stride0, timeout ) ;
+  stride0 = ccntxt->rect.right*(ccntxt->inherited.depth/8);
+  CCquicktime_grab_next_frame_blocking_with_stride( ccntxt, out_bytes, stride0, timeout ) ;
 }
 
-void CamContext_get_last_timestamp( CamContext *in_cr, double* timestamp ) {
+void CCquicktime_point_next_frame_blocking(struct CCquicktime*this,unsigned char**data,float timeout) {
+  NOT_IMPLEMENTED;
+}
+
+void CCquicktime_unpoint_frame(struct CCquicktime*this) {
+  NOT_IMPLEMENTED;
+}
+
+void CCquicktime_get_last_timestamp( CCquicktime *in_cr, double* timestamp ) {
   CHECK_CC(in_cr);
   // convert from microseconds to seconds
-  //*timestamp = (double)(((cam_iface_backend_extras*)(in_cr->backend_extras))->last_timestamp) * 1e-6;
+  //*timestamp = (double)(in_cr->last_timestamp) * 1e-6;
   *timestamp = 0.0;
 }
 
-void CamContext_get_last_framenumber( CamContext *in_cr, long* framenumber ){
+void CCquicktime_get_last_framenumber( CCquicktime *in_cr, long* framenumber ){
   CHECK_CC(in_cr);
-  *framenumber=((cam_iface_backend_extras*)(in_cr->backend_extras))->last_framenumber;
+  *framenumber=in_cr->last_framenumber;
 }
 
-void CamContext_get_num_trigger_modes( CamContext *in_cr, 
-				       int *num_exposure_modes ) {
+void CCquicktime_get_num_trigger_modes( CCquicktime *in_cr, 
+					int *num_exposure_modes ) {
   *num_exposure_modes = 1;
 }
 
-void CamContext_get_trigger_mode_string( CamContext *ccntxt,
-					 int exposure_mode_number,
-					 char* exposure_mode_string, //output parameter
-					 int exposure_mode_string_maxlen) {
+void CCquicktime_get_trigger_mode_string( CCquicktime *ccntxt,
+					  int exposure_mode_number,
+					  char* exposure_mode_string, //output parameter
+					  int exposure_mode_string_maxlen) {
   CHECK_CC(ccntxt);
   if (exposure_mode_number!=0) {
     cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("only trigger mode 0 supported"); return;
@@ -579,54 +720,54 @@ void CamContext_get_trigger_mode_string( CamContext *ccntxt,
   snprintf(exposure_mode_string,exposure_mode_string_maxlen,"internal freerunning");
 }
 
-void CamContext_get_trigger_mode_number( CamContext *ccntxt,
-					 int *exposure_mode_number ) {
+void CCquicktime_get_trigger_mode_number( CCquicktime *ccntxt,
+					  int *exposure_mode_number ) {
   CHECK_CC(ccntxt);
   *exposure_mode_number=0;
 }
 
-void CamContext_set_trigger_mode_number( CamContext *ccntxt,
-					 int exposure_mode_number ) {
+void CCquicktime_set_trigger_mode_number( CCquicktime *ccntxt,
+					  int exposure_mode_number ) {
   CHECK_CC(ccntxt);
   if (exposure_mode_number!=0) {
     cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("only trigger mode 0 supported"); return;
   }
 }
 
-void CamContext_get_frame_offset( CamContext *in_cr, 
-				  int *left, int *top ) {
+void CCquicktime_get_frame_offset( CCquicktime *in_cr, 
+				   int *left, int *top ) {
   CHECK_CC(in_cr);
   *left = 0;
   *top = 0;
 }
 
-void CamContext_set_frame_offset( CamContext *in_cr, 
-				  int left, int top ) {
+void CCquicktime_set_frame_offset( CCquicktime *in_cr, 
+				   int left, int top ) {
   CHECK_CC(in_cr);
   if ((left != 0) | (top != 0) ) {
      cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame offset can only be 0,0"); return;
   }
 }
-void CamContext_get_framerate( CamContext *in_cr, 
-			       float *framerate ) {
+void CCquicktime_get_framerate( CCquicktime *in_cr, 
+				float *framerate ) {
   CHECK_CC(in_cr);
   *framerate=30.0;
 }
 
-void CamContext_set_framerate( CamContext *in_cr, 
-			       float framerate ) {
+void CCquicktime_set_framerate( CCquicktime *in_cr, 
+				float framerate ) {
   NOT_IMPLEMENTED;
 }
 
-void CamContext_get_num_framebuffers( CamContext *in_cr, 
-				      int *num_framebuffers ) {
+void CCquicktime_get_num_framebuffers( CCquicktime *in_cr, 
+				       int *num_framebuffers ) {
 
   CHECK_CC(in_cr);
   *num_framebuffers=4; // unknown, really
 }
 
-void CamContext_set_num_framebuffers( CamContext *in_cr, 
-				      int num_framebuffers ) {
+void CCquicktime_set_num_framebuffers( CCquicktime *in_cr, 
+				       int num_framebuffers ) {
   CHECK_CC(in_cr);
   NOT_IMPLEMENTED;
 }
