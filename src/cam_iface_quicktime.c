@@ -560,10 +560,6 @@ void CCquicktime_CCquicktime( CCquicktime* in_cr,
 
 void CCquicktime_close( CCquicktime *in_cr) {
   CHECK_CC(in_cr);
-  if (in_cr!=NULL) {
-    free( in_cr );
-    in_cr=NULL;
-  }
 }
 
 void CCquicktime_get_frame_size( CCquicktime *in_cr, 
