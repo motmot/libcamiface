@@ -34,8 +34,12 @@ def add_unity( d ):
                                       ])
     # this will need to be updated for other platforms
     backend_lib_dir = '/usr/lib/'
-    prefix = 'lib'
-    suffix = '.so'
+    if sys.platform.startswith('darwin') or sys.platform.startswith('linux'):
+        prefix = 'lib'
+    if sys.platform.startswith('darwin'):
+        suffix = '.dylib'
+    elif sys.platform.startswith('linux'):
+        suffix = '.so'
     d.setdefault('CPPDEFINES',{}).update( {'UNITY_BACKEND_DIR':r'"\"%s\""'%backend_lib_dir,
                                            'UNITY_BACKEND_PREFIX':r'"\"%s\""'%prefix,
                                            'UNITY_BACKEND_SUFFIX':r'"\"%s\""'%suffix,
