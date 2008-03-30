@@ -355,9 +355,11 @@ void cam_iface_startup() {
 
   libdc1394_instance = dc1394_new ();
 
-  // Disable printouts of error messages - we are pretty good about
-  // checking return codes, so this should be fine.
-  CIDC1394CHK(dc1394_log_register_handler(DC1394_LOG_ERROR,NULL,NULL));
+  if (getenv("DC1394_BACKEND_DEBUG")==NULL) {
+    // Disable printouts of error messages - we are pretty good about
+    // checking return codes, so this should be fine.
+    CIDC1394CHK(dc1394_log_register_handler(DC1394_LOG_ERROR,NULL,NULL));
+  }
 
   CIDC1394CHK(dc1394_camera_enumerate (libdc1394_instance, &list));
 
@@ -812,13 +814,15 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
     return;
   }
 
+  // Set color coding
+
   if (!dc1394_is_video_mode_scalable(video_mode)) {
     CIDC1394CHK(dc1394_video_set_framerate(cameras[device_number], framerate));
   } else {
     // format7
     CIDC1394CHK(dc1394_format7_set_color_coding(cameras[device_number],
-						 video_mode,
-						 coding));
+						video_mode,
+						coding));
   }
 
   switch (coding) {
@@ -862,6 +866,8 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   // This doesn't give 12 for YUV411, so we force our values above.
   //CIDC1394CHK(dc1394_video_get_data_depth(cameras[device_number], &tmp_depth));
   //this->inherited.depth = tmp_depth;
+
+  // reset ROI
 
   this->roi_width = this->max_width;
   this->roi_height = this->max_height;
