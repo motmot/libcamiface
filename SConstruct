@@ -21,7 +21,7 @@ if sys.platform.startswith('win'):
     elif 'VCINSTALLDIR' in os.environ: # VC8
         HAVE_MANIFEST_TOOL=True
 
-BUILD_BACKENDS = ['unity','pynet'] # also 'blank'
+BUILD_BACKENDS = ['unity','pynet','blank']
 
 class PrereqsNotFoundError(Exception): pass
 
