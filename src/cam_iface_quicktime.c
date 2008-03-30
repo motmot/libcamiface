@@ -1,4 +1,4 @@
-/* 
+/*
 
  Note: see also
  http://www.auc.edu.au/conf/conf03/papers/FAUC_DV2003_Heckenberg.pdf
@@ -181,7 +181,7 @@ Component *components_by_device_number=NULL;
     cam_iface_error = -1;				\
     CAM_IFACE_ERROR_FORMAT("only mode 0 exists");	\
     return;						\
-  }							
+  }
 
 
 void do_qt_error(OSErr err,char* file,int line) {
@@ -199,7 +199,7 @@ void do_qt_error(OSErr err,char* file,int line) {
     ReleaseResource(h);
   }
   else {
-    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, "Mac OS error code %d (%s,line %d)", 
+    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, "Mac OS error code %d (%s,line %d)",
 	     err,file,line);
   }
 
@@ -257,14 +257,14 @@ const char* cam_iface_get_api_version() {
 
 OSErr handle_frame_func(SGChannel chan, Rect *source_rect, GWorldPtr gworldptr, ImageSequence *im_sequence) {
   OSErr err = noErr;
- 
+
   ImageDescriptionHandle im_desc = (ImageDescriptionHandle)NewHandle(sizeof(ImageDescription));
   if (im_desc) {
     err = SGGetChannelSampleDescription(chan,(Handle)im_desc);
     if (err == noErr) {
       MatrixRecord matrixrecord;
       Rect rect;
-      
+
       rect.left = 0;
       rect.right = (*im_desc)->width;
       rect.top = 0;
@@ -278,12 +278,12 @@ OSErr handle_frame_func(SGChannel chan, Rect *source_rect, GWorldPtr gworldptr, 
   else {
     err = MemError();
   }
-  
+
   return err;
 }
 
-pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset, 
-				   long chRefCon, TimeValue time, short writeType, 
+pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
+				   long chRefCon, TimeValue time, short writeType,
 				   long refCon) {
   /* This is called within SGIdle */
   ComponentResult err;
@@ -372,7 +372,7 @@ void cam_iface_startup() {
   componentInfo=NewHandle(sizeof(info));
 
   err=EnterMovies();
-  CHK_QT(err); 
+  CHK_QT(err);
 
   theDesc.componentType = SeqGrabComponentType;
   theDesc.componentSubType = 0L;
@@ -383,7 +383,7 @@ void cam_iface_startup() {
   num_cameras = CountComponents( &theDesc );
   components_by_device_number = (Component*)malloc( num_cameras*sizeof(Component));
   if (components_by_device_number==NULL) {
-    cam_iface_error = -1;			
+    cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("malloc failed");
     return;
   }
@@ -396,8 +396,8 @@ void cam_iface_startup() {
     // for componentName and componentInfo example.
 
     err=GetComponentInfo(sgCompID,&theDesc,componentName,componentInfo,NULL);
-    CHK_QT(err); 
-    
+    CHK_QT(err);
+
     /*
     printf("found a device to capture with \n");
     printf("Type: %s\n", &theDesc.componentType);
@@ -497,13 +497,13 @@ void CCquicktime_CCquicktime( CCquicktime* in_cr,
 
   in_cr->gworld=NULL;
   err = SGInitialize(cam);
-  CHK_QT(err); 
+  CHK_QT(err);
 
   err = SGSetDataRef(cam, 0, 0, seqGrabDontMakeMovie);
-  CHK_QT(err); 
+  CHK_QT(err);
 
   err = SGNewChannel(cam, VideoMediaType, &(in_cr->sg_video_channel));
-  CHK_QT(err); 
+  CHK_QT(err);
 
   in_cr->rect.left=0;
   in_cr->rect.top=0;
@@ -515,45 +515,45 @@ void CCquicktime_CCquicktime( CCquicktime* in_cr,
   in_cr->inherited.device_number=device_number;
 
   err = SGSetChannelBounds(in_cr->sg_video_channel, &(in_cr->rect));
-  CHK_QT(err); 
+  CHK_QT(err);
 
 #if 0
   in_cr->coding = CAM_IFACE_ARGB8;
   in_cr->depth=32;
-  err = QTNewGWorld( &(in_cr->gworld), 
+  err = QTNewGWorld( &(in_cr->gworld),
 		     k32ARGBPixelFormat,// let Mac do conversion to RGB
 		     &(in_cr->rect),
 		     0, NULL, 0);
-  CHK_QT(err); 
+  CHK_QT(err);
 #else
   in_cr->inherited.coding = CAM_IFACE_YUV422,
   in_cr->inherited.depth=16;
-  err = QTNewGWorld( &(in_cr->gworld), 
+  err = QTNewGWorld( &(in_cr->gworld),
 		     k422YpCbCr8PixelFormat,
 		     &(in_cr->rect),
 		     0, NULL, 0);
-  CHK_QT(err); 
+  CHK_QT(err);
 #endif
-  
+
   PixMapHandle pix = GetGWorldPixMap(in_cr->gworld); // XXX deprecated call
   int width_bytes = GetPixRowBytes(pix); // XXX deprecated call
   int height = in_cr->rect.bottom;
   in_cr->buffer_size = width_bytes*height;
 
   err = SGSetGWorld(cam, in_cr->gworld, NULL);
-  CHK_QT(err); 
-  
+  CHK_QT(err);
+
   err = SGSetChannelUsage(in_cr->sg_video_channel, seqGrabRecord);
   CHK_QT(err);
 
   err = SGSetDataProc(cam, NewSGDataUPP(process_data_callback), (long)in_cr);
-  CHK_QT(err); 
+  CHK_QT(err);
 
   err = SGPrepare(cam,false,true);
-  CHK_QT(err); 
+  CHK_QT(err);
 
   err = handle_frame_func(in_cr->sg_video_channel, &(in_cr->rect), in_cr->gworld, &(in_cr->decompression_sequence));
-  CHK_QT(err); 
+  CHK_QT(err);
 
   return in_cr;
 }
@@ -562,14 +562,14 @@ void CCquicktime_close( CCquicktime *in_cr) {
   CHECK_CC(in_cr);
 }
 
-void CCquicktime_get_frame_size( CCquicktime *in_cr, 
+void CCquicktime_get_frame_size( CCquicktime *in_cr,
 				 int *width, int *height ) {
   CHECK_CC(in_cr);
   *width=in_cr->rect.right;
   *height=in_cr->rect.bottom;
 }
 
-void CCquicktime_set_frame_size( CCquicktime *in_cr, 
+void CCquicktime_set_frame_size( CCquicktime *in_cr,
 				 int width, int height ) {
   CHECK_CC(in_cr);
   if (width!=in_cr->rect.right) {
@@ -580,15 +580,15 @@ void CCquicktime_set_frame_size( CCquicktime *in_cr,
   }
 }
 
-CAM_IFACE_API void CCquicktime_get_max_frame_size( CCquicktime *in_cr, 
-						   int *width, 
-						   int *height ) {
+void CCquicktime_get_max_frame_size( CCquicktime *in_cr,
+				     int *width,
+				     int *height ) {
   CHECK_CC(in_cr);
   *width=in_cr->rect.right;
   *height=in_cr->rect.bottom;
 }
 
-void CCquicktime_get_num_camera_properties(CCquicktime *in_cr, 
+void CCquicktime_get_num_camera_properties(CCquicktime *in_cr,
 					   int* num_properties) {
   CHECK_CC(in_cr);
   *num_properties = 0;
@@ -608,15 +608,15 @@ void CCquicktime_get_camera_property(CCquicktime *in_cr,
   NOT_IMPLEMENTED;
 }
 
-void CCquicktime_set_camera_property(CCquicktime *in_cr, 
+void CCquicktime_set_camera_property(CCquicktime *in_cr,
 				     int property_number,
 				     long Value,
 				     int Auto ) {
   NOT_IMPLEMENTED;
 }
 
-CAM_IFACE_API void CCquicktime_get_buffer_size( CCquicktime *in_cr,
-						int *size) {
+void CCquicktime_get_buffer_size( CCquicktime *in_cr,
+				  int *size) {
   CHECK_CC(in_cr);
   *size=in_cr->buffer_size;
 }
@@ -625,18 +625,18 @@ void CCquicktime_start_camera( CCquicktime *in_cr ) {
   OSErr err;
   CHECK_CC(in_cr);
   err = SGStartRecord(in_cr->inherited.cam);
-  CHK_QT(err); 
+  CHK_QT(err);
 }
 
 void CCquicktime_stop_camera( CCquicktime *in_cr ) {
   OSErr err;
   CHECK_CC(in_cr);
   err = SGStop(in_cr->inherited.cam);
-  CHK_QT(err); 
+  CHK_QT(err);
 }
 
-void CCquicktime_grab_next_frame_blocking_with_stride( CCquicktime *ccntxt, 
-						       unsigned char *out_bytes, 
+void CCquicktime_grab_next_frame_blocking_with_stride( CCquicktime *ccntxt,
+						       unsigned char *out_bytes,
 						       intptr_t stride0,
 						       float timeout) {
   SeqGrabComponent cam;
@@ -653,10 +653,10 @@ void CCquicktime_grab_next_frame_blocking_with_stride( CCquicktime *ccntxt,
   ccntxt->image_was_copied = 0;
   ccntxt->stride0 = stride0;
   ccntxt->image_buf = out_bytes;
-  
+
   while(1) {
     err = SGIdle(cam); // this will call our callback
-    CHK_QT(err); 
+    CHK_QT(err);
 
     // check for image
     if (ccntxt->image_was_copied) {
@@ -669,8 +669,8 @@ void CCquicktime_grab_next_frame_blocking_with_stride( CCquicktime *ccntxt,
   }
 }
 
-void CCquicktime_grab_next_frame_blocking( CCquicktime *ccntxt, 
-					   unsigned char *out_bytes, 
+void CCquicktime_grab_next_frame_blocking( CCquicktime *ccntxt,
+					   unsigned char *out_bytes,
 					   float timeout ) {
   intptr_t stride0;
 
@@ -700,7 +700,7 @@ void CCquicktime_get_last_framenumber( CCquicktime *in_cr, long* framenumber ){
   *framenumber=in_cr->last_framenumber;
 }
 
-void CCquicktime_get_num_trigger_modes( CCquicktime *in_cr, 
+void CCquicktime_get_num_trigger_modes( CCquicktime *in_cr,
 					int *num_exposure_modes ) {
   *num_exposure_modes = 1;
 }
@@ -730,39 +730,39 @@ void CCquicktime_set_trigger_mode_number( CCquicktime *ccntxt,
   }
 }
 
-void CCquicktime_get_frame_offset( CCquicktime *in_cr, 
+void CCquicktime_get_frame_offset( CCquicktime *in_cr,
 				   int *left, int *top ) {
   CHECK_CC(in_cr);
   *left = 0;
   *top = 0;
 }
 
-void CCquicktime_set_frame_offset( CCquicktime *in_cr, 
+void CCquicktime_set_frame_offset( CCquicktime *in_cr,
 				   int left, int top ) {
   CHECK_CC(in_cr);
   if ((left != 0) | (top != 0) ) {
      cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame offset can only be 0,0"); return;
   }
 }
-void CCquicktime_get_framerate( CCquicktime *in_cr, 
+void CCquicktime_get_framerate( CCquicktime *in_cr,
 				float *framerate ) {
   CHECK_CC(in_cr);
   *framerate=30.0;
 }
 
-void CCquicktime_set_framerate( CCquicktime *in_cr, 
+void CCquicktime_set_framerate( CCquicktime *in_cr,
 				float framerate ) {
   NOT_IMPLEMENTED;
 }
 
-void CCquicktime_get_num_framebuffers( CCquicktime *in_cr, 
+void CCquicktime_get_num_framebuffers( CCquicktime *in_cr,
 				       int *num_framebuffers ) {
 
   CHECK_CC(in_cr);
   *num_framebuffers=4; // unknown, really
 }
 
-void CCquicktime_set_num_framebuffers( CCquicktime *in_cr, 
+void CCquicktime_set_num_framebuffers( CCquicktime *in_cr,
 				       int num_framebuffers ) {
   CHECK_CC(in_cr);
   NOT_IMPLEMENTED;

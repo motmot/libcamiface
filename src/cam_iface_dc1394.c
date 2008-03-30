@@ -1695,8 +1695,8 @@ void CCdc1394_get_max_frame_size( CCdc1394 *this,
   *height=this->max_height;
 }
 
-CAM_IFACE_API void CCdc1394_get_buffer_size( CCdc1394 *this,
-					     int *size) {
+void CCdc1394_get_buffer_size( CCdc1394 *this,
+			       int *size) {
   CHECK_CC(this);
   *size=this->buffer_size;
 }
