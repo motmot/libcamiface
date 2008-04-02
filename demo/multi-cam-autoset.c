@@ -187,7 +187,14 @@ int main(int argc, char** argv) {
 	_check_error();
 	printf("  %s: %d (%s)\n",cam_props.name,prop_value, prop_auto ? "AUTO" : "MANUAL");
       } else {
-	printf("  %s: not present\n");
+	printf("  %s: not present\n",cam_props.name);
+      }
+
+      if (cam_props.has_auto_mode) {
+	prop_auto = 1;
+	CamContext_set_camera_property(cc[camno],i,prop_value,prop_auto);
+	_check_error();
+	printf("  %s: set to AUTO\n",cam_props.name);
       }
     }
 

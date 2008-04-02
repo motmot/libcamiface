@@ -44,6 +44,22 @@ if 1:
                 LINKFLAGS=cam_iface_external_linkflags,
                 **cam_iface_env_kwargs)
 
+if 1:
+    multicam_obj = env.Object(target='multi-cam-autoset-%s'%backend,
+                              source=['multi-cam-autoset.c'],
+                              LIBS=cam_iface_external_libs+[cam_iface_static_lib],
+                              LIBPATH=cam_iface_external_libpath,
+                              CPPPATH=['../inc']+cam_iface_external_cpppath,
+                              LINKFLAGS=cam_iface_external_linkflags,
+                              **cam_iface_env_kwargs)
+    env.Program(target=os.path.join(bin_output_dir,'multi-cam-autoset-%s'%backend),
+                source=multicam_obj,
+                LIBS=cam_iface_external_libs+[cam_iface_static_lib],
+                LIBPATH=cam_iface_external_libpath,
+                CPPPATH=['../inc'],
+                LINKFLAGS=cam_iface_external_linkflags,
+                **cam_iface_env_kwargs)
+
 ###
 if 0:
     cvlibs = ['cv','highgui']
