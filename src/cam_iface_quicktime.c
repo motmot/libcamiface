@@ -592,7 +592,6 @@ void CCquicktime_get_num_camera_properties(CCquicktime *in_cr,
 					   int* num_properties) {
   CHECK_CC(in_cr);
   *num_properties = 0;
-  printf("returning 0 props\n");
 }
 
 void CCquicktime_get_camera_property_info(CCquicktime *in_cr,
