@@ -72,8 +72,7 @@ int main(int argc, char** argv) {
   double fps;
   int n_frames;
   int buffer_size;
-  int num_modes, num_props;
-  const char** mode_strings;
+  int num_modes, num_props, num_trigger_modes;
   char mode_string[255];
   int i,mode_number;
   CameraPropertyInfo cam_props;
@@ -213,10 +212,15 @@ int main(int argc, char** argv) {
     printf("will now grab %d frames.\n",do_num_frames);
   }
 
-  /*
-  CamContext_set_trigger_mode_number( cc, 0 );
+  CamContext_get_num_trigger_modes( cc, &num_trigger_modes );
   _check_error();
-  */
+
+  printf("trigger modes:\n");
+  for (i =0; i<num_trigger_modes; i++) {
+    CamContext_get_trigger_mode_string( cc, i, mode_string, 255 );
+    printf("  %d: %s\n",i,mode_string);
+  }
+  printf("\n");
 
   while (1) {
     if (do_num_frames>=0) {
