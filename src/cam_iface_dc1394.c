@@ -182,7 +182,9 @@ typedef struct cam_iface_dc1394_feature_list cam_iface_dc1394_feature_list_t;
 
 struct cam_iface_dc1394_trigger_list {
   int num_trigger_modes;
-  unsigned char *is_internal_freerunning;
+  uint8_t trigger_polarity_changeable;
+
+  uint8_t *is_internal_freerunning;
   dc1394trigger_mode_t *mode;
   dc1394trigger_polarity_t *polarity;
   dc1394trigger_source_t *source;
@@ -403,7 +405,7 @@ void cam_iface_startup() {
   dc1394featureset_t features;
   dc1394feature_info_t    *feature_info;
   dc1394color_codings_t color_codings;
-  int trig_count;
+  int trig_count, num_polarities;
   dc1394camera_list_t * list;
 
   libdc1394_instance = dc1394_new ();
@@ -475,18 +477,19 @@ void cam_iface_startup() {
 	features_by_device_number[device_number].num_features++;
       }
 
-#ifdef DISABLE_TRIGGER_CODE
-      if (feature_info->id == DC1394_FEATURE_TRIGGER) {
-	continue;
-      }
-#endif
-
       if (feature_info->id == DC1394_FEATURE_TRIGGER) {
 	trig_count = 1;
-	trig_count += 2*(feature_info->trigger_modes.num)*(feature_info->trigger_sources.num);
+
+	trigger_list_by_device_number[device_number].trigger_polarity_changeable = feature_info->polarity_capable;
+	if (feature_info->polarity_capable) {
+	  num_polarities = 2;
+	} else {
+	  num_polarities = 1;
+	}
+	trig_count += num_polarities*(feature_info->trigger_modes.num)*(feature_info->trigger_sources.num);
 
 	trigger_list_by_device_number[device_number].num_trigger_modes = trig_count;
-	trigger_list_by_device_number[device_number].is_internal_freerunning = malloc(trig_count*sizeof(unsigned char));
+	trigger_list_by_device_number[device_number].is_internal_freerunning = malloc(trig_count*sizeof(uint8_t));
 	trigger_list_by_device_number[device_number].mode = malloc(trig_count*sizeof(dc1394trigger_mode_t));
 	trigger_list_by_device_number[device_number].polarity = malloc(trig_count*sizeof(dc1394trigger_polarity_t));
 	trigger_list_by_device_number[device_number].source = malloc(trig_count*sizeof(dc1394trigger_source_t));
@@ -496,7 +499,7 @@ void cam_iface_startup() {
 	trigger_list_by_device_number[device_number].is_internal_freerunning[0] = 1;
 
 	trig_count = 1;
-	for (kk=0; kk<2; kk++) {
+	for (kk=0; kk<num_polarities; kk++) {
 	  for (j=0; j<(feature_info->trigger_modes.num); j++) {
 	    for (k=0; k<(feature_info->trigger_sources.num); k++) {
 	      trigger_list_by_device_number[device_number].is_internal_freerunning[trig_count] = 0;
@@ -1179,6 +1182,9 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
 
   feature_info.id = feature_id;
   CIDC1394CHK(dc1394_feature_get(camera, &feature_info));
+#if 0
+  CIDC1394CHK(dc1394_feature_print(&feature_info, stdout));
+#endif
   info->min_value = feature_info.min;
   info->max_value = feature_info.max;
 
@@ -1445,7 +1451,7 @@ void CCdc1394_get_trigger_mode_string( CCdc1394 *this,
   dc1394bool_t has_trigger;
 
   CHECK_CC(this);
-  if ((trigger_mode_number < 0) || 
+  if ((trigger_mode_number < 0) ||
       (trigger_mode_number >= trigger_list_by_device_number[this->inherited.device_number].num_trigger_modes)) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("trigger_mode_number invalid");
@@ -1455,11 +1461,18 @@ void CCdc1394_get_trigger_mode_string( CCdc1394 *this,
   if (trigger_list_by_device_number[this->inherited.device_number].is_internal_freerunning[trigger_mode_number]) {
     snprintf(trigger_mode_string,trigger_mode_string_maxlen,"internal, freerunning");
   } else {
-    snprintf(trigger_mode_string,trigger_mode_string_maxlen,"external, polarity: %s, mode: %s, source: %s",
-	     trig_polarity_str(trigger_list_by_device_number[this->inherited.device_number].polarity[trigger_mode_number]),
-	     trig_mode_str(trigger_list_by_device_number[this->inherited.device_number].mode[trigger_mode_number]),
-	     trig_sources_str(trigger_list_by_device_number[this->inherited.device_number].source[trigger_mode_number])
-	     );
+    if (trigger_list_by_device_number[this->inherited.device_number].trigger_polarity_changeable) {
+      snprintf(trigger_mode_string,trigger_mode_string_maxlen,"external, polarity: %s, mode: %s, source: %s",
+	       trig_polarity_str(trigger_list_by_device_number[this->inherited.device_number].polarity[trigger_mode_number]),
+	       trig_mode_str(trigger_list_by_device_number[this->inherited.device_number].mode[trigger_mode_number]),
+	       trig_sources_str(trigger_list_by_device_number[this->inherited.device_number].source[trigger_mode_number])
+	       );
+    } else {
+      snprintf(trigger_mode_string,trigger_mode_string_maxlen,"external, mode: %s, source: %s",
+	       trig_mode_str(trigger_list_by_device_number[this->inherited.device_number].mode[trigger_mode_number]),
+	       trig_sources_str(trigger_list_by_device_number[this->inherited.device_number].source[trigger_mode_number])
+	       );
+    }
   }
   return;
 }
@@ -1499,7 +1512,7 @@ void CCdc1394_set_trigger_mode_number( CCdc1394 *this,
 
   CHECK_CC(this);
   camera = cameras[this->inherited.device_number];
-  if ((trigger_mode_number < 0) || 
+  if ((trigger_mode_number < 0) ||
       (trigger_mode_number >= trigger_list_by_device_number[this->inherited.device_number].num_trigger_modes)) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("trigger_mode_number invalid");
