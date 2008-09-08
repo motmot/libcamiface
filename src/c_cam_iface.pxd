@@ -103,7 +103,7 @@ cdef extern from "cam_iface.h":
     void CamContext_get_last_timestamp( CamContext *ccntxt, 
                                         double* timestamp )
     void CamContext_get_last_framenumber( CamContext *ccntxt,
-                                          long* framenumber )
+                                          unsigned long* framenumber )
 
     void CamContext_get_num_trigger_modes( CamContext *ccntxt, 
                                            int *num_exposure_modes )

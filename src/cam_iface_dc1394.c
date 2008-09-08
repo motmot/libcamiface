@@ -47,7 +47,7 @@ typedef struct {
   void (*point_next_frame_blocking)(struct CCdc1394*,unsigned char**,float);
   void (*unpoint_frame)(struct CCdc1394*);
   void (*get_last_timestamp)(struct CCdc1394*,double*);
-  void (*get_last_framenumber)(struct CCdc1394*,long*);
+  void (*get_last_framenumber)(struct CCdc1394*,unsigned long*);
   void (*get_num_trigger_modes)(struct CCdc1394*,int*);
   void (*get_trigger_mode_string)(struct CCdc1394*,int,char*,int);
   void (*get_trigger_mode_number)(struct CCdc1394*,int*);
@@ -74,7 +74,7 @@ typedef struct CCdc1394 {
   int roi_width;
   int roi_height;
   int buffer_size;     // bytes per frame
-  long nframe_hack;
+  unsigned long nframe_hack;
 
   int num_dma_buffers;
   uint64_t last_timestamp;
@@ -111,7 +111,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride(struct CCdc1394*,
 void CCdc1394_point_next_frame_blocking(struct CCdc1394*,unsigned char**,float);
 void CCdc1394_unpoint_frame(struct CCdc1394*);
 void CCdc1394_get_last_timestamp(struct CCdc1394*,double*);
-void CCdc1394_get_last_framenumber(struct CCdc1394*,long*);
+void CCdc1394_get_last_framenumber(struct CCdc1394*,unsigned long*);
 void CCdc1394_get_num_trigger_modes(struct CCdc1394*,int*);
 void CCdc1394_get_trigger_mode_string(struct CCdc1394*,int,char*,int);
 void CCdc1394_get_trigger_mode_number(struct CCdc1394*,int*);
@@ -1429,7 +1429,7 @@ void CCdc1394_get_last_timestamp( CCdc1394 *this, double* timestamp ) {
   *timestamp = (double)(this->last_timestamp) * 1e-6;
 }
 
-void CCdc1394_get_last_framenumber( CCdc1394 *this, long* framenumber ){
+void CCdc1394_get_last_framenumber( CCdc1394 *this, unsigned long* framenumber ){
   CHECK_CC(this);
   *framenumber=this->nframe_hack;
 }

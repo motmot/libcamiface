@@ -63,7 +63,7 @@ void CamContext_get_last_timestamp( CamContext *this,
   this->vmt->get_last_timestamp(this,timestamp);
 }
 void CamContext_get_last_framenumber( CamContext *this,
-				      long* framenumber ){
+				      unsigned long* framenumber ){
   this->vmt->get_last_framenumber(this,framenumber);
 }
 void CamContext_get_num_trigger_modes( CamContext *this,

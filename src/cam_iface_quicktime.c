@@ -42,7 +42,7 @@ typedef struct {
   void (*point_next_frame_blocking)(struct CCquicktime*,unsigned char**,float);
   void (*unpoint_frame)(struct CCquicktime*);
   void (*get_last_timestamp)(struct CCquicktime*,double*);
-  void (*get_last_framenumber)(struct CCquicktime*,long*);
+  void (*get_last_framenumber)(struct CCquicktime*,unsigned long*);
   void (*get_num_trigger_modes)(struct CCquicktime*,int*);
   void (*get_trigger_mode_string)(struct CCquicktime*,int,char*,int);
   void (*get_trigger_mode_number)(struct CCquicktime*,int*);
@@ -66,7 +66,7 @@ typedef struct CCquicktime {
   SGChannel sg_video_channel;
   Rect rect;
   TimeValue last_timestamp;
-  long last_framenumber;
+  unsigned long last_framenumber;
   int buffer_size;
   ImageSequence decompression_sequence;
 
@@ -101,7 +101,7 @@ void CCquicktime_grab_next_frame_blocking_with_stride(struct CCquicktime*,
 void CCquicktime_point_next_frame_blocking(struct CCquicktime*,unsigned char**,float);
 void CCquicktime_unpoint_frame(struct CCquicktime*);
 void CCquicktime_get_last_timestamp(struct CCquicktime*,double*);
-void CCquicktime_get_last_framenumber(struct CCquicktime*,long*);
+void CCquicktime_get_last_framenumber(struct CCquicktime*,unsigned long*);
 void CCquicktime_get_num_trigger_modes(struct CCquicktime*,int*);
 void CCquicktime_get_trigger_mode_string(struct CCquicktime*,int,char*,int);
 void CCquicktime_get_trigger_mode_number(struct CCquicktime*,int*);
@@ -510,7 +510,7 @@ void CCquicktime_CCquicktime( CCquicktime* in_cr,
   in_cr->rect.right=640;
   in_cr->rect.bottom=480;
 
-  in_cr->last_framenumber = -1;
+  in_cr->last_framenumber = 0;
 
   in_cr->inherited.device_number=device_number;
 
@@ -694,7 +694,7 @@ void CCquicktime_get_last_timestamp( CCquicktime *in_cr, double* timestamp ) {
   *timestamp = 0.0;
 }
 
-void CCquicktime_get_last_framenumber( CCquicktime *in_cr, long* framenumber ){
+void CCquicktime_get_last_framenumber( CCquicktime *in_cr, unsigned long* framenumber ){
   CHECK_CC(in_cr);
   *framenumber=in_cr->last_framenumber;
 }

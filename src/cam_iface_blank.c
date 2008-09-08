@@ -32,7 +32,7 @@ typedef struct {
   void (*point_next_frame_blocking)(struct CCblank*,unsigned char**,float);
   void (*unpoint_frame)(struct CCblank*);
   void (*get_last_timestamp)(struct CCblank*,double*);
-  void (*get_last_framenumber)(struct CCblank*,long*);
+  void (*get_last_framenumber)(struct CCblank*,unsigned long*);
   void (*get_num_trigger_modes)(struct CCblank*,int*);
   void (*get_trigger_mode_string)(struct CCblank*,int,char*,int);
   void (*get_trigger_mode_number)(struct CCblank*,int*);
@@ -96,7 +96,7 @@ void CCblank_grab_next_frame_blocking_with_stride(struct CCblank*,
 void CCblank_point_next_frame_blocking(struct CCblank*,unsigned char**,float);
 void CCblank_unpoint_frame(struct CCblank*);
 void CCblank_get_last_timestamp(struct CCblank*,double*);
-void CCblank_get_last_framenumber(struct CCblank*,long*);
+void CCblank_get_last_framenumber(struct CCblank*,unsigned long*);
 void CCblank_get_num_trigger_modes(struct CCblank*,int*);
 void CCblank_get_trigger_mode_string(struct CCblank*,int,char*,int);
 void CCblank_get_trigger_mode_number(struct CCblank*,int*);
@@ -371,7 +371,7 @@ void CCblank_get_last_timestamp( CCblank *this, double* timestamp ) {
   NOT_IMPLEMENTED;
 }
 
-void CCblank_get_last_framenumber( CCblank *this, long* framenumber ){
+void CCblank_get_last_framenumber( CCblank *this, unsigned long* framenumber ){
   CHECK_CC(this);
   NOT_IMPLEMENTED;
 }

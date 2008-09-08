@@ -76,7 +76,7 @@ static std::deque<int> cam_iface_bufs_in_use;
 
 typedef struct cam_iface_BCAM_backend_extras cam_iface_BCAM_backend_extras;
 struct cam_iface_BCAM_backend_extras {
-  long last_framenumber;
+  unsigned long last_framenumber;
   double last_timestamp;
   PBYTE * ppBuffers;
   int NumImageBuffers;
@@ -307,7 +307,7 @@ CamContext * new_CamContext( int device_number, int NumImageBuffers,
       this_ppBuffers[i] =  new BYTE[this_backend_extras->ImageBufferSize];
     //printf("%s: line %d\n",__FILE__,__LINE__);
     
-    this_backend_extras->last_framenumber = -1;
+    this_backend_extras->last_framenumber = 0;
     this_backend_extras->last_timestamp = 0.0;
     this_backend_extras->ppBuffers = this_ppBuffers; // keep copy
     this_backend_extras->NumImageBuffers = NumImageBuffers;
@@ -592,7 +592,7 @@ extern void CamContext_get_last_timestamp( CamContext *in_cr,
 }
 
 extern void CamContext_get_last_framenumber( CamContext *in_cr, 
-					     long* framenumber ) {
+					     unsigned long* framenumber ) {
   if (in_cr==NULL) {
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("camera resources null");

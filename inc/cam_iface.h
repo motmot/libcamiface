@@ -182,7 +182,7 @@ typedef struct {
   void (*point_next_frame_blocking)(struct CamContext*,unsigned char**,float);
   void (*unpoint_frame)(struct CamContext*);
   void (*get_last_timestamp)(struct CamContext*,double*);
-  void (*get_last_framenumber)(struct CamContext*,long*);
+  void (*get_last_framenumber)(struct CamContext*,unsigned long*);
   void (*get_num_trigger_modes)(struct CamContext*,int*);
   void (*get_trigger_mode_string)(struct CamContext*,int,char*,int);
   void (*get_trigger_mode_number)(struct CamContext*,int*);
@@ -249,7 +249,7 @@ CAM_IFACE_API void CamContext_unpoint_frame(CamContext *ccntxt);
 CAM_IFACE_API void CamContext_get_last_timestamp( CamContext *ccntxt,
 					   double* timestamp );
 CAM_IFACE_API void CamContext_get_last_framenumber( CamContext *ccntxt,
-					   long* framenumber );
+						    unsigned long* framenumber );
 
 CAM_IFACE_API void CamContext_get_num_trigger_modes( CamContext *ccntxt,
 						     int *num_exposure_modes ); /* output parameter */

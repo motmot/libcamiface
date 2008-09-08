@@ -91,7 +91,7 @@ typedef struct {
   void (*point_next_frame_blocking)(struct CCprosil*,unsigned char**,float);
   void (*unpoint_frame)(struct CCprosil*);
   void (*get_last_timestamp)(struct CCprosil*,double*);
-  void (*get_last_framenumber)(struct CCprosil*,long*);
+  void (*get_last_framenumber)(struct CCprosil*,unsigned long*);
   void (*get_num_trigger_modes)(struct CCprosil*,int*);
   void (*get_trigger_mode_string)(struct CCprosil*,int,char*,int);
   void (*get_trigger_mode_number)(struct CCprosil*,int*);
@@ -138,7 +138,7 @@ void CCprosil_grab_next_frame_blocking_with_stride(struct CCprosil*,
 void CCprosil_point_next_frame_blocking(struct CCprosil*,unsigned char**,float);
 void CCprosil_unpoint_frame(struct CCprosil*);
 void CCprosil_get_last_timestamp(struct CCprosil*,double*);
-void CCprosil_get_last_framenumber(struct CCprosil*,long*);
+void CCprosil_get_last_framenumber(struct CCprosil*,unsigned long*);
 void CCprosil_get_num_trigger_modes(struct CCprosil*,int*);
 void CCprosil_get_trigger_mode_string(struct CCprosil*,int,char*,int);
 void CCprosil_get_trigger_mode_number(struct CCprosil*,int*);
@@ -250,7 +250,7 @@ struct cam_iface_backend_extras {
   int max_width;
   tPvFrame** frames;
   int frame_number_currently_waiting_for;
-  unsigned long last_framecount;
+  unsigned long last_framecount; // same type as Prosilica's FrameCount in struct tPvFrame
 #ifndef CIPROSIL_TIME_HOST
   u_int64_t last_timestamp;
   double timestamp_tick;
@@ -1005,10 +1005,10 @@ void CCprosil_get_last_timestamp( CCprosil *ccntxt, double* timestamp ) {
 
 }
 
-void CCprosil_get_last_framenumber( CCprosil *ccntxt, long* framenumber ){
+void CCprosil_get_last_framenumber( CCprosil *ccntxt, unsigned long* framenumber ){
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  *framenumber = backend_extras->last_framecount; // XXX should check casting
+  *framenumber = (backend_extras->last_framecount);
 }
 
 void CCprosil_get_num_trigger_modes( CCprosil *ccntxt,
