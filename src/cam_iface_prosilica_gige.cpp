@@ -945,7 +945,13 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
 	   (const void*)( ((intptr_t)(frame->ImageBuffer)) + row*wb),//src
 	   wb);//size
   }
+  if (getenv("PROSILICA_BACKEND_DEBUG")!=NULL) {
+    fprintf(stderr,"frame->FrameCount %ul\n",frame->FrameCount);
+  }
   backend_extras->last_framecount = frame->FrameCount;
+  if (getenv("PROSILICA_BACKEND_DEBUG")!=NULL) {
+    fprintf(stderr,"backend_extras->last_framecount %ul\n",backend_extras->last_framecount);
+  }
 #ifndef CIPROSIL_TIME_HOST
   u_int64_t ts_uint64;
   ts_uint64 = (((u_int64_t)(frame->TimestampHi))<<32) + (frame->TimestampLo);
@@ -1009,6 +1015,9 @@ void CCprosil_get_last_framenumber( CCprosil *ccntxt, unsigned long* framenumber
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
   *framenumber = (backend_extras->last_framecount);
+  if (getenv("PROSILICA_BACKEND_DEBUG")!=NULL) {
+    fprintf(stderr,"*framenumber %ul\n",*framenumber);
+  }
 }
 
 void CCprosil_get_num_trigger_modes( CCprosil *ccntxt,
