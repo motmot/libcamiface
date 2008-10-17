@@ -1576,7 +1576,7 @@ void CCdc1394_set_frame_offset( CCdc1394 *this,
 					       &h_unit_pos,
 					       &v_unit_pos));
   left = left/h_unit_pos * h_unit_pos;
-  top = left/v_unit_pos * v_unit_pos;
+  top = top/v_unit_pos * v_unit_pos;
 
   restart = 0;
   if (this->capture_is_set>0) {
