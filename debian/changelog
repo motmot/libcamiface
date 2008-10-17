@@ -1,3 +1,9 @@
+camiface (0.4.dev650-0ads1) gutsy; urgency=low
+
+  * Fix bug in dc1394 set_frame_offset() call.
+
+ -- Andrew Straw <strawman@astraw.com>  Fri, 17 Oct 2008 12:47:42 -0700
+
 camiface (0.4.dev640-0ads1) gutsy; urgency=low
 
   * New release
