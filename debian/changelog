@@ -1,3 +1,9 @@
+camiface (0.4.dev650-0ads1) hardy; urgency=low
+
+  * Put in hardy repository
+
+ -- Andrew Straw <strawman@astraw.com>  Tue, 02 Dec 2008 11:15:37 -0800
+
 camiface (0.4.dev650-0ads1) gutsy; urgency=low
 
   * Fix bug in dc1394 set_frame_offset() call.
