@@ -1396,9 +1396,20 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
     return;
   }
 
+  /* There seems to be a (kernel?) bug on Ubuntu 8.04
+     2.6.24-22-generic x86_64 in which this test sometimes fails with
+     a Pt. Grey Firefly MV when ROI set from something less than full
+     frame to full frame. */
+
+  if ( ((frame->size[1])*(frame->stride)) > frame->total_bytes ) {
+    cam_iface_error = -1;
+    CAM_IFACE_ERROR_FORMAT("assumption about image size is wrong");
+    return;
+  }
+
   for (row=0;row<h;row++) {
     memcpy((void*)(out_bytes+row*stride0), /*dest*/
-    	   (const void*)(frame->image + row*wb),/*src*/
+    	   (const void*)(frame->image + row*(frame->stride)),/*src*/
     	   wb);/*size*/
   }
 
