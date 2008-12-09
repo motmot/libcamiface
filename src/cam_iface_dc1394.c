@@ -894,6 +894,13 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   this->max_width = h_size;
   this->max_height = v_size;
 
+  if (getenv("DC1394_BACKEND_1394B")!=NULL) {
+    CIDC1394CHK(dc1394_video_set_operation_mode(cameras[device_number],
+                                                DC1394_OPERATION_MODE_1394B));
+    CIDC1394CHK(dc1394_video_set_iso_speed(cameras[device_number],
+                                           DC1394_ISO_SPEED_800));
+  }
+
   CIDC1394CHK(dc1394_video_set_mode(cameras[device_number],video_mode));
   CIDC1394CHK(dc1394_video_get_mode(cameras[device_number],&test_video_mode));
 
