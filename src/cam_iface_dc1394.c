@@ -881,8 +881,6 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
 					    DC1394_OFF));
   this->capture_is_set=0;
 
-  CIDC1394CHK(dc1394_video_set_iso_speed(cameras[device_number], DC1394_ISO_SPEED_400));
-
   this->inherited.device_number = device_number;
 
   if (!_get_size_for_video_mode(device_number,video_mode,&h_size,&v_size,&scalable)){
@@ -899,6 +897,9 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
                                                 DC1394_OPERATION_MODE_1394B));
     CIDC1394CHK(dc1394_video_set_iso_speed(cameras[device_number],
                                            DC1394_ISO_SPEED_800));
+  } else {
+    CIDC1394CHK(dc1394_video_set_iso_speed(cameras[device_number],
+                                           DC1394_ISO_SPEED_400));
   }
 
   CIDC1394CHK(dc1394_video_set_mode(cameras[device_number],video_mode));
