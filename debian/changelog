@@ -1,3 +1,9 @@
+camiface (0.4.dev681-0ads1) hardy; urgency=low
+
+  * Get trigger mode
+
+ -- Andrew Straw <strawman@astraw.com>  Tue, 09 Dec 2008 10:03:49 -0800
+
 camiface (0.4.dev680-0ads1) hardy; urgency=low
 
   * Fix segfault when image size changes
