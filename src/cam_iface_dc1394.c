@@ -1501,6 +1501,12 @@ void CCdc1394_get_trigger_mode_number( CCdc1394 *this,
   dc1394bool_t has_trigger;
   dc1394switch_t pwr;
 
+  dc1394trigger_polarity_t polarity;
+  dc1394trigger_mode_t mode;
+  dc1394trigger_source_t source;
+
+  int i;
+
   CHECK_CC(this);
   camera = cameras[this->inherited.device_number];
   CIDC1394CHK(dc1394_feature_is_present(camera,
@@ -1515,10 +1521,39 @@ void CCdc1394_get_trigger_mode_number( CCdc1394 *this,
 
   if (!pwr) {
     *trigger_mode_number = 0;
+    return;
   } else {
-    NOT_IMPLEMENTED;
+    // Power is on
+    if (trigger_list_by_device_number[this->inherited.device_number].trigger_polarity_changeable) {
+      CIDC1394CHK(dc1394_external_trigger_get_polarity(camera, &polarity));
+    }
+    CIDC1394CHK(dc1394_external_trigger_get_mode(camera, &mode));
+    CIDC1394CHK(dc1394_external_trigger_get_source(camera, &source));
+
+    // go through all trigger modes and see if we match
+
+    for (i=0;i<trigger_list_by_device_number[this->inherited.device_number].num_trigger_modes;i++){
+      if ((trigger_list_by_device_number[this->inherited.device_number].mode[i]==mode) &
+          (trigger_list_by_device_number[this->inherited.device_number].source[i]==source)) {
+        // matching mode and source
+        if (trigger_list_by_device_number[this->inherited.device_number].trigger_polarity_changeable) {
+          if (trigger_list_by_device_number[this->inherited.device_number].polarity[i]==polarity) {
+            // matching polarity
+            *trigger_mode_number = i;
+            return;
+          }
+        } else {
+          // polarity does not matter
+          *trigger_mode_number = i;
+          return;
+        }
+      }
+    }
   }
 
+  cam_iface_error = -1;
+  CAM_IFACE_ERROR_FORMAT("unable to determine trigger mode number");
+  *trigger_mode_number = -1;
   return;
 }
 
