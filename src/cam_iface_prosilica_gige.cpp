@@ -189,9 +189,8 @@ CCprosil_functable CCprosil_vmt = {
 
 
 // If the following is defined, we get time from the host computer clock.
-#define CIPROSIL_TIME_HOST
+//#define CIPROSIL_TIME_HOST
 
-#ifdef CIPROSIL_TIME_HOST
 double ciprosil_floattime() {
 #ifdef _WIN32
 #if _MSC_VER == 1310
@@ -215,7 +214,6 @@ double ciprosil_floattime() {
     return 0.0;
 #endif
 }
-#endif // #ifdef CIPROSIL_TIME_HOST
 
 /* globals -- allocate space */
   u_int64_t prev_ts_uint64; //tmp
@@ -250,7 +248,9 @@ struct cam_iface_backend_extras {
   int max_width;
   tPvFrame** frames;
   int frame_number_currently_waiting_for;
-  unsigned long last_framecount; // same type as Prosilica's FrameCount in struct tPvFrame
+  long last_framecount; // same type as Prosilica's FrameCount in struct tPvFrame
+  long frame_epoch;
+  double frame_epoch_start;
 #ifndef CIPROSIL_TIME_HOST
   u_int64_t last_timestamp;
   double timestamp_tick;
@@ -648,6 +648,8 @@ void CCprosil_CCprosil( CCprosil * ccntxt, int device_number, int NumImageBuffer
   tPvUint32 tsf;
   CIPVCHK(PvAttrUint32Get(*handle_ptr,"TimeStampFrequency",&tsf));
   backend_extras->timestamp_tick = 1.0/((double)tsf);
+  DPRINTF("tsf %lu = dt %g\n",tsf,backend_extras->timestamp_tick);
+
 #endif // #ifndef CIPROSIL_TIME_HOST
 
   CCprosil_set_trigger_mode_number( ccntxt, 0 ); // set to freerun
@@ -673,6 +675,9 @@ void CCprosil_CCprosil( CCprosil * ccntxt, int device_number, int NumImageBuffer
   CIPVCHK(PvAttrUint32Get(*handle_ptr,"Width",&Width));
   backend_extras->current_width = Width;
   backend_extras->max_width = MaxWidth;  // XXX should check for int overflow...
+  backend_extras->frame_epoch = 0;
+  backend_extras->frame_epoch_start = ciprosil_floattime();
+  backend_extras->last_framecount = 0;
 
   tPvUint32 MinHeight,MaxHeight,Height;
   CIPVCHK(PvAttrRangeUint32(*handle_ptr,"Height",&MinHeight,&MaxHeight));
@@ -923,6 +928,8 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
   int status;
   int frame_waiting;
   unsigned long pvTimeout;
+  double now;
+  bool recent_rollover;
 
   if (timeout < 0)
     pvTimeout = PVINFINITE;
@@ -948,9 +955,37 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
   if (getenv("PROSILICA_BACKEND_DEBUG")!=NULL) {
     fprintf(stderr,"frame->FrameCount %lu\n",frame->FrameCount);
   }
-  backend_extras->last_framecount = frame->FrameCount;
+
+  now = ciprosil_floattime();
+  recent_rollover = (now - (backend_extras->frame_epoch_start) <= 30.0);
+
+  // FrameCount can rollover, but we don't want that
+  if ( ((backend_extras->last_framecount-1)%(long)(0xFFFF)) > (long)0xFF00) {
+    if ( ((long)frame->FrameCount) < (long)0xFF00 ) {
+      if (!recent_rollover) {
+        // wait 30 seconds before allowing rollover again
+        backend_extras->frame_epoch++;
+        backend_extras->frame_epoch_start = now;
+      }
+    }
+  }
+
+  if (recent_rollover) {
+    if ( ((long)frame->FrameCount) > (long)0xFF00 ) {
+      // These frames are probably coming in from before rollover.
+      backend_extras->last_framecount = ((backend_extras->frame_epoch-1)*(long)0xFFFF)+
+        ((long)frame->FrameCount);
+    } else {
+      backend_extras->last_framecount = ((backend_extras->frame_epoch)*(long)0xFFFF)+
+        ((long)frame->FrameCount);
+    }
+  } else {
+    backend_extras->last_framecount = ((backend_extras->frame_epoch)*(long)0xFFFF)+
+      ((long)frame->FrameCount);
+  }
+
   if (getenv("PROSILICA_BACKEND_DEBUG")!=NULL) {
-    fprintf(stderr,"backend_extras->last_framecount %lu\n",backend_extras->last_framecount);
+    fprintf(stderr,"backend_extras->last_framecount %ld\n",backend_extras->last_framecount);
   }
 #ifndef CIPROSIL_TIME_HOST
   u_int64_t ts_uint64;
@@ -959,7 +994,7 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
   dif64=ts_uint64-prev_ts_uint64;
   prev_ts_uint64 = ts_uint64;
 
-  //  DPRINTF("got it                         (ts %llu)    (diff %lld)!\n",ts_uint64,dif64);
+  DPRINTF("got it                         (ts %llu)    (diff %lld)!\n",ts_uint64,dif64);
   backend_extras->last_timestamp = ts_uint64;
 #else // #ifndef CIPROSIL_TIME_HOST
   backend_extras->last_timestamp = ciprosil_floattime();
@@ -1014,7 +1049,7 @@ void CCprosil_get_last_timestamp( CCprosil *ccntxt, double* timestamp ) {
 void CCprosil_get_last_framenumber( CCprosil *ccntxt, unsigned long* framenumber ){
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  *framenumber = (backend_extras->last_framecount);
+  *framenumber = (unsigned long)(backend_extras->last_framecount);
   if (getenv("PROSILICA_BACKEND_DEBUG")!=NULL) {
     fprintf(stderr,"*framenumber %lu\n",*framenumber);
   }
