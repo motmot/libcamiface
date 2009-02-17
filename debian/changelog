@@ -1,3 +1,9 @@
+camiface (0.4.dev716-0ads1) hardy; urgency=low
+
+  * latest updates from svn
+
+ -- Andrew Straw <strawman@astraw.com>  Fri, 06 Feb 2009 10:58:58 -0800
+
 camiface (0.4.dev681-0ads1) hardy; urgency=low
 
   * Get trigger mode
