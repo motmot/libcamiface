@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <signal.h>
+#include <math.h>
 #endif
 
 #include "PvApi.h"
@@ -934,7 +935,7 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
   if (timeout < 0)
     pvTimeout = PVINFINITE;
   else
-    pvTimeout = (timeout*1000.0f); // convert to milliseconds
+    pvTimeout = ceilf(timeout*1000.0f); // convert to milliseconds
 
   frame = frames_ready_list_cam0[frames_ready_cam0_read_idx];
   if (frame==NULL) CAM_IFACE_THROW_ERROR("internal cam_iface error: frame not allocated");
