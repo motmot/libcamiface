@@ -51,9 +51,15 @@ def add_pynet( d ):
                                       ])
     if True:
     #if not debug:
-        d.setdefault('CPPPATH',[]).extend( ['/usr/include/python2.5'] )
-        d.setdefault('LIBS',[]).append('python2.5')
-        d.setdefault('LIBPATH',[]).extend( ['/usr/lib/python2.5/config/'] )
+        tmp = Environment()
+        tmp.ParseConfig('python-config --cflags')
+
+        d.setdefault('CPPPATH',[]).extend( tmp['CPPPATH'] )
+
+        tmp = Environment()
+        tmp.ParseConfig('python-config --ldflags')
+        d.setdefault('LIBS',[]).extend( tmp['LIBS'] )
+        d.setdefault('LIBPATH',[]).extend( tmp['LIBPATH'] )
     else:
         # Grr, I can't get this to work.
         if 0:
