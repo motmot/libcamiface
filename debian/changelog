@@ -1,3 +1,10 @@
+camiface (0.4.dev745-0ads1) jaunty; urgency=low
+
+  * fix FTBFS on jaunty
+  * latest updates from svn
+
+ -- Andrew Straw <strawman@astraw.com>  Sat, 14 Mar 2009 21:50:40 -0700
+
 camiface (0.4.dev723-0ads1) hardy; urgency=low
 
   * latest updates from svn
