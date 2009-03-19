@@ -84,21 +84,13 @@ void CamContext_set_trigger_mode_number( CamContext *this,
 					 int exposure_mode_number ){
   this->vmt->set_trigger_mode_number(this,exposure_mode_number);
 }
-void CamContext_get_frame_offset( CamContext *this,
-				  int *left, int *top ){
-  this->vmt->get_frame_offset(this,left,top);
+void CamContext_get_frame_roi( CamContext *this,
+			       int *left, int *top, int *width, int *height ){
+  this->vmt->get_frame_roi(this,left,top,width,height);
 }
-void CamContext_set_frame_offset( CamContext *this,
-				  int left, int top ){
-  this->vmt->set_frame_offset(this,left,top);
-}
-void CamContext_get_frame_size( CamContext *this,
-				int *width, int *height ){
-  this->vmt->get_frame_size(this,width,height);
-}
-void CamContext_set_frame_size( CamContext *this,
-				int width, int height ){
-  this->vmt->set_frame_size(this,width,height);
+void CamContext_set_frame_roi( CamContext *this,
+			       int left, int top, int width, int height ){
+  this->vmt->set_frame_roi(this,left,top, width, height);
 }
 void CamContext_get_max_frame_size( CamContext *this,
 				    int *width,

@@ -97,10 +97,8 @@ typedef struct {
   void (*get_trigger_mode_string)(struct CCprosil*,int,char*,int);
   void (*get_trigger_mode_number)(struct CCprosil*,int*);
   void (*set_trigger_mode_number)(struct CCprosil*,int);
-  void (*get_frame_offset)(struct CCprosil*,int*,int*);
-  void (*set_frame_offset)(struct CCprosil*,int,int);
-  void (*get_frame_size)(struct CCprosil*,int*,int*);
-  void (*set_frame_size)(struct CCprosil*,int,int);
+  void (*get_frame_roi)(struct CCprosil*,int*,int*,int*,int*);
+  void (*set_frame_roi)(struct CCprosil*,int,int,int,int);
   void (*get_max_frame_size)(struct CCprosil*,int*,int*);
   void (*get_buffer_size)(struct CCprosil*,int*);
   void (*get_framerate)(struct CCprosil*,float*);
@@ -144,10 +142,8 @@ void CCprosil_get_num_trigger_modes(struct CCprosil*,int*);
 void CCprosil_get_trigger_mode_string(struct CCprosil*,int,char*,int);
 void CCprosil_get_trigger_mode_number(struct CCprosil*,int*);
 void CCprosil_set_trigger_mode_number(struct CCprosil*,int);
-void CCprosil_get_frame_offset(struct CCprosil*,int*,int*);
-void CCprosil_set_frame_offset(struct CCprosil*,int,int);
-void CCprosil_get_frame_size(struct CCprosil*,int*,int*);
-void CCprosil_set_frame_size(struct CCprosil*,int,int);
+void CCprosil_get_frame_roi(struct CCprosil*,int*,int*,int*,int*);
+void CCprosil_set_frame_roi(struct CCprosil*,int,int,int,int);
 void CCprosil_get_max_frame_size(struct CCprosil*,int*,int*);
 void CCprosil_get_buffer_size(struct CCprosil*,int*);
 void CCprosil_get_framerate(struct CCprosil*,float*);
@@ -176,10 +172,8 @@ CCprosil_functable CCprosil_vmt = {
   CCprosil_get_trigger_mode_string,
   CCprosil_get_trigger_mode_number,
   CCprosil_set_trigger_mode_number,
-  CCprosil_get_frame_offset,
-  CCprosil_set_frame_offset,
-  CCprosil_get_frame_size,
-  CCprosil_set_frame_size,
+  CCprosil_get_frame_roi,
+  CCprosil_set_frame_roi,
   CCprosil_get_max_frame_size,
   CCprosil_get_buffer_size,
   CCprosil_get_framerate,
@@ -1125,50 +1119,32 @@ void CCprosil_set_trigger_mode_number( CCprosil *ccntxt,
   backend_extras->exposure_mode_number = exposure_mode_number;
 }
 
-void CCprosil_get_frame_offset( CCprosil *ccntxt,
-				  int *left, int *top ) {
+void CCprosil_get_frame_roi( CCprosil *ccntxt,
+			     int *left, int *top, int* width, int* height ) {
+  // XXX not yet done
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
   *left = 0;
   *top = 0;
+  *width = backend_extras->current_width;
+  *height = backend_extras->current_height;
 }
 
-void CCprosil_set_frame_offset( CCprosil *ccntxt,
-				  int left, int top ) {
+void CCprosil_set_frame_roi( CCprosil *ccntxt,
+			     int left, int top, int width, int height ) {
+  // XXX not yet done
   CHECK_CC(ccntxt);
   tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
 
   tPvUint32 l,t;
-
-  l=left;// XXX should check for int overflow...
-  t=top;
-  _internal_stop_streaming( ccntxt, handle_ptr, backend_extras );INTERNAL_CHK();
-  CIPVCHK(PvAttrUint32Set(*handle_ptr,"RegionX",l));
-  CIPVCHK(PvAttrUint32Set(*handle_ptr,"RegionY",t));
-  _internal_start_streaming( ccntxt, handle_ptr, backend_extras );INTERNAL_CHK();
-}
-
-void CCprosil_get_frame_size( CCprosil *ccntxt,
-				int *width, int *height ) {
-  CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
-  cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  *width = backend_extras->current_width;
-  *height = backend_extras->current_height;
-}
-
-void CCprosil_set_frame_size( CCprosil *ccntxt,
-				int width, int height ) {
-  CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
-  cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
   tPvUint32 w,h;
   w=width;// XXX should check for int overflow...
   h=height;
 
+  l=left;// XXX should check for int overflow...
+  t=top;
   _internal_stop_streaming( ccntxt, handle_ptr, backend_extras );INTERNAL_CHK();
-
   CIPVCHK(PvAttrUint32Set(*handle_ptr,"Width",w));
   backend_extras->current_width = width;
   CIPVCHK(PvAttrUint32Set(*handle_ptr,"Height",h));
@@ -1181,6 +1157,9 @@ void CCprosil_set_frame_size( CCprosil *ccntxt,
   for (int i=0; i<backend_extras->num_buffers; i++) {
     backend_extras->frames[i]->ImageBufferSize = backend_extras->buf_size;
   }
+
+  CIPVCHK(PvAttrUint32Set(*handle_ptr,"RegionX",l));
+  CIPVCHK(PvAttrUint32Set(*handle_ptr,"RegionY",t));
   _internal_start_streaming( ccntxt, handle_ptr, backend_extras );INTERNAL_CHK();
 }
 

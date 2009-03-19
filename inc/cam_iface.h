@@ -187,10 +187,8 @@ typedef struct {
   void (*get_trigger_mode_string)(struct CamContext*,int,char*,int);
   void (*get_trigger_mode_number)(struct CamContext*,int*);
   void (*set_trigger_mode_number)(struct CamContext*,int);
-  void (*get_frame_offset)(struct CamContext*,int*,int*);
-  void (*set_frame_offset)(struct CamContext*,int,int);
-  void (*get_frame_size)(struct CamContext*,int*,int*);
-  void (*set_frame_size)(struct CamContext*,int,int);
+  void (*get_frame_roi)(struct CamContext*,int*,int*,int*,int*);
+  void (*set_frame_roi)(struct CamContext*,int,int,int,int);
   void (*get_max_frame_size)(struct CamContext*,int*,int*);
   void (*get_buffer_size)(struct CamContext*,int*);
   void (*get_framerate)(struct CamContext*,float*);
@@ -262,15 +260,10 @@ CAM_IFACE_API void CamContext_get_trigger_mode_number( CamContext *ccntxt,
 CAM_IFACE_API void CamContext_set_trigger_mode_number( CamContext *ccntxt,
 						       int exposure_mode_number );
 
-CAM_IFACE_API void CamContext_get_frame_offset( CamContext *ccntxt,
-					 int *left, int *top );
-CAM_IFACE_API void CamContext_set_frame_offset( CamContext *ccntxt,
-					 int left, int top );
-
-CAM_IFACE_API void CamContext_get_frame_size( CamContext *ccntxt,
-				       int *width, int *height );
-CAM_IFACE_API void CamContext_set_frame_size( CamContext *ccntxt,
-				       int width, int height );
+CAM_IFACE_API void CamContext_get_frame_roi( CamContext *ccntxt,
+					     int *left, int *top, int* width, int* height );
+CAM_IFACE_API void CamContext_set_frame_roi( CamContext *ccntxt,
+					     int left, int top, int width, int height );
 
 CAM_IFACE_API void CamContext_get_max_frame_size( CamContext *ccntxt,
 						  int *width,

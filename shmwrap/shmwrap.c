@@ -159,6 +159,7 @@ int main(int argc, char** argv) {
   long prop_value;
   int prop_auto;
   int errnum;
+  int left, top;
   int width, height;
   int max_width, max_height;
   size_t shm_chunk_size;
@@ -268,7 +269,7 @@ int main(int argc, char** argv) {
   cc = new_CamContext(camera_number,num_buffers,mode_number);
   _check_error();
 
-  CamContext_get_frame_size(cc, &width, &height);
+  CamContext_get_frame_roi(cc, &left, &top, &width, &height);
   _check_error();
 
   CamContext_get_max_frame_size(cc, &max_width, &max_height);

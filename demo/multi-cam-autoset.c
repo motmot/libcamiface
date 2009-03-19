@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
   long prop_value;
   int prop_auto;
   int errnum;
-  int width, height;
+  int left, top, width, height;
   int do_num_frames;
   CameraPixelCoding coding;
   cam_iface_constructor_func_t new_CamContext;
@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
     cc[camno] = new_CamContext(camno,num_buffers,mode_number);
     _check_error();
 
-    CamContext_get_frame_size(cc[camno], &width, &height);
+    CamContext_get_frame_roi(cc[camno], &left, &top, &width, &height);
     _check_error();
 
     CamContext_get_num_framebuffers(cc[camno],&num_buffers);

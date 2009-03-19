@@ -58,10 +58,8 @@ typedef struct {
   void (*get_trigger_mode_string)(struct CCdc1394*,int,char*,int);
   void (*get_trigger_mode_number)(struct CCdc1394*,int*);
   void (*set_trigger_mode_number)(struct CCdc1394*,int);
-  void (*get_frame_offset)(struct CCdc1394*,int*,int*);
-  void (*set_frame_offset)(struct CCdc1394*,int,int);
-  void (*get_frame_size)(struct CCdc1394*,int*,int*);
-  void (*set_frame_size)(struct CCdc1394*,int,int);
+  void (*get_frame_roi)(struct CCdc1394*,int*,int*,int*,int*);
+  void (*set_frame_roi)(struct CCdc1394*,int,int,int,int);
   void (*get_max_frame_size)(struct CCdc1394*,int*,int*);
   void (*get_buffer_size)(struct CCdc1394*,int*);
   void (*get_framerate)(struct CCdc1394*,float*);
@@ -122,10 +120,8 @@ void CCdc1394_get_num_trigger_modes(struct CCdc1394*,int*);
 void CCdc1394_get_trigger_mode_string(struct CCdc1394*,int,char*,int);
 void CCdc1394_get_trigger_mode_number(struct CCdc1394*,int*);
 void CCdc1394_set_trigger_mode_number(struct CCdc1394*,int);
-void CCdc1394_get_frame_offset(struct CCdc1394*,int*,int*);
-void CCdc1394_set_frame_offset(struct CCdc1394*,int,int);
-void CCdc1394_get_frame_size(struct CCdc1394*,int*,int*);
-void CCdc1394_set_frame_size(struct CCdc1394*,int,int);
+void CCdc1394_get_frame_roi(struct CCdc1394*,int*,int*,int*,int*);
+void CCdc1394_set_frame_roi(struct CCdc1394*,int,int,int,int);
 void CCdc1394_get_max_frame_size(struct CCdc1394*,int*,int*);
 void CCdc1394_get_buffer_size(struct CCdc1394*,int*);
 void CCdc1394_get_framerate(struct CCdc1394*,float*);
@@ -154,10 +150,8 @@ CCdc1394_functable CCdc1394_vmt = {
   CCdc1394_get_trigger_mode_string,
   CCdc1394_get_trigger_mode_number,
   CCdc1394_set_trigger_mode_number,
-  CCdc1394_get_frame_offset,
-  CCdc1394_set_frame_offset,
-  CCdc1394_get_frame_size,
-  CCdc1394_set_frame_size,
+  CCdc1394_get_frame_roi,
+  CCdc1394_set_frame_roi,
   CCdc1394_get_max_frame_size,
   CCdc1394_get_buffer_size,
   CCdc1394_get_framerate,
@@ -1592,8 +1586,8 @@ void CCdc1394_set_trigger_mode_number( CCdc1394 *this,
   return;
 }
 
-void CCdc1394_get_frame_offset( CCdc1394 *this,
-				int *left, int *top ) {
+void CCdc1394_get_frame_roi( CCdc1394 *this,
+			     int *left, int *top, int* width, int* height ) {
   uint32_t l,t;
   dc1394camera_t *camera;
   dc1394video_mode_t video_mode;
@@ -1611,13 +1605,19 @@ void CCdc1394_get_frame_offset( CCdc1394 *this,
     *left=0;
     *top=0;
   }
+
+  *width=this->roi_width;
+  *height=this->roi_height;
+
 }
 
-void CCdc1394_set_frame_offset( CCdc1394 *this,
-				int left, int top ) {
+void CCdc1394_set_frame_roi( CCdc1394 *this,
+			     int left, int top, int width, int height ) {
   dc1394camera_t *camera;
   dc1394video_mode_t video_mode;
+  uint32_t h_unit,v_unit;
   uint32_t h_unit_pos,  v_unit_pos;
+  uint32_t test_width, test_height;
   dc1394color_coding_t coding;
   int restart;
 
@@ -1628,6 +1628,15 @@ void CCdc1394_set_frame_offset( CCdc1394 *this,
 
   if (!dc1394_is_video_mode_scalable(video_mode)) {
     CAM_IFACE_ERROR_FORMAT("cannot set frame offset - video mode not scalable");
+    return;
+  }
+
+  CIDC1394CHK(dc1394_format7_get_unit_size(camera,
+					   video_mode,
+					   &h_unit, &v_unit));
+
+  if ((width%h_unit != 0) || (height%v_unit != 0)) {
+    CAM_IFACE_ERROR_FORMAT("specified ROI size not attainable with this camera");
     return;
   }
 
@@ -1647,58 +1656,6 @@ void CCdc1394_set_frame_offset( CCdc1394 *this,
 
   DPRINTF("setting roi left: %d, top %d\n",left,top);
 
-  CIDC1394CHK(dc1394_format7_set_roi(camera, video_mode, coding,
-				     DC1394_USE_MAX_AVAIL, // use max packet size
-				     left, top,
-				     this->roi_width,
-				     this->roi_height));
-  if (restart) {
-    DPRINTF("started camera\n");
-    CCdc1394_start_camera( this );
-  }
-}
-
-
-void CCdc1394_get_frame_size( CCdc1394 *this,
-			      int *width, int *height ) {
-  CHECK_CC(this);
-  *width=this->roi_width;
-  *height=this->roi_height;
-}
-
-void CCdc1394_set_frame_size( CCdc1394 *this,
-			      int width, int height ) {
-  dc1394camera_t *camera;
-  dc1394video_mode_t video_mode;
-  int restart;
-  uint32_t test_width, test_height;
-
-  restart=0;
-  CHECK_CC(this);
-  camera = cameras[this->inherited.device_number];
-  CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
-  if (!dc1394_is_video_mode_scalable(video_mode)) {
-    CAM_IFACE_ERROR_FORMAT("cannot set frame offset - video mode not scalable");
-    return;
-  }
-  if (this->capture_is_set>0) {
-    CCdc1394_stop_camera( this );
-    restart = 1;
-    DPRINTF("stopped camera\n");
-  }
-  uint32_t h_unit,v_unit;
-  CIDC1394CHK(dc1394_format7_get_unit_size(camera,
-					   video_mode,
-					   &h_unit, &v_unit));
-
-  if ((width%h_unit != 0) || (height%v_unit != 0)) {
-    if (restart) {
-      CCdc1394_start_camera( this );
-    }
-    CAM_IFACE_ERROR_FORMAT("specified ROI size not attainable with this camera");
-    return;
-  }
-
   CIDC1394CHK(dc1394_format7_set_image_size(camera,
 					    video_mode,
 					    width, height));
@@ -1708,10 +1665,12 @@ void CCdc1394_set_frame_size( CCdc1394 *this,
 					    &test_width, &test_height));
   DPRINTF("returned width: %d, height: %d\n",test_width,test_height);
 
-  if (restart) {
-    DPRINTF("starting camera\n");
-    CCdc1394_start_camera( this );
-  }
+  CIDC1394CHK(dc1394_format7_set_roi(camera, video_mode, coding,
+				     DC1394_USE_MAX_AVAIL, // use max packet size
+				     left, top,
+				     test_width,
+				     test_height));
+
 
   if (test_width != width) {
     CAM_IFACE_ERROR_FORMAT("width was not successfully set");
@@ -1726,8 +1685,12 @@ void CCdc1394_set_frame_size( CCdc1394 *this,
   this->roi_width = test_width;
   this->roi_height = test_height;
   this->buffer_size=(this->roi_width)*(this->roi_height)*this->inherited.depth/8;
-}
 
+  if (restart) {
+    DPRINTF("started camera\n");
+    CCdc1394_start_camera( this );
+  }
+}
 
 void CCdc1394_get_framerate( CCdc1394 *this,
 			     float *framerate ) {
