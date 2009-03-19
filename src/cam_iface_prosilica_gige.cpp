@@ -1121,11 +1121,16 @@ void CCprosil_set_trigger_mode_number( CCprosil *ccntxt,
 
 void CCprosil_get_frame_roi( CCprosil *ccntxt,
 			     int *left, int *top, int* width, int* height ) {
-  // XXX not yet done
+  tPvUint32 l,t;
+
   CHECK_CC(ccntxt);
+  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  *left = 0;
-  *top = 0;
+  CIPVCHK(PvAttrUint32Get(*handle_ptr,"RegionX",&l));
+  CIPVCHK(PvAttrUint32Get(*handle_ptr,"RegionY",&t));
+
+  *left = l;  // XXX cast error?
+  *top = t;   // XXX cast error?
   *width = backend_extras->current_width;
   *height = backend_extras->current_height;
 }
