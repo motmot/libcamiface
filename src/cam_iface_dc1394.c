@@ -1,6 +1,12 @@
 /* Backend for libdc1394 v2.0 */
 #include "cam_iface.h"
 
+#if 1
+#define DPRINTF(...)
+#else
+#define DPRINTF(...) printf(__VA_ARGS__)
+#endif
+
 #include <dc1394/control.h>
 #include <dc1394/utils.h>
 
@@ -1635,8 +1641,11 @@ void CCdc1394_set_frame_offset( CCdc1394 *this,
   restart = 0;
   if (this->capture_is_set>0) {
     CCdc1394_stop_camera( this );
+    DPRINTF("stopped camera\n");
     restart = 1;
   }
+
+  DPRINTF("setting roi left: %d, top %d\n",left,top);
 
   CIDC1394CHK(dc1394_format7_set_roi(camera, video_mode, coding,
 				     DC1394_USE_MAX_AVAIL, // use max packet size
@@ -1644,6 +1653,7 @@ void CCdc1394_set_frame_offset( CCdc1394 *this,
 				     this->roi_width,
 				     this->roi_height));
   if (restart) {
+    DPRINTF("started camera\n");
     CCdc1394_start_camera( this );
   }
 }
@@ -1674,6 +1684,7 @@ void CCdc1394_set_frame_size( CCdc1394 *this,
   if (this->capture_is_set>0) {
     CCdc1394_stop_camera( this );
     restart = 1;
+    DPRINTF("stopped camera\n");
   }
   uint32_t h_unit,v_unit;
   CIDC1394CHK(dc1394_format7_get_unit_size(camera,
@@ -1691,12 +1702,14 @@ void CCdc1394_set_frame_size( CCdc1394 *this,
   CIDC1394CHK(dc1394_format7_set_image_size(camera,
 					    video_mode,
 					    width, height));
+  DPRINTF("requested width: %d, height: %d\n",width,height);
 
   CIDC1394CHK(dc1394_format7_get_image_size(camera, video_mode,
 					    &test_width, &test_height));
-
+  DPRINTF("returned width: %d, height: %d\n",test_width,test_height);
 
   if (restart) {
+    DPRINTF("starting camera\n");
     CCdc1394_start_camera( this );
   }
 
