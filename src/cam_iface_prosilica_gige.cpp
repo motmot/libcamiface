@@ -488,6 +488,23 @@ const char* cam_iface_get_api_version() {
 }
 
 void cam_iface_startup() {
+  unsigned long major, minor;
+
+  PvVersion(&major,&minor);
+#if defined(CAMIFACE_PROSIL_MAJOR)
+  if (major!=CAMIFACE_PROSIL_MAJOR) {
+    CAM_IFACE_THROW_ERROR("Prosilica library version mismatch");
+  }
+  if (minor!=CAMIFACE_PROSIL_MINOR) {
+    CAM_IFACE_THROW_ERROR("Prosilica library version mismatch");
+  }
+  DPRINTF("libcamiface compiled with and loaded PvAPI version %d.%d\n",
+          major,minor);
+#else
+  DPRINTF("libcamiface loaded PvAPI version %d.%d\n",
+          major,minor);
+#endif
+
   CIPVCHK(PvInitialize());
 
   for (int i=0;i<4;i++) {

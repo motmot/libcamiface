@@ -147,6 +147,14 @@ def add_openthreads(d):
         d.setdefault('CPPPATH',[]).extend([opj('OpenThreads','include')])
 
 def add_prosilica_gige( d ):
+    import prosilica_help
+
+    # Since prosilica libraries don't have SONAME versioning, check
+    # version this way. (This issue was reported to Paul Kozik of
+    # Prosilica on June 12, 2007.)
+
+    major,minor = prosilica_help.get_prosilica_version()
+
     if sys.platform.startswith('linux'):
         if not os.path.exists('/usr/include/PvApi.h'):
             raise PrereqsNotFoundError('Prosilica headers not found')
@@ -164,6 +172,10 @@ def add_prosilica_gige( d ):
         d.setdefault('CPPDEFINES',{}).update( {'_x86':None} )
     elif arch_name == 'x86_64':
         d.setdefault('CPPDEFINES',{}).update( {'_x64':None} )
+
+    d.setdefault('CPPDEFINES',{}).update( {'CAMIFACE_PROSIL_MAJOR':str(major),
+                                           'CAMIFACE_PROSIL_MINOR':str(minor),
+                                           } )
 
     if sys.platform.startswith('linux'):
         # _LINUX is defined in Prosilica's examples
