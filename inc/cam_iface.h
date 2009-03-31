@@ -5,7 +5,7 @@
 #ifndef CAM_IFACE_H
 #define CAM_IFACE_H
 
-#define CAM_IFACE_API_VERSION "20080124a"
+#define CAM_IFACE_API_VERSION "20090331"
 
 #ifdef _WIN32
 #include <windows.h>
