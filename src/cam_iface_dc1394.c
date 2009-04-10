@@ -1771,7 +1771,12 @@ void CCdc1394_set_framerate( CCdc1394 *this,
 
     CIDC1394CHK(dc1394_video_get_iso_speed(camera,&speed));
     switch (speed) {
+    case DC1394_ISO_SPEED_100: bus_period = 500e-6; break;
+    case DC1394_ISO_SPEED_200: bus_period = 250e-6; break;
     case DC1394_ISO_SPEED_400: bus_period = 125e-6; break;
+    case DC1394_ISO_SPEED_800: bus_period =  62.5e-6; break;
+    case DC1394_ISO_SPEED_1600: bus_period = 31.25e-6; break;
+    case DC1394_ISO_SPEED_3200: bus_period = 15.625e-16; break;
     default: NOT_IMPLEMENTED; break;
     }
 
