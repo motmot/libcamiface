@@ -191,11 +191,19 @@ struct cam_iface_dc1394_trigger_list {
 };
 typedef struct cam_iface_dc1394_trigger_list cam_iface_dc1394_trigger_list_t;
 
+// See the following for a hint on how to make thread thread-local without __thread.
+// http://lists.apple.com/archives/Xcode-users/2006/Jun/msg00551.html
+#ifdef __APPLE__
+#define myTLS
+#else
+#define myTLS __thread
+#endif
+
 /* globals -- allocate space */
 dc1394_t * libdc1394_instance=NULL;
-__thread int cam_iface_error = 0;
+myTLS int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-__thread char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
+myTLS char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 uint32_t num_cameras = 0;
 dc1394camera_t **cameras = NULL;
