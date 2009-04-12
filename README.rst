@@ -10,7 +10,7 @@ Overview
 libcamiface ("camera interface") is a C API that provides a camera and OS
 independent image acquisition framework.
 
-There is also a Python wrapper (:mod:`cam_iface`) of the cam_iface
+There is also a Python wrapper (:mod:`cam_iface`) of the libcamiface
 libraries.
 
 Backend status
@@ -29,7 +29,7 @@ A number of backends are supported.
   * - libdc1394_
     - |works|
     - |works|
-    - |orange| newest library version supports Windows, but untested with cam_iface
+    - |orange| newest library version supports Windows, but untested with libcamiface
     - |mostly works| triggering options disabled
   * - `Prosilica GigE Vision`_
     - |works|
@@ -89,7 +89,7 @@ Windows
 
 Open a "Visual Studio Command Prompt" and type::
 
-  cd C:\Blah\blah\cam_iface
+  cd C:\Blah\blah\libcamiface
   scons
 
 linux
@@ -97,7 +97,7 @@ linux
 
 ::
 
-  cd /home/somebody/blah/blah/cam_iface
+  cd /home/somebody/blah/blah/libcamiface
   scons
 
 Backend notes
@@ -116,5 +116,5 @@ Prosilica's command line tools::
 License
 =======
 
-cam_iface is licensed under the BSD license. See the LICENSE.txt file
+libcamiface is licensed under the BSD license. See the LICENSE.txt file
 for the full description.
