@@ -3,6 +3,19 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 
+#ifndef UNITY_BACKEND_DIR
+# error "must define UNITY_BACKEND_DIR"
+#endif
+
+#ifndef UNITY_BACKEND_PREFIX
+# error "must define UNITY_BACKEND_PREFIX"
+#endif
+
+#ifndef UNITY_BACKEND_SUFFIX
+# error "must define UNITY_BACKEND_SUFFIX"
+#endif
+
+
 struct backend_info_t {
   char* name;
   int started;
