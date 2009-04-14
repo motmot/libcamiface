@@ -21,6 +21,13 @@ pkg_check_modules(DC1394 libdc1394-2)
 # create config.h file
 #configure_file(src/camiface_config.h.in.cmake ${CMAKE_BINARY_DIR}/src/camiface_config.h)
 
+set(all_backends unity)
+
+IF(DC1394_FOUND)
+  set(all_backends ${all_backends} dc1394)
+ENDIF(DC1394_FOUND)
+
+
 add_subdirectory(src)
 add_subdirectory(demo)
 
