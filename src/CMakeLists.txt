@@ -13,19 +13,23 @@ FOREACH(BACKEND ${all_backends})
   IF(${BACKEND} STREQUAL "unity")
     # don't include unity backend in list of backends for unity
   ELSE(${BACKEND} STREQUAL "unity")
-    IF(DEFINED UNITY_BACKENDS)
-      set(UNITY_BACKENDS "${UNITY_BACKENDS},\"${BACKEND}\"")
-    ELSE(DEFINED UNITY_BACKENDS)
-      set(UNITY_BACKENDS "\"${BACKEND}\"")
-    ENDIF(DEFINED UNITY_BACKENDS)
+    set(INDIVIDUAL_UNITY_BACKENDS ${INDIVIDUAL_UNITY_BACKENDS} ${BACKEND})
   ENDIF(${BACKEND} STREQUAL "unity")
 ENDFOREACH(BACKEND)
 
-list(LENGTH UNITY_BACKENDS NUM_BACKENDS)
+FOREACH(BACKEND ${INDIVIDUAL_UNITY_BACKENDS})
+  IF(DEFINED UNITY_BACKENDS)
+    set(UNITY_BACKENDS "${UNITY_BACKENDS},\"${BACKEND}\"")
+  ELSE(DEFINED UNITY_BACKENDS)
+    set(UNITY_BACKENDS "\"${BACKEND}\"")
+  ENDIF(DEFINED UNITY_BACKENDS)
+ENDFOREACH(BACKEND)
 
-MESSAGE("NUM BACKENDS: ${NUM_BACKENDS}")
+list(LENGTH INDIVIDUAL_UNITY_BACKENDS NUM_BACKENDS)
 
-# get list of each command-line define
+MESSAGE("unity backend includes ${NUM_BACKENDS} other backends: (${UNITY_BACKENDS})")
+
+# list of each command-line define
 set(unity_DEFINE
     -DNUM_BACKENDS=${NUM_BACKENDS}
     -DUNITY_BACKENDS='{${UNITY_BACKENDS}}'
@@ -34,9 +38,9 @@ set(unity_DEFINE
     -DUNITY_BACKEND_DIR='\"\"')
 
 # concatenate (join) strings to make single argument
-FOREACH(ud ${unity_DEFINE})
-  set(unity_DEFINES "${unity_DEFINES} ${ud}")
-ENDFOREACH(ud ${unity_DEFINE})
+FOREACH(element ${unity_DEFINE})
+  set(unity_DEFINES "${unity_DEFINES} ${element}")
+ENDFOREACH(element ${unity_DEFINE})
 
 SET_SOURCE_FILES_PROPERTIES(
     cam_iface_unity.c
@@ -69,3 +73,38 @@ IF(DC1394_FOUND)
   )
 
 ENDIF(DC1394_FOUND)
+
+# prosilica_gige backend ------------------
+
+IF(PROSILICA_GIGE_FOUND)
+
+  set(prosilica_gige_SRCS ${common_SRCS}
+      cam_iface_prosilica_gige.cpp
+      )
+
+  # list of each command-line define
+  # XXX these need to be improved for multi-arch support:
+  set(prosilica_gige_DEFINE
+      -D_x64
+      -D_LINUX
+      )
+
+  # concatenate (join) strings to make single argument
+  FOREACH(element ${prosilica_gige_DEFINE})
+    set(prosilica_gige_DEFINES "${prosilica_gige_DEFINES} ${element}")
+  ENDFOREACH(element)
+
+  SET_SOURCE_FILES_PROPERTIES(
+      cam_iface_prosilica_gige.cpp
+      PROPERTIES COMPILE_FLAGS ${prosilica_gige_DEFINES})
+
+  ADD_LIBRARY(camiface_prosilica_gige SHARED ${prosilica_gige_SRCS})
+  TARGET_LINK_LIBRARIES(camiface_prosilica_gige ${PROSILICA_GIGE_LIBRARIES})
+
+  INSTALL(TARGETS camiface_prosilica_gige
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
+ENDIF(PROSILICA_GIGE_FOUND)

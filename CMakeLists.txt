@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-#set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules )
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules )
 
 ##  global setup
 project(libcamiface)
@@ -15,8 +15,7 @@ FIND_PACKAGE(PkgConfig)
 
 pkg_check_modules(DC1394 libdc1394-2)
 
-#FIND_PACKAGE(DC1394)
-#INCLUDE_DIRECTORIES(${DC1394_INCLUDE_PATH})
+FIND_PACKAGE(ProsilicaGigE)
 
 # create config.h file
 #configure_file(src/camiface_config.h.in.cmake ${CMAKE_BINARY_DIR}/src/camiface_config.h)
@@ -27,6 +26,9 @@ IF(DC1394_FOUND)
   set(all_backends ${all_backends} dc1394)
 ENDIF(DC1394_FOUND)
 
+IF(PROSILICA_GIGE_FOUND)
+  set(all_backends ${all_backends} prosilica_gige)
+ENDIF(PROSILICA_GIGE_FOUND)
 
 add_subdirectory(src)
 add_subdirectory(demo)
