@@ -108,3 +108,26 @@ IF(PROSILICA_GIGE_FOUND)
   )
 
 ENDIF(PROSILICA_GIGE_FOUND)
+
+# quicktime backend ------------------
+
+IF(QUICKTIME_FOUND)
+
+IF(NOT CARBON_FOUND)
+  MESSAGE(FATAL_ERROR "QuickTime backend depends on Carbon, but Carbon not found")
+ENDIF(NOT CARBON_FOUND)
+
+  set(quicktime_SRCS ${common_SRCS}
+      cam_iface_quicktime.c
+      )
+
+  ADD_LIBRARY(camiface_quicktime SHARED ${quicktime_SRCS})
+  TARGET_LINK_LIBRARIES(camiface_quicktime ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
+
+  INSTALL(TARGETS camiface_quicktime
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
+ENDIF(QUICKTIME_FOUND)

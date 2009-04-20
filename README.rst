@@ -81,24 +81,39 @@ Key to the above symbols:
 .. |NA| replace:: NA
 
 
-Building
-========
+Build and install
+=================
 
-Windows
--------
+Prerequisites
+-------------
 
-Open a "Visual Studio Command Prompt" and type::
-
-  cd C:\Blah\blah\libcamiface
-  scons
+On all platforms, you need to install cmake. cmake is available from
+http://www.cmake.org/
 
 linux
 -----
 
 ::
 
-  cd /home/somebody/blah/blah/libcamiface
-  scons
+  mkdir build
+  cd build
+  cmake ..
+  make
+  make install
+
+Mac OS X
+--------
+
+Download and install Apple's XCode. This requires signing up (free) as
+an Apple ADC member.
+
+::
+
+  mkdir build
+  cd build
+  cmake ..
+  make
+  make install
 
 Backend notes
 =============

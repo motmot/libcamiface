@@ -13,22 +13,44 @@ include_directories( ${CMAKE_SOURCE_DIR}/inc )
 
 FIND_PACKAGE(PkgConfig)
 
+# Backend: unity will always be built. ---------------
+set(all_backends unity)
+
+# Backend: libdc1394 ---------------------------------
+
+# Method A: Check for libdc1394 using pkg-config (preferred)
 pkg_check_modules(DC1394 libdc1394-2)
 
-FIND_PACKAGE(ProsilicaGigE)
-
-# create config.h file
-#configure_file(src/camiface_config.h.in.cmake ${CMAKE_BINARY_DIR}/src/camiface_config.h)
-
-set(all_backends unity)
+# Method B: Check for libdc1394 ourselves without pkg-config (e.g. on Mac)
+IF(NOT DC1394_FOUND)
+  FIND_PACKAGE(DC1394)
+ENDIF(NOT DC1394_FOUND)
 
 IF(DC1394_FOUND)
   set(all_backends ${all_backends} dc1394)
 ENDIF(DC1394_FOUND)
 
+# Backend: Prosilica --------------------------------
+
+FIND_PACKAGE(ProsilicaGigE)
+
 IF(PROSILICA_GIGE_FOUND)
   set(all_backends ${all_backends} prosilica_gige)
 ENDIF(PROSILICA_GIGE_FOUND)
+
+# Backend: QuickTime --------------------------------
+
+FIND_PACKAGE(QuickTime)
+FIND_PACKAGE(Carbon)
+
+IF(QUICKTIME_FOUND)
+  set(all_backends ${all_backends} quicktime)
+ENDIF(QUICKTIME_FOUND)
+
+# Build targets -------------------------------------
+
+# create config.h file
+#configure_file(src/camiface_config.h.in.cmake ${CMAKE_BINARY_DIR}/src/camiface_config.h)
 
 add_subdirectory(src)
 add_subdirectory(demo)
