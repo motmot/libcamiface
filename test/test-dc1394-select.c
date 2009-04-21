@@ -24,6 +24,7 @@
 #include <dc1394/dc1394.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <errno.h>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -59,6 +60,10 @@ int main(int argc, char *argv[])
     dc1394camera_list_t * list;
 
     dc1394error_t err;
+
+    struct timeval tv;
+    int retval, errsv, nfds, fileno;
+    fd_set fdset;
 
     d = dc1394_new ();
     if (!d)
@@ -145,10 +150,41 @@ int main(int argc, char *argv[])
     DC1394_ERR_CLN_RTN(err,cleanup_and_exit(camera),"Could not start camera iso transmission");
 
     /*-----------------------------------------------------------------------
-     *  capture one frame
+     *  wait for frame using select, dequeue it
      *-----------------------------------------------------------------------*/
-    err=dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &frame);
-    DC1394_ERR_CLN_RTN(err,cleanup_and_exit(camera),"Could not capture a frame");
+    FD_ZERO(&fdset);
+    while(1) {
+      tv.tv_sec = 0;
+      tv.tv_usec = 200000; /* 200 msec */
+      fileno = dc1394_capture_get_fileno(camera);
+      nfds = fileno+1;
+      FD_SET(fileno, &fdset);
+      retval = select( nfds, &fdset, NULL, NULL, &tv );
+      errsv = errno;
+      if (retval == -1 ) {
+        /* there was a problem */
+        fprintf(stderr,"errno %d\n",errsv);
+        if (errsv==EINTR) {
+          continue;
+        }
+        exit(1);
+      }
+      else if (retval == 0) {
+        /* timeout exceeded */
+        continue;
+      }
+      else {
+        /* success. select() succeeded, frame is waiting. */
+        err=dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &frame);
+        DC1394_ERR_CLN_RTN(err,cleanup_and_exit(camera),"Could not capture a frame");
+        break;
+      }
+    }
+
+    if (frame==NULL) {
+      fprintf(stderr,"ERROR: select succeeded, but no frame is waiting\n");
+      exit(1);
+    }
 
     /*-----------------------------------------------------------------------
      *  stop data transmission
