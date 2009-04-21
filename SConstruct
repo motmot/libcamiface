@@ -43,6 +43,8 @@ def add_unity( d ):
     d.setdefault('CPPDEFINES',{}).update( {'UNITY_BACKEND_DIR':r'"\"%s\""'%backend_lib_dir,
                                            'UNITY_BACKEND_PREFIX':r'"\"%s\""'%prefix,
                                            'UNITY_BACKEND_SUFFIX':r'"\"%s\""'%suffix,
+                                           'UNITY_BACKENDS':r'"{\"dc1394\",\"prosilica-gige\"}"',
+                                           'NUM_BACKENDS':"2",
                                            } )
     d.setdefault('LIBS',[]).append('dl')
 
