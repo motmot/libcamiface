@@ -1372,8 +1372,8 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 
   if (frame==NULL) {
     // No error, but no frame: polling ioctl call returned with EINTR.
-    cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
-    CAM_IFACE_ERROR_FORMAT("Interrupted syscall (EINTR)");
+    cam_iface_error = CAM_IFACE_SELECT_RETURNED_BUT_NO_FRAME_AVAILABLE;
+    CAM_IFACE_ERROR_FORMAT("select() call returnd, but no frame available");
     return;
   }
 
