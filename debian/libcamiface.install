@@ -1,0 +1,3 @@
+lib/libcam_iface_blank.so   usr/lib
+lib/libcam_iface_dc1394.so  usr/lib
+lib/libcam_iface_unity.so  usr/lib

@@ -1,0 +1,3 @@
+shmwrap/bin/* usr/bin
+backends.txt usr/share/camiface
+demo/bin/* usr/share/camiface/demo
