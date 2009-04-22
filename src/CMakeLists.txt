@@ -46,10 +46,10 @@ SET_SOURCE_FILES_PROPERTIES(
     cam_iface_unity.c
     PROPERTIES COMPILE_FLAGS ${unity_DEFINES})
 
-ADD_LIBRARY(camiface_unity SHARED ${unity_SRCS})
-TARGET_LINK_LIBRARIES(camiface_unity dl)
+ADD_LIBRARY(cam_iface_unity SHARED ${unity_SRCS})
+TARGET_LINK_LIBRARIES(cam_iface_unity dl)
 
-INSTALL(TARGETS camiface_unity
+INSTALL(TARGETS cam_iface_unity
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -63,10 +63,10 @@ IF(DC1394_FOUND)
       cam_iface_dc1394.c
       )
 
-  ADD_LIBRARY(camiface_dc1394 SHARED ${dc1394_SRCS})
-  TARGET_LINK_LIBRARIES(camiface_dc1394 ${DC1394_LIBRARIES})
+  ADD_LIBRARY(cam_iface_dc1394 SHARED ${dc1394_SRCS})
+  TARGET_LINK_LIBRARIES(cam_iface_dc1394 ${DC1394_LIBRARIES})
 
-  INSTALL(TARGETS camiface_dc1394
+  INSTALL(TARGETS cam_iface_dc1394
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -98,10 +98,10 @@ IF(PROSILICA_GIGE_FOUND)
       cam_iface_prosilica_gige.cpp
       PROPERTIES COMPILE_FLAGS ${prosilica_gige_DEFINES})
 
-  ADD_LIBRARY(camiface_prosilica_gige SHARED ${prosilica_gige_SRCS})
-  TARGET_LINK_LIBRARIES(camiface_prosilica_gige ${PROSILICA_GIGE_LIBRARIES})
+  ADD_LIBRARY(cam_iface_prosilica_gige SHARED ${prosilica_gige_SRCS})
+  TARGET_LINK_LIBRARIES(cam_iface_prosilica_gige ${PROSILICA_GIGE_LIBRARIES})
 
-  INSTALL(TARGETS camiface_prosilica_gige
+  INSTALL(TARGETS cam_iface_prosilica_gige
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -121,10 +121,10 @@ ENDIF(NOT CARBON_FOUND)
       cam_iface_quicktime.c
       )
 
-  ADD_LIBRARY(camiface_quicktime SHARED ${quicktime_SRCS})
-  TARGET_LINK_LIBRARIES(camiface_quicktime ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
+  ADD_LIBRARY(cam_iface_quicktime SHARED ${quicktime_SRCS})
+  TARGET_LINK_LIBRARIES(cam_iface_quicktime ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
 
-  INSTALL(TARGETS camiface_quicktime
+  INSTALL(TARGETS cam_iface_quicktime
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
