@@ -2,6 +2,9 @@ set(common_SRCS
     cam_iface_common.c
     )
 
+set(CAM_IFACE_VERSION 0.5.2)
+set(CAM_IFACE_SOVERSION 0)
+
 # unity backend -----------------
 
 set(unity_SRCS ${common_SRCS}
@@ -48,6 +51,11 @@ SET_SOURCE_FILES_PROPERTIES(
 
 ADD_LIBRARY(cam_iface_unity SHARED ${unity_SRCS})
 TARGET_LINK_LIBRARIES(cam_iface_unity dl)
+set_target_properties(cam_iface_unity PROPERTIES VERSION ${CAM_IFACE_VERSION}
+  SOVERSION ${CAM_IFACE_SOVERSION})
+
+ADD_LIBRARY(cam_iface_unity-static STATIC ${unity_SRCS})
+set_target_properties(cam_iface_unity-static PROPERTIES OUTPUT_NAME "cam_iface_unity")
 
 INSTALL(TARGETS cam_iface_unity
   RUNTIME DESTINATION bin
@@ -65,6 +73,11 @@ IF(DC1394_FOUND)
 
   ADD_LIBRARY(cam_iface_dc1394 SHARED ${dc1394_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_dc1394 ${DC1394_LIBRARIES})
+  set_target_properties(cam_iface_dc1394 PROPERTIES VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION})
+
+  ADD_LIBRARY(cam_iface_dc1394-static STATIC ${dc1394_SRCS})
+  set_target_properties(cam_iface_dc1394-static PROPERTIES OUTPUT_NAME "cam_iface_dc1394")
 
   INSTALL(TARGETS cam_iface_dc1394
     RUNTIME DESTINATION bin
@@ -100,6 +113,11 @@ IF(PROSILICA_GIGE_FOUND)
 
   ADD_LIBRARY(cam_iface_prosilica_gige SHARED ${prosilica_gige_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_prosilica_gige ${PROSILICA_GIGE_LIBRARIES})
+  set_target_properties(cam_iface_prosilica_gige PROPERTIES VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION})
+
+  ADD_LIBRARY(cam_iface_prosilica_gige-static STATIC ${prosilica_gige_SRCS})
+  set_target_properties(cam_iface_prosilica_gige-static PROPERTIES OUTPUT_NAME "cam_iface_prosilica_gige")
 
   INSTALL(TARGETS cam_iface_prosilica_gige
     RUNTIME DESTINATION bin
@@ -123,6 +141,11 @@ ENDIF(NOT CARBON_FOUND)
 
   ADD_LIBRARY(cam_iface_quicktime SHARED ${quicktime_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_quicktime ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
+  set_target_properties(cam_iface_quicktime PROPERTIES VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION})
+
+  ADD_LIBRARY(cam_iface_quicktime-static STATIC ${quicktime_SRCS})
+  set_target_properties(cam_iface_quicktime-static PROPERTIES OUTPUT_NAME "cam_iface_quicktime")
 
   INSTALL(TARGETS cam_iface_quicktime
     RUNTIME DESTINATION bin
