@@ -1,3 +1,10 @@
+libcamiface (0.5.1-0ads2) hardy; urgency=low
+
+  * New upstream version using cmake
+  * Switch to debhelper 7
+
+ -- Andrew Straw <strawman@astraw.com>  Wed, 22 Apr 2009 02:08:24 -0700
+
 libcamiface (0.5.1-0ads1) hardy; urgency=low
 
   * New Upstream Version

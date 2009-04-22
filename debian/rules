@@ -1,50 +1,36 @@
 #!/usr/bin/make -f
+# from wkhtmltopdf
+
+builddir/Makefile:
+	dh_testdir
+	mkdir -p builddir
+	cd builddir && cmake .. \
+		 -DCMAKE_INSTALL_PREFIX=/usr \
+		 -DCMAKE_C_FLAGS="$(CFLAGS)" \
+		 -DCMAKE_LD_FLAGS="-Wl,-z,defs" \
+		 -DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		 -DCMAKE_SKIP_RPATH=ON \
+		 -DCMAKE_VERBOSE_MAKEFILE=ON
 
 build: build-stamp
-build-stamp:
+build-stamp:  builddir/Makefile
+	dh build --before build
+	$(MAKE) -C builddir
+	dh build --after build
 	touch $@
-	scons
-	touch $@
+
+install: build
+	dh install
 
 clean:
-	dh_testdir
-	dh_testroot
-	scons -c
-	rm -f *-stamp
-	rm -rf dist build lib/libcam_iface_*.a lib/libcam_iface_*.so 
-	rm -rf demo/bin shmwrap/bin
-	rm -f prosilica_help.pyc .sconsign.dblite
-	rm backends.txt
-	dh_clean
+	rm -f build-stamp
+	rm -rf builddir
+	dh clean
 
-install: build install-prereq install-shmwrap
-install-prereq:
-	dh_testdir
-	dh_testroot
-	dh_clean -k
+binary-arch: install
+	dh binary-arch
 
-install-shmwrap:
-	dh_installdirs
-	dh_install
+binary-indep: install
+	dh binary-indep
 
-binary-indep:
-
-binary-arch: build install
-	dh_testdir -a
-	dh_testroot -a
-#	dh_installdocs -a
-	dh_installdirs -a
-	dh_installexamples  -a
-	dh_strip -a
-	dh_compress -a
-	dh_fixperms -a
-	dh_installdeb -a
-	dh_shlibdeps -a
-	dh_gencontrol -a
-	dh_md5sums -a
-	dh_builddeb -a
-
-binary: binary-indep binary-arch
-
-
-.PHONY: build clean binary-indep binary-arch binary install configure
+binary: binary-arch binary-indep

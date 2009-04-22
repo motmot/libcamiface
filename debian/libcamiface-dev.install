@@ -1,3 +1,2 @@
-lib/*.a usr/lib
+builddir/src/*.a usr/lib
 inc/cam_iface.h usr/include
-shmwrap/cam_iface_shmwrap.h usr/include
