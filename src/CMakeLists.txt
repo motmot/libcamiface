@@ -57,6 +57,12 @@ set_target_properties(cam_iface_unity PROPERTIES VERSION ${CAM_IFACE_VERSION}
 ADD_LIBRARY(cam_iface_unity-static STATIC ${unity_SRCS})
 set_target_properties(cam_iface_unity-static PROPERTIES OUTPUT_NAME "cam_iface_unity")
 
+# These next two lines are required but it is unclear exactly what they do.
+# The CMake FAQ mentions they are necessary and it does not work otherwise.
+
+SET_TARGET_PROPERTIES(cam_iface_unity PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+SET_TARGET_PROPERTIES(cam_iface_unity-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+
 INSTALL(TARGETS cam_iface_unity
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
@@ -78,6 +84,9 @@ IF(DC1394_FOUND)
 
   ADD_LIBRARY(cam_iface_dc1394-static STATIC ${dc1394_SRCS})
   set_target_properties(cam_iface_dc1394-static PROPERTIES OUTPUT_NAME "cam_iface_dc1394")
+
+  SET_TARGET_PROPERTIES(cam_iface_dc1394 PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+  SET_TARGET_PROPERTIES(cam_iface_dc1394-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
   INSTALL(TARGETS cam_iface_dc1394
     RUNTIME DESTINATION bin
@@ -119,6 +128,9 @@ IF(PROSILICA_GIGE_FOUND)
   ADD_LIBRARY(cam_iface_prosilica_gige-static STATIC ${prosilica_gige_SRCS})
   set_target_properties(cam_iface_prosilica_gige-static PROPERTIES OUTPUT_NAME "cam_iface_prosilica_gige")
 
+  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+
   INSTALL(TARGETS cam_iface_prosilica_gige
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
@@ -146,6 +158,9 @@ ENDIF(NOT CARBON_FOUND)
 
   ADD_LIBRARY(cam_iface_quicktime-static STATIC ${quicktime_SRCS})
   set_target_properties(cam_iface_quicktime-static PROPERTIES OUTPUT_NAME "cam_iface_quicktime")
+
+  SET_TARGET_PROPERTIES(cam_iface_quicktime PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+  SET_TARGET_PROPERTIES(cam_iface_quicktime-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
   INSTALL(TARGETS cam_iface_quicktime
     RUNTIME DESTINATION bin
