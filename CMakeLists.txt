@@ -1,0 +1,63 @@
+cmake_minimum_required(VERSION 2.6)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules )
+
+##  global setup
+project(libcamiface)
+
+# version
+set(V_MAJOR 0)
+set(V_MINOR 5)
+set(V_PATCH 2)
+
+include_directories( ${CMAKE_SOURCE_DIR}/inc )
+
+FIND_PACKAGE(PkgConfig)
+
+# Backend: unity will always be built. ---------------
+set(all_backends unity)
+
+# Backend: libdc1394 ---------------------------------
+
+# Method A: Check for libdc1394 using pkg-config (preferred)
+pkg_check_modules(DC1394 libdc1394-2)
+
+# Method B: Check for libdc1394 ourselves without pkg-config (e.g. on Mac)
+IF(NOT DC1394_FOUND)
+  FIND_PACKAGE(DC1394)
+ENDIF(NOT DC1394_FOUND)
+
+IF(DC1394_FOUND)
+  set(all_backends ${all_backends} dc1394)
+ENDIF(DC1394_FOUND)
+
+# Backend: Prosilica --------------------------------
+
+FIND_PACKAGE(ProsilicaGigE)
+
+IF(PROSILICA_GIGE_FOUND)
+  set(all_backends ${all_backends} prosilica_gige)
+ENDIF(PROSILICA_GIGE_FOUND)
+
+# Backend: QuickTime --------------------------------
+
+FIND_PACKAGE(QuickTime)
+FIND_PACKAGE(Carbon)
+
+IF(QUICKTIME_FOUND)
+  set(all_backends ${all_backends} quicktime)
+ENDIF(QUICKTIME_FOUND)
+
+# Build targets -------------------------------------
+
+# create config.h file
+#configure_file(src/camiface_config.h.in.cmake ${CMAKE_BINARY_DIR}/src/camiface_config.h)
+
+add_subdirectory(src)
+add_subdirectory(demo)
+
+SET(CPACK_PACKAGE_VERSION_MAJOR "${V_MAJOR}")
+SET(CPACK_PACKAGE_VERSION_MINOR "${V_MINOR}")
+SET(CPACK_PACKAGE_VERSION_PATCH "${V_PATCH}")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${V_MAJOR}.${V_MINOR}")
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "libcamiface-${V_MAJOR}.${V_MINOR}.${V_PATCH}")
+SET(CPACK_SOURCE_GENERATOR "TGZ")

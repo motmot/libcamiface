@@ -1,0 +1,14 @@
+set(simple_SRCS
+    simple.c
+    )
+
+FOREACH(BACKEND ${all_backends})
+  ADD_EXECUTABLE(simple-${BACKEND} ${simple_SRCS})
+  TARGET_LINK_LIBRARIES(simple-${BACKEND} cam_iface_${BACKEND})
+
+  INSTALL(TARGETS simple-${BACKEND}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+ENDFOREACH(BACKEND)

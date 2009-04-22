@@ -3,6 +3,19 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 
+#ifndef UNITY_BACKEND_DIR
+# error "must define UNITY_BACKEND_DIR"
+#endif
+
+#ifndef UNITY_BACKEND_PREFIX
+# error "must define UNITY_BACKEND_PREFIX"
+#endif
+
+#ifndef UNITY_BACKEND_SUFFIX
+# error "must define UNITY_BACKEND_SUFFIX"
+#endif
+
+
 struct backend_info_t {
   char* name;
   int started;
@@ -35,8 +48,7 @@ myTLS int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 myTLS char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
-#define NUM_BACKENDS 2
-char *backend_names[NUM_BACKENDS] = {"dc1394","prosilica_gige"};
+char *backend_names[NUM_BACKENDS] = UNITY_BACKENDS;
 struct backend_info_t backend_info[NUM_BACKENDS] = {};
 static int backends_started = 0;
 

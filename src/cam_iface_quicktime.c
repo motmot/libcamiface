@@ -47,10 +47,8 @@ typedef struct {
   void (*get_trigger_mode_string)(struct CCquicktime*,int,char*,int);
   void (*get_trigger_mode_number)(struct CCquicktime*,int*);
   void (*set_trigger_mode_number)(struct CCquicktime*,int);
-  void (*get_frame_offset)(struct CCquicktime*,int*,int*);
-  void (*set_frame_offset)(struct CCquicktime*,int,int);
-  void (*get_frame_size)(struct CCquicktime*,int*,int*);
-  void (*set_frame_size)(struct CCquicktime*,int,int);
+  void (*get_frame_roi)(struct CCquicktime*,int*,int*,int*,int*);
+  void (*set_frame_roi)(struct CCquicktime*,int,int,int,int);
   void (*get_max_frame_size)(struct CCquicktime*,int*,int*);
   void (*get_buffer_size)(struct CCquicktime*,int*);
   void (*get_framerate)(struct CCquicktime*,float*);
@@ -106,10 +104,8 @@ void CCquicktime_get_num_trigger_modes(struct CCquicktime*,int*);
 void CCquicktime_get_trigger_mode_string(struct CCquicktime*,int,char*,int);
 void CCquicktime_get_trigger_mode_number(struct CCquicktime*,int*);
 void CCquicktime_set_trigger_mode_number(struct CCquicktime*,int);
-void CCquicktime_get_frame_offset(struct CCquicktime*,int*,int*);
-void CCquicktime_set_frame_offset(struct CCquicktime*,int,int);
-void CCquicktime_get_frame_size(struct CCquicktime*,int*,int*);
-void CCquicktime_set_frame_size(struct CCquicktime*,int,int);
+void CCquicktime_get_frame_roi(struct CCquicktime*,int*,int*,int*,int*);
+void CCquicktime_set_frame_roi(struct CCquicktime*,int,int,int,int);
 void CCquicktime_get_max_frame_size(struct CCquicktime*,int*,int*);
 void CCquicktime_get_buffer_size(struct CCquicktime*,int*);
 void CCquicktime_get_framerate(struct CCquicktime*,float*);
@@ -138,10 +134,8 @@ CCquicktime_functable CCquicktime_vmt = {
   CCquicktime_get_trigger_mode_string,
   CCquicktime_get_trigger_mode_number,
   CCquicktime_set_trigger_mode_number,
-  CCquicktime_get_frame_offset,
-  CCquicktime_set_frame_offset,
-  CCquicktime_get_frame_size,
-  CCquicktime_set_frame_size,
+  CCquicktime_get_frame_roi,
+  CCquicktime_set_frame_roi,
   CCquicktime_get_max_frame_size,
   CCquicktime_get_buffer_size,
   CCquicktime_get_framerate,
@@ -562,24 +556,6 @@ void CCquicktime_close( CCquicktime *in_cr) {
   CHECK_CC(in_cr);
 }
 
-void CCquicktime_get_frame_size( CCquicktime *in_cr,
-				 int *width, int *height ) {
-  CHECK_CC(in_cr);
-  *width=in_cr->rect.right;
-  *height=in_cr->rect.bottom;
-}
-
-void CCquicktime_set_frame_size( CCquicktime *in_cr,
-				 int width, int height ) {
-  CHECK_CC(in_cr);
-  if (width!=in_cr->rect.right) {
-    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame width cannot be changed"); return;
-  }
-  if (height!=in_cr->rect.bottom) {
-    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame height cannot be changed"); return;
-  }
-}
-
 void CCquicktime_get_max_frame_size( CCquicktime *in_cr,
 				     int *width,
 				     int *height ) {
@@ -729,18 +705,26 @@ void CCquicktime_set_trigger_mode_number( CCquicktime *ccntxt,
   }
 }
 
-void CCquicktime_get_frame_offset( CCquicktime *in_cr,
-				   int *left, int *top ) {
+void CCquicktime_get_frame_roi( CCquicktime *in_cr,
+				int *left, int *top, int *width, int *height ) {
   CHECK_CC(in_cr);
   *left = 0;
   *top = 0;
+  *width=in_cr->rect.right;
+  *height=in_cr->rect.bottom;
 }
 
-void CCquicktime_set_frame_offset( CCquicktime *in_cr,
-				   int left, int top ) {
+void CCquicktime_set_frame_roi( CCquicktime *in_cr,
+				int left, int top, int width, int height ) {
   CHECK_CC(in_cr);
   if ((left != 0) | (top != 0) ) {
      cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame offset can only be 0,0"); return;
+  }
+  if (width!=in_cr->rect.right) {
+    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame width cannot be changed"); return;
+  }
+  if (height!=in_cr->rect.bottom) {
+    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame height cannot be changed"); return;
   }
 }
 void CCquicktime_get_framerate( CCquicktime *in_cr,
