@@ -87,6 +87,8 @@ Download
 Release tarballs/zip files
 --------------------------
 
+.. Also keep motmot/doc/source/overview.rst in sync with download page.
+
 Download official releases from `the download page`__.
 
 __ http://github.com/motmot/libcamiface/downloads
