@@ -2,7 +2,7 @@ set(common_SRCS
     cam_iface_common.c
     )
 
-set(CAM_IFACE_VERSION 0.5.2)
+set(CAM_IFACE_VERSION "${V_MAJOR}.${V_MINOR}.${V_PATCH}")
 set(CAM_IFACE_SOVERSION 0)
 
 # unity backend -----------------
