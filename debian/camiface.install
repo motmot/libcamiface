@@ -1,1 +1,1 @@
-builddir/demo/simple-* usr/share/camiface/demo
+builddir/demo/simple-* usr/lib/libcamiface/demo
