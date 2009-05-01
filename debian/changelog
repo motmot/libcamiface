@@ -1,3 +1,9 @@
+libcamiface (0.5.2-0ads1) jaunty; urgency=low
+
+  * New upstream release
+
+ -- Andrew Straw <strawman@astraw.com>  Thu, 30 Apr 2009 20:34:05 -0700
+
 libcamiface (0.5.1-0ads2) hardy; urgency=low
 
   * New upstream version using cmake
