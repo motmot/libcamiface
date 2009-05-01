@@ -229,8 +229,8 @@ int main(int argc, char** argv) {
       if (do_num_frames<0) break;
     }
 #ifdef USE_COPY
-    CamContext_grab_next_frame_blocking(cc,pixels,0.2); // timeout after 200 msec
-    //CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
+    //CamContext_grab_next_frame_blocking(cc,pixels,0.2); // timeout after 200 msec
+    CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
       cam_iface_clear_error();
