@@ -1407,7 +1407,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 
   if (wb>stride0) {
     cam_iface_error = -1;
-    fprintf(stderr,"w %d, wb %d, stride0 %d, depth %d\n",w,wb,stride0,depth);
+    fprintf(stderr,"w %d, wb %d, stride0 %ld, depth %d\n",w,wb,stride0,depth);
     CAM_IFACE_ERROR_FORMAT("the buffer provided is not large enough");
     return;
   }

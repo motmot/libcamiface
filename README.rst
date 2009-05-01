@@ -81,6 +81,27 @@ Key to the above symbols:
 .. |NA| replace:: NA
 
 
+Download
+========
+
+Release tarballs/zip files
+--------------------------
+
+.. Also keep motmot/doc/source/overview.rst in sync with download page.
+
+Download official releases from `the download page`__.
+
+__ http://github.com/motmot/libcamiface/downloads
+
+git source code repository
+--------------------------
+
+The `development version of libcamiface`__ may be downloaded via git::
+
+  git clone git://github.com/motmot/libcamiface.git
+
+__ http://github.com/motmot/libcamiface
+
 Build and install
 =================
 
@@ -89,6 +110,10 @@ Prerequisites
 
 On all platforms, you need to install cmake. cmake is available from
 http://www.cmake.org/
+
+You will also need the libraries for any camera software. Cmake should
+automatically find these if they are installed in the default
+locations.
 
 linux
 -----
