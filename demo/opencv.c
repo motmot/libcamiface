@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
   long prop_value;
   int prop_auto;
   int errnum;
-  int width, height;
+  int left, top, width, height;
   int do_num_frames;
   CameraPixelCoding coding;
   IplImage *cvframe = 0;
@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
   cc = new_CamContext(0,num_buffers,mode_number);
   _check_error();
 
-  CamContext_get_frame_size(cc, &width, &height);
+  CamContext_get_frame_roi(cc, &left, &top, &width, &height);
   _check_error();
 
   CamContext_get_num_framebuffers(cc,&num_buffers);
