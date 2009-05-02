@@ -10,8 +10,7 @@
 #include <string.h>
 #include "cam_iface.h"
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <cv.h>
 
 double my_floattime() {
 #ifdef _WIN32
