@@ -124,16 +124,16 @@ void display_pixels() {
     glNormal3d(0, 0, 1);
 
     glTexCoord2f(0,0);
-    glVertex3f(-1,-1,0);
-
-    glTexCoord2f(0,buf_hf);
     glVertex3f(-1,1,0);
 
+    glTexCoord2f(0,buf_hf);
+    glVertex3f(-1,-1,0);
+
     glTexCoord2f(buf_wf,buf_hf);
-    glVertex3f(1,1,0);
+    glVertex3f(1,-1,0);
 
     glTexCoord2f(buf_wf,0);
-    glVertex3f(1,-1,0);
+    glVertex3f(1,1,0);
 
     glEnd();
 
