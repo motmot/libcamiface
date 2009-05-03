@@ -47,6 +47,7 @@ ENDIF(OPENCV_FOUND)
 
 #  glut.c
 FIND_PACKAGE(GLUT)
+FIND_PACKAGE(OpenGL)
 
 if(GLUT_FOUND)
 
@@ -59,6 +60,7 @@ if(GLUT_FOUND)
     TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
       cam_iface_${BACKEND}
       ${GLUT_LIBRARIES}
+      ${OPENGL_LIBRARIES}
       )
 
     INSTALL(TARGETS liveview-glut-${BACKEND}
