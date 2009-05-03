@@ -438,7 +438,6 @@ void _internal_stop_streaming( CCprosil * ccntxt,
   // in Prosilica's examples/SampleViewer/src/FinderWindow.cpp
   unsigned long lCapturing;
   tPvHandle iHandle = *handle_ptr;
-  tPvUint32 iBytesPerFrame;
 
   CIPVCHK(PvCaptureQuery(iHandle,&lCapturing));
   if(lCapturing) {
@@ -934,11 +933,8 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
   CHECK_CC(ccntxt);
   tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
   tPvFrame* frame;
-  tPvErr err;
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
 
-  int status;
-  int frame_waiting;
   unsigned long pvTimeout;
   double now;
   bool recent_rollover;
@@ -946,7 +942,7 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
   if (timeout < 0)
     pvTimeout = PVINFINITE;
   else
-    pvTimeout = ceilf(timeout*1000.0f); // convert to milliseconds
+    pvTimeout = (unsigned long)ceilf(timeout*1000.0f); // convert to msec
 
   frame = frames_ready_list_cam0[frames_ready_cam0_read_idx];
   if (frame==NULL) CAM_IFACE_THROW_ERROR("internal cam_iface error: frame not allocated");
