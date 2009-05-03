@@ -105,11 +105,19 @@ IF(PROSILICA_GIGE_FOUND)
       )
 
   # list of each command-line define
-  # XXX these need to be improved for multi-arch support:
-  set(prosilica_gige_DEFINE
-      -D_x64
-      -D_LINUX
-      )
+  IF(WIN32)
+    set(prosilica_gige_DEFINE
+        -D_x32
+        -D_WINDOWS
+        )
+  ELSE(WIN32)
+  # XXX these need to be improved for multi-arch support (and go to
+  #  compile-time test for 32 vs 64 bit)
+    set(prosilica_gige_DEFINE
+        -D_x64
+        -D_LINUX
+        )
+  ENDIF(WIN32)
 
   # concatenate (join) strings to make single argument
   FOREACH(element ${prosilica_gige_DEFINE})
@@ -120,7 +128,9 @@ IF(PROSILICA_GIGE_FOUND)
       cam_iface_prosilica_gige.cpp
       PROPERTIES COMPILE_FLAGS ${prosilica_gige_DEFINES})
 
+  include_directories(${PROSILICA_GIGE_INCLUDE_DIRS})
   ADD_LIBRARY(cam_iface_prosilica_gige SHARED ${prosilica_gige_SRCS})
+
   TARGET_LINK_LIBRARIES(cam_iface_prosilica_gige ${PROSILICA_GIGE_LIBRARIES})
   set_target_properties(cam_iface_prosilica_gige PROPERTIES VERSION ${CAM_IFACE_VERSION}
     SOVERSION ${CAM_IFACE_SOVERSION})

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #ifdef _WINDOWS
 #define WIN32_LEAN_AND_MEAN
@@ -21,7 +22,6 @@
 #include <unistd.h>
 #include <time.h>
 #include <signal.h>
-#include <math.h>
 #endif
 
 #include "PvApi.h"
@@ -210,13 +210,19 @@ double ciprosil_floattime() {
 #endif
 }
 
+#ifdef _MSC_VER
+#define cam_iface_thread_local __declspec(thread)
+#else
+#define cam_iface_thread_local __thread
+#endif
+
 /* globals -- allocate space */
   u_int64_t prev_ts_uint64; //tmp
 
-__thread int cam_iface_error=0;
+cam_iface_thread_local int cam_iface_error=0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-__thread char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN];
-__thread char cam_iface_backend_string[CAM_IFACE_MAX_ERROR_LEN];
+cam_iface_thread_local char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN];
+cam_iface_thread_local char cam_iface_backend_string[CAM_IFACE_MAX_ERROR_LEN];
 
 #define PV_MAX_ENUM_LEN 32
 
