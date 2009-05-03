@@ -107,16 +107,22 @@ IF(PROSILICA_GIGE_FOUND)
   # list of each command-line define
   IF(WIN32)
     set(prosilica_gige_DEFINE
-        -D_x32
         -D_WINDOWS
         )
   ELSE(WIN32)
-  # XXX these need to be improved for multi-arch support (and go to
-  #  compile-time test for 32 vs 64 bit)
-    set(prosilica_gige_DEFINE
-        -D_x64
-        -D_LINUX
-        )
+    IF(UNIX AND NOT APPLE)
+      # Linux
+      set(prosilica_gige_DEFINE
+          -D_LINUX
+          )
+      IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" )
+        set(prosilica_gige_DEFINE -D_x64 ${prosilica_gige_DEFINE})
+      ELSE("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" )
+        set(prosilica_gige_DEFINE -D_x86 ${prosilica_gige_DEFINE})
+      ENDIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" )
+    ELSE(UNIX AND NOT APPLE)
+      MESSAGE(FATAL_ERROR "Prosilica GigE not supported on this platform")
+    ENDIF(UNIX AND NOT APPLE)
   ENDIF(WIN32)
 
   # concatenate (join) strings to make single argument
