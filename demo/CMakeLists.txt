@@ -26,8 +26,6 @@ pkg_check_modules(OPENCV opencv)
 
 if(OPENCV_FOUND)
 
-  MESSAGE(opencv includes ${OPENCV_INCLUDE_DIRS})
-
   set(opencv_SRCS opencv.c)
 
   FOREACH(BACKEND ${all_backends})
