@@ -1,1 +1,3 @@
 builddir/demo/simple-* usr/lib/libcamiface/demo
+builddir/demo/multi-cam-* usr/lib/libcamiface/demo
+builddir/demo/opencv-* usr/lib/libcamiface/demo
