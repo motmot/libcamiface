@@ -44,3 +44,27 @@ if(OPENCV_FOUND)
       )
   ENDFOREACH(BACKEND)
 ENDIF(OPENCV_FOUND)
+
+#  glut.c
+FIND_PACKAGE(GLUT)
+
+if(GLUT_FOUND)
+
+  set(glut_SRCS liveview-glut.c)
+
+  FOREACH(BACKEND ${all_backends})
+    ADD_EXECUTABLE(liveview-glut-${BACKEND} ${glut_SRCS})
+    include_directories(${GLUT_INCLUDE_DIRS})
+
+    TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
+      cam_iface_${BACKEND}
+      ${GLUT_LIBRARIES}
+      )
+
+    INSTALL(TARGETS liveview-glut-${BACKEND}
+      RUNTIME DESTINATION bin
+      LIBRARY DESTINATION lib
+      ARCHIVE DESTINATION lib
+      )
+  ENDFOREACH(BACKEND)
+ENDIF(GLUT_FOUND)
