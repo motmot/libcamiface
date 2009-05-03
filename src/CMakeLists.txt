@@ -6,7 +6,7 @@ set(CAM_IFACE_VERSION "${V_MAJOR}.${V_MINOR}.${V_PATCH}")
 set(CAM_IFACE_SOVERSION 0)
 
 # unity backend -----------------
-
+if(!win32)
 set(unity_SRCS ${common_SRCS}
     cam_iface_unity.c
     )
@@ -68,6 +68,7 @@ INSTALL(TARGETS cam_iface_unity
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
+endif(!win32)
 
 # dc1394 backend ------------------
 
@@ -138,14 +139,27 @@ IF(PROSILICA_GIGE_FOUND)
   ADD_LIBRARY(cam_iface_prosilica_gige SHARED ${prosilica_gige_SRCS})
 
   TARGET_LINK_LIBRARIES(cam_iface_prosilica_gige ${PROSILICA_GIGE_LIBRARIES})
-  set_target_properties(cam_iface_prosilica_gige PROPERTIES VERSION ${CAM_IFACE_VERSION}
-    SOVERSION ${CAM_IFACE_SOVERSION})
+  set_target_properties(cam_iface_prosilica_gige PROPERTIES
+    VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION}
+    DEFINE_SYMBOL cam_iface_EXPORTS
+    )
 
+  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige PROPERTIES
+    CLEAN_DIRECT_OUTPUT 1
+  )
+
+  if(!win32)
+  # Trouble building static lib on Windows, so disabled for now...
   ADD_LIBRARY(cam_iface_prosilica_gige-static STATIC ${prosilica_gige_SRCS})
-  set_target_properties(cam_iface_prosilica_gige-static PROPERTIES OUTPUT_NAME "cam_iface_prosilica_gige")
+  set_target_properties(cam_iface_prosilica_gige-static PROPERTIES
+    OUTPUT_NAME "cam_iface_prosilica_gige"
+    )
 
-  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES
+    CLEAN_DIRECT_OUTPUT 1
+  )
+  endif(!win32)
 
   INSTALL(TARGETS cam_iface_prosilica_gige
     RUNTIME DESTINATION bin

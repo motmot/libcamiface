@@ -29,7 +29,7 @@ typedef __int64 int64_t;
 
 
 #if defined (_WIN32)
-# if defined(cam_iface_prosilica_gige_EXPORTS)
+# if defined(cam_iface_EXPORTS)
 #  define CAM_IFACE_API __declspec(dllexport)
 # else
 #  define CAM_IFACE_API __declspec(dllimport)
@@ -155,6 +155,8 @@ struct CamContext; /* forward declaration */
 
 /* constructor that mallocs memory: */
 typedef struct CamContext* (*cam_iface_constructor_func_t)(int,int,int);
+
+CAM_IFACE_API
 cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number);
 
 /* keep functable in sync across backends */

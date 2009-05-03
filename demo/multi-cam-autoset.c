@@ -10,6 +10,12 @@
 #include <string.h>
 #include "cam_iface.h"
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+#endif
+
 double my_floattime() {
 #ifdef _WIN32
 #if _MSC_VER == 1310
@@ -270,7 +276,7 @@ int main(int argc, char** argv) {
     _check_error();
 
     if (coding==CAM_IFACE_MONO8) {
-      snprintf(save_fname, 100, "image_camera%d.pgm", camno);
+      _snprintf(save_fname, 100, "image_camera%d.pgm", camno);
       save_pgm(save_fname, pixels[camno], width, height);
       printf("saved last image as %s\n",save_fname);
     } else {

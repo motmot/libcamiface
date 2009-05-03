@@ -10,6 +10,12 @@
 #include <string.h>
 #include "cam_iface.h"
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+#endif
+
 double my_floattime() {
 #ifdef _WIN32
 #if _MSC_VER == 1310
