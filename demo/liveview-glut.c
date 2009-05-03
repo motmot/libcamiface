@@ -23,7 +23,7 @@
 /* global variables */
 CamContext *cc;
 int width, height;
-unsigned char *pixels, *converted_pixels;
+unsigned char *raw_pixels, *converted_pixels, *show_pixels;
 double buf_wf, buf_hf;
 
 #define _check_error() {						\
@@ -36,12 +36,30 @@ double buf_wf, buf_hf;
     }									\
   }									\
 
-unsigned char* convert_pixels( unsigned char* in_buf, CameraPixelCoding coding) {
+void yuv422_to_mono8(src_pixels, dest_pixels, width, height, src_stride, dest_stride) {
+  int i,j;
+  unsigned char* src_chunk, *dest_chunk;
+  for (i=0; i<height; i++) {
+    src_chunk = src_pixels + i*src_stride;
+    dest_chunk = dest_pixels + i*dest_stride;
+    for (j=0; j<(width/2); j++) {
+      dest_chunk[0] = src_chunk[1];
+      dest_chunk[1] = src_chunk[3];
+      dest_chunk+=2;
+      src_chunk+=4;
+    }
+  }
+}
+
+unsigned char* convert_pixels(CameraPixelCoding coding) {
   if (coding==CAM_IFACE_MONO8) {
-    return in_buf; /* no conversion necessary*/
+    return raw_pixels; /* no conversion necessary*/
+  } else if (coding==CAM_IFACE_YUV422) {
+    yuv422_to_mono8(raw_pixels, converted_pixels, width, height, width*2, width);
+    return converted_pixels; /* don't convert -- but what we show will be wrong */
   } else {
-    fprintf(stderr,"ERROR: unsupported pixel coding\n");
-    exit(1);
+    fprintf(stderr,"ERROR: unsupported pixel coding %d\n",coding);
+    return raw_pixels; /* don't convert -- but what we show will be wrong */
   }
 }
 
@@ -99,7 +117,7 @@ void display_pixels() {
                     height,
                     GL_LUMINANCE, /* data format */
                     GL_UNSIGNED_BYTE, /* data type */
-                    converted_pixels);
+                    show_pixels);
 
     glBegin(GL_QUADS);
 
@@ -244,12 +262,19 @@ int main(int argc, char** argv) {
 
 #define USE_COPY
 #ifdef USE_COPY
-  pixels = (unsigned char *)malloc( buffer_size );
-  if (pixels==NULL) {
+  raw_pixels = (unsigned char *)malloc( buffer_size );
+  if (raw_pixels==NULL) {
     fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
     exit(1);
   }
 #endif
+
+  converted_pixels = (unsigned char *)malloc( width*height );
+  if (converted_pixels==NULL) {
+    fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
+    exit(1);
+  }
+  show_pixels = raw_pixels;
 
   glutDisplayFunc(display_pixels); /* set the display callback */
   glutIdleFunc(grab_frame); /* set the display callback */
@@ -278,8 +303,9 @@ int main(int argc, char** argv) {
   _check_error();
 
 #ifdef USE_COPY
-  free(pixels);
+  free(raw_pixels);
 #endif
+  free(converted_pixels);
 
   return 0;
 }
@@ -288,8 +314,8 @@ void grab_frame(void) {
   int errnum;
 
 #ifdef USE_COPY
-    //CamContext_grab_next_frame_blocking(cc,pixels,0.2); // timeout after 200 msec
-    CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
+    //CamContext_grab_next_frame_blocking(cc,raw_pixels,0.2); // timeout after 200 msec
+    CamContext_grab_next_frame_blocking(cc,raw_pixels,-1.0f); // never timeout
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
       cam_iface_clear_error();
@@ -303,19 +329,15 @@ void grab_frame(void) {
       fflush(stdout);
     } else {
       _check_error();
-      fprintf(stdout,".");
-      fflush(stdout);
     }
 #else
-    CamContext_point_next_frame_blocking(cc,&pixels,-1.0f);
+    CamContext_point_next_frame_blocking(cc,&raw_pixels,-1.0f);
     _check_error();
-    fprintf(stdout,".");
-    fflush(stdout);
     CamContext_unpoint_frame(cc);
     _check_error();
 #endif
 
-    converted_pixels = convert_pixels(pixels,cc->coding);
+    show_pixels = convert_pixels(cc->coding);
     glutPostRedisplay(); /* trigger display redraw */
 
 }
