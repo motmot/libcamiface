@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
       _check_error();
       printf("  %s: %ld\n",cam_props.name,prop_value);
     } else {
-      printf("  %s: not present\n");
+      printf("  %s: not present\n",cam_props.name);
     }
   }
 
