@@ -418,6 +418,12 @@ void cam_iface_startup() {
 
   libdc1394_instance = dc1394_new ();
 
+  if (!libdc1394_instance) {
+    cam_iface_error = -1;
+    CAM_IFACE_ERROR_FORMAT("error calling dc1394_new()");
+    return;
+  }
+
   if (getenv("DC1394_BACKEND_DEBUG")==NULL) {
     // Disable printouts of error messages - we are pretty good about
     // checking return codes, so this should be fine.
