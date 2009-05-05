@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
     _check_error();
 
     if (coding==CAM_IFACE_MONO8) {
-      _snprintf(save_fname, 100, "image_camera%d.pgm", camno);
+      snprintf(save_fname, 100, "image_camera%d.pgm", camno);
       save_pgm(save_fname, pixels[camno], width, height);
       printf("saved last image as %s\n",save_fname);
     } else {
