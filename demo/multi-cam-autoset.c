@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
       if (cam_props.is_present) {
 	CamContext_get_camera_property(cc[camno],i,&prop_value,&prop_auto);
 	_check_error();
-	printf("  %s: %d (%s)\n",cam_props.name,prop_value, prop_auto ? "AUTO" : "MANUAL");
+	printf("  %s: %ld (%s)\n",cam_props.name,prop_value, prop_auto ? "AUTO" : "MANUAL");
       } else {
 	printf("  %s: not present\n",cam_props.name);
       }
