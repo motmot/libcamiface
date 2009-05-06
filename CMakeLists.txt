@@ -57,6 +57,11 @@ ENDIF(QUICKTIME_FOUND)
 add_subdirectory(src)
 add_subdirectory(demo)
 
+# Install header ------------------------------------
+
+INSTALL(FILES inc/cam_iface.h
+  DESTINATION include)
+
 # CPack for binary and source releases --------------
 
 # For binary releases
