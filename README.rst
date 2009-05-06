@@ -153,6 +153,33 @@ Prosilica's command line tools::
   CamAttr -i $CAM_IP -s StreamBytesPerSecond 123963084
   CamAttr -i $CAM_IP -s PacketSize 1500
 
+Environment variables:
+
+  * *PROSILICA_BACKEND_DEBUG* print various debuggin information.
+
+libdc1394
+---------
+
+Environment variables:
+
+ * *DC1394_BACKEND_DEBUG* print libdc1394 error messages. (You may
+   also be interested in libdc1394's own *DC1394_DEBUG* environment
+   variable, which prints debug messages.)
+
+ * *DC1394_BACKEND_1394B* attempt to force use of firewire
+    800. (Otherwise defaults to 400.)
+
+unity
+-----
+
+Environment variables:
+
+ * *UNITY_BACKEND_DEBUG* print debugging messages.
+
+ * *UNITY_BACKEND_DIR* set to directory in which to look for
+    libcamiface shared libraries.
+
+
 License
 =======
 
