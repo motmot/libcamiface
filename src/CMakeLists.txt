@@ -2,11 +2,11 @@ set(common_SRCS
     cam_iface_common.c
     )
 
-set(CAM_IFACE_VERSION 0.5.2)
+set(CAM_IFACE_VERSION "${V_MAJOR}.${V_MINOR}.${V_PATCH}")
 set(CAM_IFACE_SOVERSION 0)
 
 # unity backend -----------------
-
+if(NOT WIN32)
 set(unity_SRCS ${common_SRCS}
     cam_iface_unity.c
     )
@@ -68,6 +68,7 @@ INSTALL(TARGETS cam_iface_unity
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
+endif(NOT WIN32)
 
 # dc1394 backend ------------------
 
@@ -105,11 +106,25 @@ IF(PROSILICA_GIGE_FOUND)
       )
 
   # list of each command-line define
-  # XXX these need to be improved for multi-arch support:
-  set(prosilica_gige_DEFINE
-      -D_x64
-      -D_LINUX
-      )
+  IF(WIN32)
+    set(prosilica_gige_DEFINE
+        -D_WINDOWS
+        )
+  ELSE(WIN32)
+    IF(UNIX AND NOT APPLE)
+      # Linux
+      set(prosilica_gige_DEFINE
+          -D_LINUX
+          )
+      IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" )
+        set(prosilica_gige_DEFINE -D_x64 ${prosilica_gige_DEFINE})
+      ELSE("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" )
+        set(prosilica_gige_DEFINE -D_x86 ${prosilica_gige_DEFINE})
+      ENDIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" )
+    ELSE(UNIX AND NOT APPLE)
+      MESSAGE(FATAL_ERROR "Prosilica GigE not supported on this platform")
+    ENDIF(UNIX AND NOT APPLE)
+  ENDIF(WIN32)
 
   # concatenate (join) strings to make single argument
   FOREACH(element ${prosilica_gige_DEFINE})
@@ -120,16 +135,31 @@ IF(PROSILICA_GIGE_FOUND)
       cam_iface_prosilica_gige.cpp
       PROPERTIES COMPILE_FLAGS ${prosilica_gige_DEFINES})
 
+  include_directories(${PROSILICA_GIGE_INCLUDE_DIRS})
   ADD_LIBRARY(cam_iface_prosilica_gige SHARED ${prosilica_gige_SRCS})
+
   TARGET_LINK_LIBRARIES(cam_iface_prosilica_gige ${PROSILICA_GIGE_LIBRARIES})
-  set_target_properties(cam_iface_prosilica_gige PROPERTIES VERSION ${CAM_IFACE_VERSION}
-    SOVERSION ${CAM_IFACE_SOVERSION})
+  set_target_properties(cam_iface_prosilica_gige PROPERTIES
+    VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION}
+    DEFINE_SYMBOL cam_iface_EXPORTS
+    )
 
+  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige PROPERTIES
+    CLEAN_DIRECT_OUTPUT 1
+  )
+
+  if(NOT win32)
+  # Trouble building static lib on Windows, so disabled for now...
   ADD_LIBRARY(cam_iface_prosilica_gige-static STATIC ${prosilica_gige_SRCS})
-  set_target_properties(cam_iface_prosilica_gige-static PROPERTIES OUTPUT_NAME "cam_iface_prosilica_gige")
+  set_target_properties(cam_iface_prosilica_gige-static PROPERTIES
+    OUTPUT_NAME "cam_iface_prosilica_gige"
+    )
 
-  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+  SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES
+    CLEAN_DIRECT_OUTPUT 1
+  )
+  endif(NOT win32)
 
   INSTALL(TARGETS cam_iface_prosilica_gige
     RUNTIME DESTINATION bin

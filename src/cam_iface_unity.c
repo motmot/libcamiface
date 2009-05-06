@@ -34,7 +34,7 @@ struct backend_info_t {
 };
 
 /* globals -- allocate space */
-int num_cameras = 0;
+int unity_num_cameras = 0;
 
 // See the following for a hint on how to make thread thread-local without __thread.
 // http://lists.apple.com/archives/Xcode-users/2006/Jun/msg00551.html
@@ -143,7 +143,7 @@ const char *cam_iface_get_driver_name(void) {
 }
 
 int cam_iface_get_num_cameras(void) {
-  return num_cameras;
+  return unity_num_cameras;
 }
 
 void cam_iface_startup(void) {
@@ -154,7 +154,7 @@ void cam_iface_startup(void) {
   char *envvar;
   int try_this_name;
 
-  num_cameras = 0;
+  unity_num_cameras = 0;
 
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
@@ -216,8 +216,8 @@ void cam_iface_startup(void) {
 	if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
 	  fprintf(stderr,"%s: %d: Failed.\n",__FILE__,__LINE__,full_backend_name);
 	}
-	this_backend_info->cam_start_idx = num_cameras;
-	this_backend_info->cam_stop_idx = num_cameras;
+	this_backend_info->cam_start_idx = unity_num_cameras;
+	this_backend_info->cam_stop_idx = unity_num_cameras;
 	free(full_backend_name);
 	continue;
       } else {
@@ -279,10 +279,10 @@ void cam_iface_startup(void) {
 
     this_backend_info->started = 1;
 
-    next_num_cameras = num_cameras + this_backend_info->get_num_cameras();
-    this_backend_info->cam_start_idx = num_cameras;
+    next_num_cameras = unity_num_cameras + this_backend_info->get_num_cameras();
+    this_backend_info->cam_start_idx = unity_num_cameras;
     this_backend_info->cam_stop_idx = next_num_cameras;
-    num_cameras = next_num_cameras;
+    unity_num_cameras = next_num_cameras;
   }
   backends_started = 1;
 }

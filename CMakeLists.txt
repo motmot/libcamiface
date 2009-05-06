@@ -7,14 +7,16 @@ project(libcamiface)
 # version
 set(V_MAJOR 0)
 set(V_MINOR 5)
-set(V_PATCH 2)
+set(V_PATCH 3)
 
 include_directories( ${CMAKE_SOURCE_DIR}/inc )
 
 FIND_PACKAGE(PkgConfig)
 
 # Backend: unity will always be built. ---------------
+if(NOT win32)
 set(all_backends unity)
+endif(NOT win32)
 
 # Backend: libdc1394 ---------------------------------
 
@@ -55,9 +57,30 @@ ENDIF(QUICKTIME_FOUND)
 add_subdirectory(src)
 add_subdirectory(demo)
 
+# Install header ------------------------------------
+
+INSTALL(FILES inc/cam_iface.h
+  DESTINATION include)
+
+# CPack for binary and source releases --------------
+
+# For binary releases
+
+SET(CPACK_PACKAGE_NAME "libcamiface")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libcamiface - camera interface library")
+SET(CPACK_PACKAGE_VENDOR "Motmot authors")
+SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.rst")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+
 SET(CPACK_PACKAGE_VERSION_MAJOR "${V_MAJOR}")
 SET(CPACK_PACKAGE_VERSION_MINOR "${V_MINOR}")
 SET(CPACK_PACKAGE_VERSION_PATCH "${V_PATCH}")
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${V_MAJOR}.${V_MINOR}")
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME "libcamiface-${V_MAJOR}.${V_MINOR}.${V_PATCH}")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "libcamiface ${V_MAJOR}.${V_MINOR}.${V_PATCH}")
+
+# For source releases (except we use git archive to make these)
+
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME 
+    "libcamiface-${V_MAJOR}.${V_MINOR}.${V_PATCH}")
 SET(CPACK_SOURCE_GENERATOR "TGZ")
+
+INCLUDE(CPack)

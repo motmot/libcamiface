@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
       _check_error();
       printf("  %s: %ld\n",cam_props.name,prop_value);
     } else {
-      printf("  %s: not present\n");
+      printf("  %s: not present\n",cam_props.name);
     }
   }
 
@@ -229,8 +229,8 @@ int main(int argc, char** argv) {
       if (do_num_frames<0) break;
     }
 #ifdef USE_COPY
-    CamContext_grab_next_frame_blocking(cc,pixels,0.2); // timeout after 200 msec
-    //CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
+    //CamContext_grab_next_frame_blocking(cc,pixels,0.2); // timeout after 200 msec
+    CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
       cam_iface_clear_error();
@@ -241,6 +241,10 @@ int main(int argc, char** argv) {
     if (errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) {
       cam_iface_clear_error();
       fprintf(stdout,"M");
+      fflush(stdout);
+    } else if (errnum == CAM_IFACE_FRAME_INTERRUPTED_SYSCALL) {
+      cam_iface_clear_error();
+      fprintf(stdout,"I");
       fflush(stdout);
     } else {
       _check_error();

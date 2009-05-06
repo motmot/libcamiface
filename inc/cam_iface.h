@@ -20,19 +20,23 @@ typedef int		intptr_t;
 #include <unistd.h>
 #endif
 
-/* get intptr_t */
+#ifdef _MSC_VER
+typedef unsigned __int64 u_int64_t;
+typedef __int64 int64_t;
+#else
 #include <stdint.h>
+#endif
 
-#ifdef CAM_IFACE_DLL
-#ifdef CAM_IFACE_EXPORTS
-#define CAM_IFACE_API __declspec(dllexport)
-#else
-#define CAM_IFACE_API __declspec(dllimport)
-#endif /* CAM_IFACE_EXPORTS */
-#else
-#define CAM_IFACE_API extern
-#endif /* CAM_IFACE_DLL */
 
+#if defined (_WIN32)
+# if defined(cam_iface_EXPORTS)
+#  define CAM_IFACE_API __declspec(dllexport)
+# else
+#  define CAM_IFACE_API __declspec(dllimport)
+# endif /* EXPORTS */
+#else
+# define CAM_IFACE_API extern
+#endif /* _WIN32 */
 
 
 #ifdef __cplusplus
@@ -151,6 +155,8 @@ struct CamContext; /* forward declaration */
 
 /* constructor that mallocs memory: */
 typedef struct CamContext* (*cam_iface_constructor_func_t)(int,int,int);
+
+CAM_IFACE_API
 cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number);
 
 /* keep functable in sync across backends */

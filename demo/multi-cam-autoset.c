@@ -10,6 +10,12 @@
 #include <string.h>
 #include "cam_iface.h"
 
+#ifdef _WIN32
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+#endif
+
 double my_floattime() {
 #ifdef _WIN32
 #if _MSC_VER == 1310
@@ -185,7 +191,7 @@ int main(int argc, char** argv) {
       if (cam_props.is_present) {
 	CamContext_get_camera_property(cc[camno],i,&prop_value,&prop_auto);
 	_check_error();
-	printf("  %s: %d (%s)\n",cam_props.name,prop_value, prop_auto ? "AUTO" : "MANUAL");
+	printf("  %s: %ld (%s)\n",cam_props.name,prop_value, prop_auto ? "AUTO" : "MANUAL");
       } else {
 	printf("  %s: not present\n",cam_props.name);
       }
@@ -245,6 +251,11 @@ int main(int argc, char** argv) {
 	cam_iface_clear_error();
 	fprintf(stdout,"M");
 	fflush(stdout);
+	continue; // wait again on next camera
+      } else if (errnum == CAM_IFACE_FRAME_INTERRUPTED_SYSCALL) {
+        cam_iface_clear_error();
+        fprintf(stdout,"I");
+        fflush(stdout);
 	continue; // wait again on next camera
       }
 
