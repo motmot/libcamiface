@@ -140,6 +140,35 @@ an Apple ADC member.
   make
   make install
 
+Windows
+-------
+
+Install Microsoft's Visual Studio 2008. (Tested with Express Edition.)
+Install CMake.
+
+Open a Visual Studio Command Prompt from Start Menu->All
+Programs->Microsoft Visual C++ 2008 Express Edition->Visual Studio
+Tools->Visual Studio 2008 Command Prompt. Change directories into the
+libcamiface source directory.
+
+::
+
+  cmakesetup
+  rem  In the cmakesetup GUI, set your source and build directories.
+  rem  Click "configure".
+  rem  In the "Select Generator" menu that pops up, press "NMake Makefiles".
+  rem  After it's done configuring, click "configure" again.
+  rem  Finally, click "OK".
+
+  rem Now change into your build directory.
+  cd build
+  nmake
+
+  rem Now, to build an NSIS .exe Windows installer.
+  cpack
+
+The Windows installer will be called ``libcamiface-x.y.z-win32.exe``.
+
 Backend notes
 =============
 

@@ -48,6 +48,14 @@ if(OPENCV_FOUND)
 ENDIF(OPENCV_FOUND)
 
 #  glut.c
+
+IF(WIN32)
+  # Download from http://www.xmission.com/~nate/glut.html.  Then
+  # install glut.h in GLUT_ROOT_PATH\include\GL and the rest in
+  # GLUT_ROOT_PATH\Release.
+  SET(GLUT_ROOT_PATH "C:/Program\ Files/GLUT32")
+ENDIF(WIN32)
+
 FIND_PACKAGE(GLUT)
 FIND_PACKAGE(OpenGL)
 
@@ -57,7 +65,7 @@ if(GLUT_FOUND)
 
   FOREACH(BACKEND ${all_backends})
     ADD_EXECUTABLE(liveview-glut-${BACKEND} ${glut_SRCS})
-    include_directories(${GLUT_INCLUDE_DIRS})
+    include_directories(${GLUT_INCLUDE_DIR})
 
     TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
       cam_iface_${BACKEND}
@@ -71,4 +79,6 @@ if(GLUT_FOUND)
       ARCHIVE DESTINATION lib
       )
   ENDFOREACH(BACKEND)
+ELSE(GLUT_FOUND)
+  message(FATAL_ERROR "no glut")
 ENDIF(GLUT_FOUND)

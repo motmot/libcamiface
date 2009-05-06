@@ -14,9 +14,9 @@ include_directories( ${CMAKE_SOURCE_DIR}/inc )
 FIND_PACKAGE(PkgConfig)
 
 # Backend: unity will always be built. ---------------
-if(NOT win32)
+if(NOT WIN32)
 set(all_backends unity)
-endif(NOT win32)
+endif(NOT WIN32)
 
 # Backend: libdc1394 ---------------------------------
 
