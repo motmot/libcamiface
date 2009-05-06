@@ -6,7 +6,7 @@ set(CAM_IFACE_VERSION "${V_MAJOR}.${V_MINOR}.${V_PATCH}")
 set(CAM_IFACE_SOVERSION 0)
 
 # unity backend -----------------
-if(!win32)
+if(NOT WIN32)
 set(unity_SRCS ${common_SRCS}
     cam_iface_unity.c
     )
@@ -68,7 +68,7 @@ INSTALL(TARGETS cam_iface_unity
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
-endif(!win32)
+endif(NOT WIN32)
 
 # dc1394 backend ------------------
 
@@ -149,7 +149,7 @@ IF(PROSILICA_GIGE_FOUND)
     CLEAN_DIRECT_OUTPUT 1
   )
 
-  if(!win32)
+  if(NOT win32)
   # Trouble building static lib on Windows, so disabled for now...
   ADD_LIBRARY(cam_iface_prosilica_gige-static STATIC ${prosilica_gige_SRCS})
   set_target_properties(cam_iface_prosilica_gige-static PROPERTIES
@@ -159,7 +159,7 @@ IF(PROSILICA_GIGE_FOUND)
   SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES
     CLEAN_DIRECT_OUTPUT 1
   )
-  endif(!win32)
+  endif(NOT win32)
 
   INSTALL(TARGETS cam_iface_prosilica_gige
     RUNTIME DESTINATION bin
