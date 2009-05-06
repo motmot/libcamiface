@@ -2,7 +2,9 @@ Source: libcamiface
 Maintainer: Andrew Straw <strawman@astraw.com>
 Section: utils
 Priority: extra
-Build-Depends: debhelper (>= 7), cmake (>= 2.6), libdc1394-22-dev (>= 2.0.2~svn547), libprosilica-gige-dev
+Build-Depends: debhelper (>= 7), cmake (>= 2.6),
+  libdc1394-22-dev (>= 2.0.2~svn547), libprosilica-gige-dev,
+  libcv-dev, freeglut3-dev, libxmu-dev
 Standards-Version: 3.7.2
 
 Package: libcamiface
