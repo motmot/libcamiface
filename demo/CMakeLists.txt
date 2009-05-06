@@ -5,13 +5,15 @@ set(SRCS
     simple
     )
 
+set(DEMO_DIR bin/libcamiface)
+
 FOREACH(SRC ${SRCS})
   FOREACH(BACKEND ${all_backends})
     ADD_EXECUTABLE(${SRC}-${BACKEND} ${SRC}.c)
     TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_${BACKEND})
 
     INSTALL(TARGETS ${SRC}-${BACKEND}
-      RUNTIME DESTINATION bin
+      RUNTIME DESTINATION ${DEMO_DIR}
       LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib
     )
@@ -38,7 +40,7 @@ if(OPENCV_FOUND)
       )
 
     INSTALL(TARGETS opencv-${BACKEND}
-      RUNTIME DESTINATION bin
+      RUNTIME DESTINATION ${DEMO_DIR}
       LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib
       )
@@ -64,7 +66,7 @@ if(GLUT_FOUND)
       )
 
     INSTALL(TARGETS liveview-glut-${BACKEND}
-      RUNTIME DESTINATION bin
+      RUNTIME DESTINATION ${DEMO_DIR}
       LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib
       )
