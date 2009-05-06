@@ -1,3 +1,4 @@
-builddir/demo/simple-* usr/lib/libcamiface/demo
-builddir/demo/multi-cam-* usr/lib/libcamiface/demo
-builddir/demo/opencv-* usr/lib/libcamiface/demo
+builddir/demo/simple-* usr/bin/libcamiface
+builddir/demo/multi-cam-* usr/bin/libcamiface
+builddir/demo/opencv-* usr/bin/libcamiface
+builddir/demo/liveview-glut-* usr/bin/libcamiface
