@@ -252,6 +252,11 @@ int main(int argc, char** argv) {
 	fprintf(stdout,"M");
 	fflush(stdout);
 	continue; // wait again on next camera
+      } else if (errnum == CAM_IFACE_FRAME_INTERRUPTED_SYSCALL) {
+        cam_iface_clear_error();
+        fprintf(stdout,"I");
+        fflush(stdout);
+	continue; // wait again on next camera
       }
 
       _check_error();

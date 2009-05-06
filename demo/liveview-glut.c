@@ -327,6 +327,10 @@ void grab_frame(void) {
       cam_iface_clear_error();
       fprintf(stdout,"M");
       fflush(stdout);
+    } else if (errnum == CAM_IFACE_FRAME_INTERRUPTED_SYSCALL) {
+      cam_iface_clear_error();
+      fprintf(stdout,"I");
+      fflush(stdout);
     } else {
       _check_error();
     }
