@@ -75,6 +75,9 @@ typedef struct CCdc1394 {
 
   int max_width;       // maximum buffer width
   int max_height;      // maximum buffer height
+
+  int roi_left;
+  int roi_top;
   int roi_width;
   int roi_height;
   int buffer_size;     // bytes per frame
@@ -983,6 +986,8 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
 
   // reset ROI
 
+  this->roi_left = 0;
+  this->roi_top = 0;
   this->roi_width = this->max_width;
   this->roi_height = this->max_height;
 
@@ -996,7 +1001,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
     CIDC1394CHK(dc1394_format7_set_roi(cameras[device_number], video_mode,
 					coding,
 					DC1394_USE_MAX_AVAIL, // use max packet size
-					0, 0, // left, top
+                                        this->roi_left, this->roi_top,
 					this->roi_width,
 					this->roi_height));  // width, height
   }
@@ -1607,19 +1612,9 @@ void CCdc1394_get_frame_roi( CCdc1394 *this,
   dc1394video_mode_t video_mode;
 
   CHECK_CC(this);
-  camera = cameras[this->inherited.device_number];
-  CIDC1394CHK(dc1394_video_get_mode(camera, &video_mode));
-  if (cam_iface_is_video_mode_scalable(video_mode)) {
-    CIDC1394CHK(dc1394_format7_get_image_position(cameras[this->inherited.device_number],
-						  video_mode,
-						  &l, &t));
-    *left=l;
-    *top=t;
-  } else {
-    *left=0;
-    *top=0;
-  }
 
+  *left=this->roi_left;
+  *top=this->roi_top;
   *width=this->roi_width;
   *height=this->roi_height;
 
@@ -1631,6 +1626,7 @@ void CCdc1394_set_frame_roi( CCdc1394 *this,
   dc1394video_mode_t video_mode;
   uint32_t h_unit,v_unit;
   uint32_t h_unit_pos,  v_unit_pos;
+  uint32_t test_left, test_top;
   uint32_t test_width, test_height;
   dc1394color_coding_t coding;
   int restart;
@@ -1669,23 +1665,15 @@ void CCdc1394_set_frame_roi( CCdc1394 *this,
   }
 
   DPRINTF("setting roi left: %d, top %d\n",left,top);
-
-  CIDC1394CHK(dc1394_format7_set_image_size(camera,
-					    video_mode,
-					    width, height));
-  DPRINTF("requested width: %d, height: %d\n",width,height);
-
-  CIDC1394CHK(dc1394_format7_get_image_size(camera, video_mode,
-					    &test_width, &test_height));
-  DPRINTF("returned width: %d, height: %d\n",test_width,test_height);
+  DPRINTF("setting width: %d, height: %d\n",width,height);
 
   CIDC1394CHK(dc1394_format7_set_roi(camera, video_mode, coding,
 				     DC1394_USE_MAX_AVAIL, // use max packet size
 				     left, top,
-				     test_width,
-				     test_height));
+				     width,
+				     height));
 
-
+  /*
   if (test_width != width) {
     CAM_IFACE_ERROR_FORMAT("width was not successfully set");
     return;
@@ -1695,7 +1683,18 @@ void CCdc1394_set_frame_roi( CCdc1394 *this,
     CAM_IFACE_ERROR_FORMAT("height was not successfully set");
     return;
   }
+  */
+  CIDC1394CHK(dc1394_format7_get_image_size(camera, video_mode,
+					    &test_width, &test_height));
 
+  CIDC1394CHK(dc1394_format7_get_image_position(cameras[this->inherited.device_number],
+                                                video_mode,
+                                                &test_left, &test_top));
+  DPRINTF("returned left: %d, top: %d\n",test_left,test_top);
+  DPRINTF("returned width: %d, height: %d\n",test_width,test_height);
+
+  this->roi_left = test_left;
+  this->roi_top = test_top;
   this->roi_width = test_width;
   this->roi_height = test_height;
   this->buffer_size=(this->roi_width)*(this->roi_height)*this->inherited.depth/8;
