@@ -5,7 +5,7 @@ set(SRCS
     simple
     )
 
-set(DEMO_DIR bin/libcamiface)
+set(DEMO_DIR bin)
 
 FOREACH(SRC ${SRCS})
   FOREACH(BACKEND ${all_backends})
