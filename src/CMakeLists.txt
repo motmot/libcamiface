@@ -37,8 +37,21 @@ set(unity_DEFINE
     -DNUM_BACKENDS=${NUM_BACKENDS}
     -DUNITY_BACKENDS='{${UNITY_BACKENDS}}'
     -DUNITY_BACKEND_PREFIX='\"lib\"'
-    -DUNITY_BACKEND_SUFFIX='\".so\"'
     -DUNITY_BACKEND_DIR='\"\"')
+
+if(UNIX)
+  IF(APPLE)
+    set(unity_DEFINE
+      -DUNITY_BACKEND_SUFFIX='\".dylib\"'
+      ${unity_DEFINE})
+  ELSE(APPLE)
+    set(unity_DEFINE
+      -DUNITY_BACKEND_SUFFIX='\".so\"'
+      ${unity_DEFINE})
+  ENDIF(APPLE)
+else(UNIX)
+  MESSAGE(FATAL_ERROR "don't know how to build unity backend on non-unix")
+endif(UNIX)
 
 # concatenate (join) strings to make single argument
 FOREACH(element ${unity_DEFINE})
@@ -122,7 +135,12 @@ IF(PROSILICA_GIGE_FOUND)
         set(prosilica_gige_DEFINE -D_x86 ${prosilica_gige_DEFINE})
       ENDIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" )
     ELSE(UNIX AND NOT APPLE)
-      MESSAGE(FATAL_ERROR "Prosilica GigE not supported on this platform")
+      set(prosilica_gige_DEFINE -D_OSX ${prosilica_gige_DEFINE})
+      IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i386" )
+        set(prosilica_gige_DEFINE -D_x86 ${prosilica_gige_DEFINE})
+      ELSE("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i386" )
+        MESSAGE(FATAL_ERROR "Prosilica GigE not supported on this platform")
+      ENDIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i386" )
     ENDIF(UNIX AND NOT APPLE)
   ENDIF(WIN32)
 
@@ -149,7 +167,7 @@ IF(PROSILICA_GIGE_FOUND)
     CLEAN_DIRECT_OUTPUT 1
   )
 
-  if(NOT win32)
+  if(NOT WIN32)
   # Trouble building static lib on Windows, so disabled for now...
   ADD_LIBRARY(cam_iface_prosilica_gige-static STATIC ${prosilica_gige_SRCS})
   set_target_properties(cam_iface_prosilica_gige-static PROPERTIES
@@ -159,13 +177,24 @@ IF(PROSILICA_GIGE_FOUND)
   SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES
     CLEAN_DIRECT_OUTPUT 1
   )
-  endif(NOT win32)
+  endif(NOT WIN32)
 
   INSTALL(TARGETS cam_iface_prosilica_gige
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
   )
+
+  IF(WIN32)
+    # install PvAPI.dll on Windows
+    GET_FILENAME_COMPONENT(PROSIL_LIB_DIR ${PROSILICA_GIGE_LIBRARIES} PATH)
+    SET(PROSIL_DLL_DIR ${PROSIL_LIB_DIR}/../bin-pc)
+    get_filename_component(PROSIL_DLL_DIR ${PROSIL_DLL_DIR} ABSOLUTE)
+    FILE(GLOB PROSIL_DLLS ${PROSIL_DLL_DIR}/*.dll)
+    INSTALL(FILES ${PROSIL_DLLS}
+      DESTINATION bin
+      )
+  ENDIF(WIN32)
 
 ENDIF(PROSILICA_GIGE_FOUND)
 

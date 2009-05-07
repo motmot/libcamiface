@@ -18,7 +18,7 @@
 #define u_int8_t unsigned char
 #endif
 
-#if defined(_LINUX) || defined(_QNX)
+#if defined(_LINUX) || defined(_QNX) || defined(__APPLE__)
 #include <unistd.h>
 #include <time.h>
 #include <signal.h>
@@ -41,7 +41,7 @@ extern "C" {
 #define DPRINTF(...) printf(__VA_ARGS__)
 #endif
 
-#if defined(_LINUX) || defined(_QNX)
+#if defined(_LINUX) || defined(_QNX) || defined(__APPLE__)
 void Sleep(unsigned int time)
 {
     struct timespec t,r;
@@ -213,7 +213,12 @@ double ciprosil_floattime() {
 #ifdef _MSC_VER
 #define cam_iface_thread_local __declspec(thread)
 #else
+#ifdef __APPLE__
+#define cam_iface_thread_local
+#warning "Thread local storage not implemented"
+#else
 #define cam_iface_thread_local __thread
+#endif
 #endif
 
 /* globals -- allocate space */

@@ -5,7 +5,7 @@ set(SRCS
     simple
     )
 
-set(DEMO_DIR bin/libcamiface)
+set(DEMO_DIR bin)
 
 FOREACH(SRC ${SRCS})
   FOREACH(BACKEND ${all_backends})
@@ -48,6 +48,14 @@ if(OPENCV_FOUND)
 ENDIF(OPENCV_FOUND)
 
 #  glut.c
+
+IF(WIN32)
+  # Download from http://www.xmission.com/~nate/glut.html.  Then
+  # install glut.h in GLUT_ROOT_PATH\include\GL and the rest in
+  # GLUT_ROOT_PATH\Release.
+  SET(GLUT_ROOT_PATH "C:/Program\ Files/GLUT32")
+ENDIF(WIN32)
+
 FIND_PACKAGE(GLUT)
 FIND_PACKAGE(OpenGL)
 
@@ -57,7 +65,7 @@ if(GLUT_FOUND)
 
   FOREACH(BACKEND ${all_backends})
     ADD_EXECUTABLE(liveview-glut-${BACKEND} ${glut_SRCS})
-    include_directories(${GLUT_INCLUDE_DIRS})
+    include_directories(${GLUT_INCLUDE_DIR})
 
     TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
       cam_iface_${BACKEND}
@@ -70,5 +78,14 @@ if(GLUT_FOUND)
       LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib
       )
+
+    IF(WIN32)
+      GET_FILENAME_COMPONENT(GLUT_LIB_DIR ${GLUT_LIBRARIES} PATH)
+      FILE(GLOB GLUT_DLLS ${GLUT_LIB_DIR}/*.dll)
+      INSTALL(FILES ${GLUT_DLLS} DESTINATION ${DEMO_DIR})
+    ENDIF(WIN32)
+
   ENDFOREACH(BACKEND)
+ELSE(GLUT_FOUND)
+  message(FATAL_ERROR "no glut")
 ENDIF(GLUT_FOUND)

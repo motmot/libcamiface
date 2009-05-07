@@ -35,16 +35,16 @@ A number of backends are supported.
     - |works|
     - |works|
     - |works|
-    - |NA|
+    - |works|
   * - `ImperX`_
     - |NA|
     - |NA|
-    - |orange| rudiments present
+    - |orange| rudiments present in git 'cruft' branch
     - |NA|
   * - `Basler BCAM 1.8`_
     - |NA|
     - |NA|
-    - |orange| rudiments present, frequent BSOD
+    - |orange| rudiments present in git 'cruft' branch, frequent BSOD
     - |NA|
   * - `QuickTime SequenceGrabber`_
     - |NA|
@@ -102,8 +102,8 @@ The `development version of libcamiface`__ may be downloaded via git::
 
 __ http://github.com/motmot/libcamiface
 
-Build and install
-=================
+Build and install from source 
+=============================
 
 Prerequisites
 -------------
@@ -138,7 +138,48 @@ an Apple ADC member.
   cd build
   cmake ..
   make
-  make install
+  cpack
+  open libcamiface-x.y.z-Darwin.dmg
+
+This will install the files::
+
+  /usr/include/cam_iface.h
+  /usr/bin/liveview-glut-*
+  /usr/bin/ ( other demos )
+  /usr/lib/libcam_iface_*
+
+(In fact, I use the environment variables ``PROSILICA_CMAKE_DEBUG=1``
+and ``PROSILICA_TEST_LIB_PATHS=/Prosilica\ GigE\ SDK/lib-pc/x86/4.0``
+in my call to cmake.)
+
+Windows
+-------
+
+Install Microsoft's Visual Studio 2008. (Tested with Express Edition.)
+Install CMake.
+
+Open a Visual Studio Command Prompt from Start Menu->All
+Programs->Microsoft Visual C++ 2008 Express Edition->Visual Studio
+Tools->Visual Studio 2008 Command Prompt. Change directories into the
+libcamiface source directory.
+
+::
+
+  cmakesetup
+  rem  In the cmakesetup GUI, set your source and build directories.
+  rem  Click "configure".
+  rem  In the "Select Generator" menu that pops up, press "NMake Makefiles".
+  rem  After it's done configuring, click "configure" again.
+  rem  Finally, click "OK".
+
+  rem Now change into your build directory.
+  cd build
+  nmake
+
+  rem Now, to build an NSIS .exe Windows installer.
+  cpack
+
+The Windows installer will be called ``libcamiface-x.y.z-win32.exe``.
 
 Backend notes
 =============
@@ -152,6 +193,33 @@ Prosilica's command line tools::
   export CAM_IP=192.168.1.63
   CamAttr -i $CAM_IP -s StreamBytesPerSecond 123963084
   CamAttr -i $CAM_IP -s PacketSize 1500
+
+Environment variables:
+
+  * *PROSILICA_BACKEND_DEBUG* print various debuggin information.
+
+libdc1394
+---------
+
+Environment variables:
+
+ * *DC1394_BACKEND_DEBUG* print libdc1394 error messages. (You may
+   also be interested in libdc1394's own *DC1394_DEBUG* environment
+   variable, which prints debug messages.)
+
+ * *DC1394_BACKEND_1394B* attempt to force use of firewire
+    800. (Otherwise defaults to 400.)
+
+unity
+-----
+
+Environment variables:
+
+ * *UNITY_BACKEND_DEBUG* print debugging messages.
+
+ * *UNITY_BACKEND_DIR* set to directory in which to look for
+    libcamiface shared libraries.
+
 
 License
 =======
