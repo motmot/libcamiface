@@ -37,8 +37,21 @@ set(unity_DEFINE
     -DNUM_BACKENDS=${NUM_BACKENDS}
     -DUNITY_BACKENDS='{${UNITY_BACKENDS}}'
     -DUNITY_BACKEND_PREFIX='\"lib\"'
-    -DUNITY_BACKEND_SUFFIX='\".so\"'
     -DUNITY_BACKEND_DIR='\"\"')
+
+if(UNIX)
+  IF(APPLE)
+    set(unity_DEFINE
+      -DUNITY_BACKEND_SUFFIX='\".dylib\"'
+      ${unity_DEFINE})
+  ELSE(APPLE)
+    set(unity_DEFINE
+      -DUNITY_BACKEND_SUFFIX='\".so\"'
+      ${unity_DEFINE})
+  ENDIF(APPLE)
+else(UNIX)
+  MESSAGE(FATAL_ERROR "don't know how to build unity backend on non-unix")
+endif(UNIX)
 
 # concatenate (join) strings to make single argument
 FOREACH(element ${unity_DEFINE})
