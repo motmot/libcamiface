@@ -35,16 +35,16 @@ A number of backends are supported.
     - |works|
     - |works|
     - |works|
-    - |NA|
+    - |works|
   * - `ImperX`_
     - |NA|
     - |NA|
-    - |orange| rudiments present
+    - |orange| rudiments present in git 'cruft' branch
     - |NA|
   * - `Basler BCAM 1.8`_
     - |NA|
     - |NA|
-    - |orange| rudiments present, frequent BSOD
+    - |orange| rudiments present in git 'cruft' branch, frequent BSOD
     - |NA|
   * - `QuickTime SequenceGrabber`_
     - |NA|
@@ -102,8 +102,8 @@ The `development version of libcamiface`__ may be downloaded via git::
 
 __ http://github.com/motmot/libcamiface
 
-Build and install
-=================
+Build and install from source 
+=============================
 
 Prerequisites
 -------------
@@ -138,7 +138,19 @@ an Apple ADC member.
   cd build
   cmake ..
   make
-  make install
+  cpack
+  open libcamiface-x.y.z-Darwin.dmg
+
+This will install the files::
+
+  /usr/include/cam_iface.h
+  /usr/bin/liveview-glut-*
+  /usr/bin/ ( other demos )
+  /usr/lib/libcam_iface_*
+
+(In fact, I use the environment variables ``PROSILICA_CMAKE_DEBUG=1``
+and ``PROSILICA_TEST_LIB_PATHS=/Prosilica\ GigE\ SDK/lib-pc/x86/4.0``
+in my call to cmake.)
 
 Windows
 -------
