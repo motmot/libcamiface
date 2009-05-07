@@ -84,29 +84,46 @@ Key to the above symbols:
 Download
 ========
 
-Release tarballs/zip files
---------------------------
-
-.. Also keep motmot/doc/source/overview.rst in sync with download page.
+.. Also keep motmot/doc/source/download.rst in sync with download page.
 
 Download official releases from `the download page`__.
 
-__ http://github.com/motmot/libcamiface/downloads
+__ http://code.astraw.com/libcamiface
 
-git source code repository
---------------------------
+Install from binary releases
+============================
 
-The `development version of libcamiface`__ may be downloaded via git::
+Mac OS X
+--------
 
-  git clone git://github.com/motmot/libcamiface.git
+The Mac installer is called ``libcamiface-x.y.z-Darwin.dmg``.
 
-__ http://github.com/motmot/libcamiface
+This will install the files::
 
-Build and install from source 
-=============================
+  /usr/include/cam_iface.h
+  /usr/bin/liveview-glut-*
+  /usr/bin/ ( other demos )
+  /usr/lib/libcam_iface_*
 
-Prerequisites
--------------
+To run a demo program, open ``/usr/bin/liveview-glut-unity``.
+
+Windows
+-------
+
+The Windows installer is called ``libcamiface-x.y.z-win32.exe``.
+
+This will install the files::
+
+  C:\Program Files\libcamiface x.y.z\bin\simple-prosilica_gige.exe
+  C:\Program Files\libcamiface x.y.z\bin\liveview-glut-prosilica_gige.exe
+  C:\Program Files\libcamiface x.y.z\include\cam_iface.h
+  C:\Program Files\libcamiface x.y.z\lib\cam_iface_prosilica_gige.lib
+  C:\Program Files\libcamiface x.y.z\bin\cam_iface_prosilica_gige.dll
+
+To run a demo program, open ``C:\Program Files\libcamiface x.y.z\bin\liveview-glut-prosilica_gige.exe``.
+
+Compile from source
+===================
 
 On all platforms, you need to install cmake. cmake is available from
 http://www.cmake.org/
@@ -139,18 +156,12 @@ an Apple ADC member.
   cmake ..
   make
   cpack
-  open libcamiface-x.y.z-Darwin.dmg
-
-This will install the files::
-
-  /usr/include/cam_iface.h
-  /usr/bin/liveview-glut-*
-  /usr/bin/ ( other demos )
-  /usr/lib/libcam_iface_*
 
 (In fact, I use the environment variables ``PROSILICA_CMAKE_DEBUG=1``
 and ``PROSILICA_TEST_LIB_PATHS=/Prosilica\ GigE\ SDK/lib-pc/x86/4.0``
 in my call to cmake.)
+
+This will build a Mac installer, called ``libcamiface-x.y.z-Darwin.dmg``.
 
 Windows
 -------
@@ -179,7 +190,9 @@ libcamiface source directory.
   rem Now, to build an NSIS .exe Windows installer.
   cpack
 
-The Windows installer will be called ``libcamiface-x.y.z-win32.exe``.
+This will build a Windows installer, called
+``libcamiface-x.y.z-win32.exe``.
+
 
 Backend notes
 =============
@@ -220,6 +233,14 @@ Environment variables:
  * *UNITY_BACKEND_DIR* set to directory in which to look for
     libcamiface shared libraries.
 
+Git source code repository
+==========================
+
+The `development version of libcamiface`__ may be downloaded via git::
+
+  git clone git://github.com/motmot/libcamiface.git
+
+__ http://github.com/motmot/libcamiface
 
 License
 =======
