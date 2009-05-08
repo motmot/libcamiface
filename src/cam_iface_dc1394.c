@@ -76,6 +76,7 @@ typedef struct CCdc1394 {
   int max_width;       // maximum buffer width
   int max_height;      // maximum buffer height
 
+  char bayer[5];
   int roi_left;
   int roi_top;
   int roi_width;
@@ -849,6 +850,8 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   uint32_t h_size,v_size,tmp_depth;
   dc1394color_coding_t coding;
   int scalable;
+  uint32_t bayer_register;
+  int i;
 
   // call parent
   CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
@@ -979,6 +982,14 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
     return;
     break;
   }
+
+  CIDC1394CHK(dc1394_get_control_register(cameras[device_number],
+                                          0x1040, /* BAYER_TILE_MAPPING */
+                                          &bayer_register));
+  for (i=0;i<4;i++) {
+    this->bayer[i] = (bayer_register >> i*8) & 0xff;
+  }
+  this->bayer[4]='\0';
 
   // This doesn't give 12 for YUV411, so we force our values above.
   //CIDC1394CHK(dc1394_video_get_data_depth(cameras[device_number], &tmp_depth));
