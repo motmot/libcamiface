@@ -945,10 +945,32 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
 						coding));
   }
 
+  CIDC1394CHK(dc1394_get_control_register(cameras[device_number],
+                                          0x1040, /* BAYER_TILE_MAPPING */
+                                          &bayer_register));
+  for (i=0;i<4;i++) {
+    this->bayer[i] = (bayer_register >> i*8) & 0xff;
+  }
+  this->bayer[4]='\0';
+
   switch (coding) {
   case DC1394_COLOR_CODING_MONO8:
-    this->inherited.coding=CAM_IFACE_MONO8;
-    this->inherited.depth = 8;
+    if (strcmp(this->bayer,"BGGR")==0) {
+      this->inherited.coding=CAM_IFACE_MONO8_BAYER_BGGR;
+      this->inherited.depth = 8;
+    } else if (strcmp(this->bayer,"RGGB")==0) {
+      this->inherited.coding=CAM_IFACE_MONO8_BAYER_RGGB;
+      this->inherited.depth = 8;
+    } else if (strcmp(this->bayer,"GRBG")==0) {
+      this->inherited.coding=CAM_IFACE_MONO8_BAYER_GRBG;
+      this->inherited.depth = 8;
+    } else if (strcmp(this->bayer,"GBRG")==0) {
+      this->inherited.coding=CAM_IFACE_MONO8_BAYER_GBRG;
+      this->inherited.depth = 8;
+    } else {
+      this->inherited.coding=CAM_IFACE_MONO8;
+      this->inherited.depth = 8;
+    }
     break;
   case DC1394_COLOR_CODING_RAW8:
     this->inherited.coding=CAM_IFACE_RAW8;
@@ -982,14 +1004,6 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
     return;
     break;
   }
-
-  CIDC1394CHK(dc1394_get_control_register(cameras[device_number],
-                                          0x1040, /* BAYER_TILE_MAPPING */
-                                          &bayer_register));
-  for (i=0;i<4;i++) {
-    this->bayer[i] = (bayer_register >> i*8) & 0xff;
-  }
-  this->bayer[4]='\0';
 
   // This doesn't give 12 for YUV411, so we force our values above.
   //CIDC1394CHK(dc1394_video_get_data_depth(cameras[device_number], &tmp_depth));

@@ -116,7 +116,7 @@ struct CameraPropertyInfo {
 typedef enum CameraPixelCoding
 {
   CAM_IFACE_UNKNOWN=0,
-  CAM_IFACE_MONO8,
+  CAM_IFACE_MONO8, /* pure monochrome (no Bayer) */
   CAM_IFACE_YUV411,
   CAM_IFACE_YUV422,
   CAM_IFACE_YUV444,
@@ -127,7 +127,11 @@ typedef enum CameraPixelCoding
   CAM_IFACE_RGB16S,
   CAM_IFACE_RAW8,
   CAM_IFACE_RAW16,
-  CAM_IFACE_ARGB8
+  CAM_IFACE_ARGB8,
+  CAM_IFACE_MONO8_BAYER_BGGR, /* BGGR Bayer coding */
+  CAM_IFACE_MONO8_BAYER_RGGB, /* RGGB Bayer coding */
+  CAM_IFACE_MONO8_BAYER_GRBG, /* GRBG Bayer coding */
+  CAM_IFACE_MONO8_BAYER_GBRG  /* GBRG Bayer coding */
 }
 CameraPixelCoding;
 
