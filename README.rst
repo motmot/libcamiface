@@ -143,6 +143,9 @@ linux
   make
   make install
 
+To build with debug symbols, include the argument
+``-DCMAKE_BUILD_TYPE=Debug`` in your call to cmake.
+
 Mac OS X
 --------
 
@@ -156,6 +159,9 @@ an Apple ADC member.
   cmake ..
   make
   cpack
+
+To build with debug symbols, include the argument
+``-DCMAKE_BUILD_TYPE=Debug`` in your call to cmake.
 
 (In fact, I use the environment variables ``PROSILICA_CMAKE_DEBUG=1``
 and ``PROSILICA_TEST_LIB_PATHS=/Prosilica\ GigE\ SDK/lib-pc/x86/4.0``
