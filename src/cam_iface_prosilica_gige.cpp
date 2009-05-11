@@ -211,7 +211,8 @@ double ciprosil_floattime() {
 }
 
 #ifdef _MSC_VER
-#define cam_iface_thread_local __declspec(thread)
+  //#define cam_iface_thread_local __declspec(thread)
+#define cam_iface_thread_local
 #else
 #ifdef __APPLE__
 #define cam_iface_thread_local
