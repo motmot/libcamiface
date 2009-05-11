@@ -11,3 +11,14 @@
 #define cam_iface_thread_local __thread
 #endif
 #endif
+
+
+#ifdef _WIN32
+#if _MSC_VER == 1310
+#define cam_iface_snprintf(dst, len, fmt, ...) _snprintf((char*)dst, (size_t)len, (const char*)fmt, __VA_ARGS__)
+#else
+#define cam_iface_snprintf(dst, len, fmt, ...) _snprintf_s((char*)dst, (size_t)len, (size_t)len, (const char*)fmt, __VA_ARGS__)
+#endif
+#else
+#define cam_iface_snprintf(...) snprintf(__VA_ARGS__)
+#endif

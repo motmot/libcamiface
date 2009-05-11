@@ -291,16 +291,6 @@ const char *pv_error_strings[PV_ERROR_NUM] = {
   "Attribute is not available at this time"
 };
 
-#ifdef _WIN32
-#if _MSC_VER == 1310
-#define cam_iface_snprintf(dst, len, fmt, ...) _snprintf((char*)dst, (size_t)len, (const char*)fmt, __VA_ARGS__)
-#else
-#define cam_iface_snprintf(dst, len, fmt, ...) _snprintf_s((char*)dst, (size_t)len, (size_t)len, (const char*)fmt, __VA_ARGS__)
-#endif
-#else
-#define cam_iface_snprintf(...) snprintf(__VA_ARGS__)
-#endif
-
 #define CAM_IFACE_ERROR_FORMAT(m)					\
   cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
 		     "%s (%d): %s\n",__FILE__,__LINE__,(m));

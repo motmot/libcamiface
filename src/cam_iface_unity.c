@@ -46,13 +46,13 @@ struct backend_info_t backend_info[NUM_BACKENDS] = {};
 static int backends_started = 0;
 
 #define CAM_IFACE_ERROR_FORMAT(m)					\
-  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
+  cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
 	   "%s (%d): %s\n",__FILE__,__LINE__,(m));
 
 #define CHECK_CI_ERR()						\
   if (this_backend_info->have_error()) {			\
     cam_iface_error = this_backend_info->have_error();		\
-    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
+    cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
 	     "unity backend error (%s %d): %s",__FILE__,	\
 	     __LINE__,this_backend_info->get_error_string());	\
     return;							\
@@ -172,20 +172,20 @@ void cam_iface_startup(void) {
 	/* Check environment variables first */
 	envvar = getenv("UNITY_BACKEND_DIR");
 	if (envvar != NULL) {
-	  snprintf(full_backend_name,256,"%s/" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,
+	  cam_iface_snprintf(full_backend_name,256,"%s/" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,
 		   envvar,backend_names[i]);
 	} else {
 	  try_this_name = 0;
-	  snprintf(full_backend_name,256,"");
+	  cam_iface_snprintf(full_backend_name,256,"");
 	}
 	break;
       case 1:
 	/* Check pwd next */
-	snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+	cam_iface_snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
 	break;
       case 2:
 	/* Next check system-install prefix */
-	snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+	cam_iface_snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
 	break;
       default:
 	cam_iface_error=-1;
