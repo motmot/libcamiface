@@ -28,6 +28,7 @@
 
 extern "C" {
 #include "cam_iface.h"
+#include "cam_iface_internal.h"
 
 #ifdef _WINDOWS
 #define _STDCALL __stdcall
@@ -209,18 +210,6 @@ double ciprosil_floattime() {
     return 0.0;
 #endif
 }
-
-#ifdef _MSC_VER
-  //#define cam_iface_thread_local __declspec(thread)
-#define cam_iface_thread_local
-#else
-#ifdef __APPLE__
-#define cam_iface_thread_local
-#warning "Thread local storage not implemented"
-#else
-#define cam_iface_thread_local __thread
-#endif
-#endif
 
 /* globals -- allocate space */
   u_int64_t prev_ts_uint64; //tmp

@@ -1,4 +1,5 @@
 #include "cam_iface.h"
+#include "cam_iface_internal.h"
 #include <stdio.h>
 #include <dlfcn.h>
 #include <stdlib.h>
@@ -36,17 +37,9 @@ struct backend_info_t {
 /* globals -- allocate space */
 int unity_num_cameras = 0;
 
-// See the following for a hint on how to make thread thread-local without __thread.
-// http://lists.apple.com/archives/Xcode-users/2006/Jun/msg00551.html
-#ifdef __APPLE__
-#define myTLS
-#else
-#define myTLS __thread
-#endif
-
-myTLS int cam_iface_error = 0;
+cam_iface_thread_local int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-myTLS char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
+cam_iface_thread_local char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 char *backend_names[NUM_BACKENDS] = UNITY_BACKENDS;
 struct backend_info_t backend_info[NUM_BACKENDS] = {};
