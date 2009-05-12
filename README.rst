@@ -13,6 +13,33 @@ independent image acquisition framework.
 There is also a Python wrapper (:mod:`cam_iface`) of the libcamiface
 libraries.
 
+What cameras are supported?
+===========================
+
+Camera support is determined by a libcamiface "backend". Each backend
+is a piece of code that creates the libcamiface interface for each
+particular camera driver.
+
+As seen below, the supported camera drivers are currently libdc1394,
+the Prosilia Gigabit Ethernet SDK, and the QuickTime
+SequenceGrabber. For a list of cameras supporting the libdc1394
+software, see http://damien.douxchamps.net/ieee1394/cameras/. For the
+Prosilica Gigabit cameras, see http://www.prosilica.com/. The
+QuickTime SequenceGrabber supports the built-in cameras on Mac laptops
+and desktops.
+
+What frame rates, image sizes, bit depths are possible?
+=======================================================
+
+This depends primarily on the camera and camera interface. A primary
+goal of the Motmot suite is not to limit the capabilities
+possible. The fastest frame rates that we routinely use are 500 fps
+with a Basler A602f camera using a small region of interest and 200
+fps on a Prosilica GE 680 at full frame resolution. The largest image
+size we routinely use is 1600x1200 on a Pt. Grey Scorpion camera. The
+largest bit depths we routinely use are 12 bits/pixel on a Basler
+A622f camera.
+
 Backend status
 ==============
 
