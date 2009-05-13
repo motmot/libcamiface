@@ -25,8 +25,9 @@ the Prosilia Gigabit Ethernet SDK, and the QuickTime
 SequenceGrabber. For a list of cameras supporting the libdc1394
 software, see http://damien.douxchamps.net/ieee1394/cameras/. For the
 Prosilica Gigabit cameras, see http://www.prosilica.com/. The
-QuickTime SequenceGrabber supports the built-in cameras on Mac laptops
-and desktops.
+QuickTime SequenceGrabber supports any camera available through
+QuickTime. This includes the built-in cameras on Mac laptops and
+desktops.
 
 What frame rates, image sizes, bit depths are possible?
 =======================================================
