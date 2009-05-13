@@ -172,7 +172,8 @@ linux
   make install
 
 To build with debug symbols, include the argument
-``-DCMAKE_BUILD_TYPE=Debug`` in your call to cmake.
+``-DCMAKE_BUILD_TYPE=Debug`` in your call to cmake. To install in
+/usr, include ``-DCMAKE_INSTALL_PREFIX=/usr``.
 
 Mac OS X
 --------

@@ -52,13 +52,17 @@ void yuv422_to_mono8(src_pixels, dest_pixels, width, height, src_stride, dest_st
 }
 
 unsigned char* convert_pixels(CameraPixelCoding coding) {
+  static int gave_error=0;
   if (coding==CAM_IFACE_MONO8) {
     return raw_pixels; /* no conversion necessary*/
   } else if (coding==CAM_IFACE_YUV422) {
     yuv422_to_mono8(raw_pixels, converted_pixels, width, height, width*2, width);
     return converted_pixels; /* don't convert -- but what we show will be wrong */
   } else {
-    fprintf(stderr,"ERROR: unsupported pixel coding %d\n",coding);
+    if (!gave_error) {
+      fprintf(stderr,"ERROR: unsupported pixel coding %d\n",coding);
+      gave_error=1;
+    }
     return raw_pixels; /* don't convert -- but what we show will be wrong */
   }
 }
