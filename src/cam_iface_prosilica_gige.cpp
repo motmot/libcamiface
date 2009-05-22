@@ -39,7 +39,7 @@ extern "C" {
 #if 1
 #define DPRINTF(...)
 #else
-#define DPRINTF(...) printf(__VA_ARGS__)
+#define DPRINTF(...) fprintf(stderr,__VA_ARGS__)
 #endif
 
 #if defined(_LINUX) || defined(_QNX) || defined(__APPLE__)
@@ -491,7 +491,7 @@ void cam_iface_startup() {
   DPRINTF("libcamiface compiled with and loaded PvAPI version %d.%d\n",
           major,minor);
 #else
-  DPRINTF("libcamiface loaded PvAPI version %d.%d\n",
+  DPRINTF("libcamiface loaded PvAPI version %ld.%ld\n",
           major,minor);
 #endif
 
