@@ -602,15 +602,18 @@ void CCprosil_CCprosil( CCprosil * ccntxt, int device_number, int NumImageBuffer
     CAM_IFACE_THROW_ERROR("firmware too old - see http://www.prosilica.com/support/gige/ge_download.html");
   }
 
-  const char *attr_names[5] = {
+  const char *attr_names[] = {
     "Width",
     "ExposureValue",
     "FrameStartTriggerMode",
     "RegionX",
     "FrameRate",
+    "PacketSize"
   };
+  const int attr_names_size = sizeof(attr_names)/sizeof(const char *);
+
   tPvAttributeInfo attrInfo;
-  for (int i=0;i<5;i++) {
+  for (int i=0;i<attr_names_size;i++) {
     DPRINTF("%s\n",attr_names[i]);
     CIPVCHK(PvAttrInfo(*handle_ptr,attr_names[i],&attrInfo));
     DPRINTF("     impact: %s\n",attrInfo.Impact);
