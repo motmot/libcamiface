@@ -87,5 +87,5 @@ if(GLUT_FOUND)
 
   ENDFOREACH(BACKEND)
 ELSE(GLUT_FOUND)
-  message(FATAL_ERROR "no glut")
+  message("GLUT not found -- no liveview-glut")
 ENDIF(GLUT_FOUND)
