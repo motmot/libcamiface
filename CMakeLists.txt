@@ -62,6 +62,16 @@ add_subdirectory(demo)
 INSTALL(FILES inc/cam_iface.h
   DESTINATION include)
 
+# Create pkg-config file
+
+SET(PKG_CONFIG_VERSION "${V_MAJOR}.${V_MINOR}.${V_PATCH}")
+set(prefix      ${CMAKE_INSTALL_PREFIX})
+set(exec_prefix ${CMAKE_INSTALL_PREFIX})
+set(libdir      ${CMAKE_INSTALL_PREFIX}/lib)
+set(includedir  ${CMAKE_INSTALL_PREFIX}/include)
+
+configure_file(libcamiface.pc.in libcamiface.pc)
+
 # CPack for binary and source releases --------------
 
 # For binary releases
