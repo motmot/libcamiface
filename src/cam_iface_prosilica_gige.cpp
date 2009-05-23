@@ -632,6 +632,16 @@ void CCprosil_CCprosil( CCprosil * ccntxt, int device_number, int NumImageBuffer
     }
   }
 
+  // code to adjust packet size, taken from SampleViewer -- JP May 2009.
+  if(!cam_iface_have_error()){
+	DPRINTF("Setting PacketSize automatically...\n");
+    tPvUint32 lMaxSize = 8228;
+    // get the last packet size set on the camera
+    CIPVCHK(PvAttrUint32Get(*handle_ptr,"PacketSize",&lMaxSize));
+    // adjust the packet size according to the current network capacity
+    CIPVCHK(PvCaptureAdjustPacketSize(*handle_ptr,lMaxSize));
+  }
+
   /*
   if (NumImageBuffers!=5) {
     DPRINTF("forcing num_buffers to 5 for performance reasons\n"); // seems to work well - ADS 20061204
