@@ -100,7 +100,7 @@ void initialize_gl_texture() {
   glTexImage2D(GL_TEXTURE_2D, /* target */
                0, /* mipmap level */
                GL_RGBA, /* internal format */
-               width, height,
+               tex_width, tex_height,
                0, /* border */
                GL_LUMINANCE, /* format */
                GL_UNSIGNED_BYTE, /* type */
