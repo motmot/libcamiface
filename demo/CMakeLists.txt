@@ -56,6 +56,7 @@ IF(WIN32)
   SET(GLUT_ROOT_PATH "C:/Program\ Files/GLUT32")
 ENDIF(WIN32)
 
+FIND_PACKAGE(GLEW)
 FIND_PACKAGE(GLUT)
 FIND_PACKAGE(OpenGL)
 
@@ -63,13 +64,24 @@ if(GLUT_FOUND)
 
   set(glut_SRCS liveview-glut.c)
 
+  IF(GLEW_FOUND)
+    SET_SOURCE_FILES_PROPERTIES(
+      ${glut_SRCS}
+      PROPERTIES COMPILE_FLAGS "-DUSE_GLEW")
+  ELSE(GLEW_FOUND)
+    SET(GLEW_INCLUDE_DIR "")
+    SET(GLEW_LIBRARY "")
+    message("GLEW not found -- no OpenGL extension support in liveview-glut")
+  ENDIF(GLEW_FOUND)
+
   FOREACH(BACKEND ${all_backends})
     ADD_EXECUTABLE(liveview-glut-${BACKEND} ${glut_SRCS})
-    include_directories(${GLUT_INCLUDE_DIR})
+    include_directories(${GLUT_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
 
     TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
       cam_iface_${BACKEND}
       ${GLUT_LIBRARIES}
+      ${GLEW_LIBRARY}
       ${OPENGL_LIBRARIES}
       )
 
@@ -82,7 +94,10 @@ if(GLUT_FOUND)
     IF(WIN32)
       GET_FILENAME_COMPONENT(GLUT_LIB_DIR ${GLUT_LIBRARIES} PATH)
       FILE(GLOB GLUT_DLLS ${GLUT_LIB_DIR}/*.dll)
-      INSTALL(FILES ${GLUT_DLLS} DESTINATION ${DEMO_DIR})
+      IF(GLEW_FOUND)
+        FILE(GLOB GLEW_DLLS ${GLEW_LIB_DIR}/*.dll)
+      ENDIF(GLEW_FOUND)
+      INSTALL(FILES ${GLUT_DLLS} ${GLEW_DLLS} DESTINATION ${DEMO_DIR})
     ENDIF(WIN32)
 
   ENDFOREACH(BACKEND)

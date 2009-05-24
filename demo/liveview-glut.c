@@ -10,9 +10,15 @@
 #include <string.h>
 
 #if defined(__APPLE__)
+#ifdef USE_GLEW
+#  include <GLEW/glew.h>
+#endif
 #  include <OpenGL/gl.h>
 #  include <GLUT/glut.h>
 #else
+#ifdef USE_GLEW
+#  include <GL/glew.h>
+#endif
 #  include <GL/gl.h>
 #  include <GL/glut.h>
 #endif
@@ -25,6 +31,10 @@ CamContext *cc;
 int width, height;
 unsigned char *raw_pixels, *converted_pixels, *show_pixels;
 double buf_wf, buf_hf;
+GLuint pbo, textureId;
+int use_pbo;
+int tex_width, tex_height;
+int rowsize;
 
 #define _check_error() {						\
     int _check_error_err;						\
@@ -78,11 +88,18 @@ double next_power_of_2(double f) {
 }
 
 void initialize_gl_texture() {
-  int tex_width, tex_height;
   char *buffer;
 
-  tex_width = (int)next_power_of_2(width);
-  tex_height = (int)next_power_of_2(height);
+  if (use_pbo) {
+    tex_width = width;
+    tex_height = height;
+  } else {
+    tex_width = (int)next_power_of_2(width);
+    tex_height = (int)next_power_of_2(height);
+  }
+  rowsize= ((width/32)*32);
+  if (rowsize<width) rowsize+=32;
+
   buf_wf = ((double)(width))/((double)tex_width);
   buf_hf = ((double)(height))/((double)tex_height);
 
@@ -111,8 +128,29 @@ void initialize_gl_texture() {
 void grab_frame(void); /* forward declaration */
 
 void display_pixels() {
-    glClear(GL_COLOR_BUFFER_BIT);
+  int i;
+  if (use_pbo) {
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
 
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, width*height, 0, GL_STREAM_DRAW_ARB);
+    GLubyte* ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
+    if(ptr)
+      {
+        // update data directly on the mapped buffer
+        GLubyte* rowstart = ptr;
+        for (i=0; i<height; i++) {
+          memcpy(rowstart, show_pixels + (width*i), width );
+          rowstart += rowsize;
+        }
+        glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer
+      }
+    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+  } else {
+
+    glBindTexture(GL_TEXTURE_2D, textureId);
     glTexSubImage2D(GL_TEXTURE_2D, /* target */
                     0, /* mipmap level */
                     0, /* x offset */
@@ -123,6 +161,11 @@ void display_pixels() {
                     GL_UNSIGNED_BYTE, /* data type */
                     show_pixels);
 
+  }
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    glColor4f(1, 1, 1, 1);
     glBegin(GL_QUADS);
 
     glNormal3d(0, 0, 1);
@@ -228,7 +271,30 @@ int main(int argc, char** argv) {
   glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE );
   glutCreateWindow("libcamiface liveview");
 
+#ifdef USE_GLEW
+  glewInit();
+  if (glewIsSupported("GL_VERSION_2_0 "
+                      "GL_ARB_pixel_buffer_object")) {
+    printf("PBO enabled\n");
+    use_pbo=1;
+  } else {
+    printf("GLEW available, but no pixel buffer support -- not using PBO\n");
+    use_pbo=0;
+  }
+#else
+  printf("GLEW not available -- not using PBO\n");
+  use_pbo=0;
+#endif
+
   initialize_gl_texture();
+
+  if (use_pbo) {
+    glGenBuffers(1, &pbo);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB,
+                 tex_width*tex_height, 0, GL_STREAM_DRAW);
+  }
+
   glEnable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
