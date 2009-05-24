@@ -173,7 +173,8 @@ linux
 
 To build with debug symbols, include the argument
 ``-DCMAKE_BUILD_TYPE=Debug`` in your call to cmake. To install in
-/usr, include ``-DCMAKE_INSTALL_PREFIX=/usr``.
+/usr, include ``-DCMAKE_INSTALL_PREFIX=/usr``. To make verbose
+makefiles, include ``-DCMAKE_VERBOSE_MAKEFILE=1``.
 
 Mac OS X
 --------
@@ -192,9 +193,13 @@ an Apple ADC member.
 To build with debug symbols, include the argument
 ``-DCMAKE_BUILD_TYPE=Debug`` in your call to cmake.
 
-(In fact, I use the environment variables ``PROSILICA_CMAKE_DEBUG=1``
-and ``PROSILICA_TEST_LIB_PATHS=/Prosilica\ GigE\ SDK/lib-pc/x86/4.0``
-in my call to cmake.)
+In fact, I use the following commands to set various environment
+variables prior to my call to cmake.::
+
+  # You will doubtless need to change these to match your system
+  export PROSILICA_CMAKE_DEBUG=1
+  export PROSILICA_TEST_LIB_PATHS=/Prosilica\ GigE\ SDK/lib-pc/x86/4.0
+  export GLEW_ROOT="/Users/astraw/other-peoples-src/glew/glew-1.5.1"
 
 This will build a Mac installer, called ``libcamiface-x.y.z-Darwin.dmg``.
 
