@@ -128,41 +128,6 @@ void initialize_gl_texture() {
 void grab_frame(void); /* forward declaration */
 
 void display_pixels() {
-  int i;
-  if (use_pbo) {
-    glBindTexture(GL_TEXTURE_2D, textureId);
-    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
-    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, width*height, 0, GL_STREAM_DRAW_ARB);
-    GLubyte* ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
-    if(ptr)
-      {
-        // update data directly on the mapped buffer
-        GLubyte* rowstart = ptr;
-        for (i=0; i<height; i++) {
-          memcpy(rowstart, show_pixels + (width*i), width );
-          rowstart += rowsize;
-        }
-        glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer
-      }
-    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-  } else {
-
-    glBindTexture(GL_TEXTURE_2D, textureId);
-    glTexSubImage2D(GL_TEXTURE_2D, /* target */
-                    0, /* mipmap level */
-                    0, /* x offset */
-                    0, /* y offset */
-                    width,
-                    height,
-                    GL_LUMINANCE, /* data format */
-                    GL_UNSIGNED_BYTE, /* data type */
-                    show_pixels);
-
-  }
-
     glClear(GL_COLOR_BUFFER_BIT);
     glBindTexture(GL_TEXTURE_2D, textureId);
     glColor4f(1, 1, 1, 1);
@@ -347,7 +312,7 @@ int main(int argc, char** argv) {
   show_pixels = raw_pixels;
 
   glutDisplayFunc(display_pixels); /* set the display callback */
-  glutIdleFunc(grab_frame); /* set the display callback */
+  glutIdleFunc(grab_frame); /* set the idle callback */
 
   CamContext_start_camera(cc);
   _check_error();
@@ -380,11 +345,53 @@ int main(int argc, char** argv) {
   return 0;
 }
 
+void upload_image_data_to_opengl(const char* image_data,
+                                 CameraPixelCoding coding) {
+  show_pixels = convert_pixels(cc->coding);
+  int i;
+  if (use_pbo) {
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
+    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, width*height, 0, GL_STREAM_DRAW_ARB);
+    GLubyte* ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
+    if(ptr)
+      {
+        // update data directly on the mapped buffer
+        GLubyte* rowstart = ptr;
+        for (i=0; i<height; i++) {
+          memcpy(rowstart, show_pixels + (width*i), width );
+          rowstart += rowsize;
+        }
+        glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer
+      }
+    glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+  } else {
+
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    glTexSubImage2D(GL_TEXTURE_2D, /* target */
+                    0, /* mipmap level */
+                    0, /* x offset */
+                    0, /* y offset */
+                    width,
+                    height,
+                    GL_LUMINANCE, /* data format */
+                    GL_UNSIGNED_BYTE, /* data type */
+                    show_pixels);
+
+  }
+}
+
+/* grab_frame() is the idle-time callback function. It grabs an image,
+   sends it to OpenGL, and tells GLUT to do the display function
+   callback. */
+
 void grab_frame(void) {
   int errnum;
 
 #ifdef USE_COPY
-    //CamContext_grab_next_frame_blocking(cc,raw_pixels,0.2); // timeout after 200 msec
     CamContext_grab_next_frame_blocking(cc,raw_pixels,-1.0f); // never timeout
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
@@ -404,14 +411,19 @@ void grab_frame(void) {
     } else {
       _check_error();
     }
+
+    upload_image_data_to_opengl(raw_pixels,cc->coding);
+
 #else
     CamContext_point_next_frame_blocking(cc,&raw_pixels,-1.0f);
     _check_error();
+
+    upload_image_data_to_opengl(raw_pixels,cc->coding);
+
     CamContext_unpoint_frame(cc);
     _check_error();
 #endif
 
-    show_pixels = convert_pixels(cc->coding);
     glutPostRedisplay(); /* trigger display redraw */
 
 }
