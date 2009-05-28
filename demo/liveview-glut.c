@@ -9,16 +9,14 @@
 #include <time.h>
 #include <string.h>
 
-#if defined(__APPLE__)
-#ifdef USE_GLEW
-#  include <GLEW/glew.h>
-#endif
-#  include <OpenGL/gl.h>
-#  include <GLUT/glut.h>
-#else
 #ifdef USE_GLEW
 #  include <GL/glew.h>
 #endif
+
+#if defined(__APPLE__)
+#  include <OpenGL/gl.h>
+#  include <GLUT/glut.h>
+#else
 #  include <GL/gl.h>
 #  include <GL/glut.h>
 #endif
@@ -29,12 +27,12 @@
 /* global variables */
 CamContext *cc;
 int width, height;
-unsigned char *raw_pixels, *converted_pixels, *show_pixels;
+unsigned char *raw_pixels;
 double buf_wf, buf_hf;
 GLuint pbo, textureId;
 int use_pbo;
 int tex_width, tex_height;
-int rowsize;
+size_t PBO_stride;
 
 #define _check_error() {						\
     int _check_error_err;						\
@@ -61,19 +59,48 @@ void yuv422_to_mono8(src_pixels, dest_pixels, width, height, src_stride, dest_st
   }
 }
 
-unsigned char* convert_pixels(CameraPixelCoding coding) {
+char* convert_pixels(char* src,
+                   CameraPixelCoding src_coding,
+                   size_t dest_stride,
+                   char* dest, int force_copy) {
   static int gave_error=0;
-  if (coding==CAM_IFACE_MONO8) {
-    return raw_pixels; /* no conversion necessary*/
-  } else if (coding==CAM_IFACE_YUV422) {
-    yuv422_to_mono8(raw_pixels, converted_pixels, width, height, width*2, width);
-    return converted_pixels; /* don't convert -- but what we show will be wrong */
+  char* actual_dest;
+  int i;
+  int copy_required;
+
+  copy_required = force_copy || (dest_stride!=width);
+
+  if (src_coding==CAM_IFACE_MONO8) {
+    if (copy_required) {
+      // update data directly on the mapped buffer
+      GLubyte* rowstart = dest;
+      for (i=0; i<height; i++) {
+        memcpy(rowstart, src + (width*i), width );
+        rowstart += dest_stride;
+      }
+      return dest;
+    } else {
+      return src; /* no conversion necessary*/
+    }
+  } else if (src_coding==CAM_IFACE_YUV422) {
+    yuv422_to_mono8(src, dest, width, height, width*2, dest_stride);
+    return dest;
   } else {
     if (!gave_error) {
-      fprintf(stderr,"ERROR: unsupported pixel coding %d\n",coding);
+      fprintf(stderr,"ERROR: unsupported pixel coding %d\n",src_coding);
       gave_error=1;
     }
-    return raw_pixels; /* don't convert -- but what we show will be wrong */
+    if (copy_required) {
+      // update data directly on the mapped buffer
+      GLubyte* rowstart = dest;
+      for (i=0; i<height; i++) {
+        memcpy(rowstart, src + (width*i), width );
+        rowstart += dest_stride;
+      }
+      return dest;
+    } else {
+      return src; /* no conversion necessary*/
+    }
   }
 }
 
@@ -91,14 +118,15 @@ void initialize_gl_texture() {
   char *buffer;
 
   if (use_pbo) {
-    tex_width = width;
+    PBO_stride = ((width/32)*32);
+    if (PBO_stride<width) PBO_stride+=32;
+    printf("PBO stride: %d\n",PBO_stride);
+    tex_width = PBO_stride;
     tex_height = height;
   } else {
     tex_width = (int)next_power_of_2(width);
     tex_height = (int)next_power_of_2(height);
   }
-  rowsize= ((width/32)*32);
-  if (rowsize<width) rowsize+=32;
 
   buf_wf = ((double)(width))/((double)tex_width);
   buf_hf = ((double)(height))/((double)tex_height);
@@ -112,6 +140,8 @@ void initialize_gl_texture() {
     exit(1);
   }
 
+  glGenTextures(1, &textureId);
+  glBindTexture(GL_TEXTURE_2D, textureId);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexImage2D(GL_TEXTURE_2D, /* target */
@@ -123,6 +153,7 @@ void initialize_gl_texture() {
                GL_UNSIGNED_BYTE, /* type */
                buffer);
   free(buffer);
+  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void grab_frame(void); /* forward declaration */
@@ -304,13 +335,6 @@ int main(int argc, char** argv) {
   }
 #endif
 
-  converted_pixels = (unsigned char *)malloc( width*height );
-  if (converted_pixels==NULL) {
-    fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
-    exit(1);
-  }
-  show_pixels = raw_pixels;
-
   glutDisplayFunc(display_pixels); /* set the display callback */
   glutIdleFunc(grab_frame); /* set the idle callback */
 
@@ -340,35 +364,43 @@ int main(int argc, char** argv) {
 #ifdef USE_COPY
   free(raw_pixels);
 #endif
-  free(converted_pixels);
 
   return 0;
 }
 
-void upload_image_data_to_opengl(const char* image_data,
+/* Send the data to OpenGL. Use the fastest possible method. */
+
+void upload_image_data_to_opengl(const char* raw_image_data,
                                  CameraPixelCoding coding) {
-  show_pixels = convert_pixels(cc->coding);
   int i;
+  char * gl_image_data;
+  static char* show_pixels=NULL;
+
   if (use_pbo) {
     glBindTexture(GL_TEXTURE_2D, textureId);
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
 
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, width*height, 0, GL_STREAM_DRAW_ARB);
+    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, tex_width*tex_height, 0, GL_STREAM_DRAW_ARB);
     GLubyte* ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
-    if(ptr)
-      {
-        // update data directly on the mapped buffer
-        GLubyte* rowstart = ptr;
-        for (i=0; i<height; i++) {
-          memcpy(rowstart, show_pixels + (width*i), width );
-          rowstart += rowsize;
-        }
-        glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer
-      }
+    if(ptr) {
+      convert_pixels(raw_image_data, cc->coding, PBO_stride, ptr, 1);
+      glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer
+    }
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
   } else {
+
+    if (show_pixels==NULL) {
+      /* allocate memory */
+      show_pixels = (unsigned char *)malloc( width*height );
+      if (show_pixels==NULL) {
+        fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
+        exit(1);
+      }
+    }
+
+    gl_image_data = convert_pixels(raw_image_data, cc->coding, width, show_pixels, 0);
 
     glBindTexture(GL_TEXTURE_2D, textureId);
     glTexSubImage2D(GL_TEXTURE_2D, /* target */
@@ -379,7 +411,7 @@ void upload_image_data_to_opengl(const char* image_data,
                     height,
                     GL_LUMINANCE, /* data format */
                     GL_UNSIGNED_BYTE, /* data type */
-                    show_pixels);
+                    gl_image_data);
 
   }
 }

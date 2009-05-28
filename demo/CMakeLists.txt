@@ -56,7 +56,16 @@ IF(WIN32)
   SET(GLUT_ROOT_PATH "C:/Program\ Files/GLUT32")
 ENDIF(WIN32)
 
-FIND_PACKAGE(GLEW)
+SET(GLEW_ROOT "$ENV{GLEW_ROOT}")
+IF(GLEW_ROOT STREQUAL "")
+  # Use FindGLEW.cmake recipe
+  FIND_PACKAGE(GLEW)
+ELSE(GLEW_ROOT STREQUAL "")
+  # Set values based on GLEW_ROOT
+  SET(GLEW_FOUND TRUE)
+  SET(GLEW_INCLUDE_DIR "${GLEW_ROOT}/include")
+  SET(GLEW_LIBRARY "${GLEW_ROOT}/lib/libGLEW.a")
+ENDIF(GLEW_ROOT STREQUAL "")
 FIND_PACKAGE(GLUT)
 FIND_PACKAGE(OpenGL)
 
@@ -74,14 +83,18 @@ if(GLUT_FOUND)
     message("GLEW not found -- no OpenGL extension support in liveview-glut")
   ENDIF(GLEW_FOUND)
 
+  add_library(imp_glew STATIC IMPORTED)
+  set_property(TARGET imp_glew PROPERTY
+               IMPORTED_LOCATION "${GLEW_LIBRARY}")
+
   FOREACH(BACKEND ${all_backends})
     ADD_EXECUTABLE(liveview-glut-${BACKEND} ${glut_SRCS})
     include_directories(${GLUT_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
+    target_link_libraries(liveview-glut-${BACKEND} imp_glew)
 
     TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
       cam_iface_${BACKEND}
       ${GLUT_LIBRARIES}
-      ${GLEW_LIBRARY}
       ${OPENGL_LIBRARIES}
       )
 
