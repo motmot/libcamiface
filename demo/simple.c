@@ -45,7 +45,6 @@ double my_floattime() {
   }									\
 
 void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
-  int i,j;
   FILE* fd;
   fd = fopen(filename,"w");
   fprintf(fd,"P5\n");
@@ -282,10 +281,17 @@ int main(int argc, char** argv) {
   cam_iface_shutdown();
   _check_error();
 
-  if (coding==CAM_IFACE_MONO8) {
+  switch (coding) {
+  case CAM_IFACE_MONO8_BAYER_BGGR:
+  case CAM_IFACE_MONO8_BAYER_RGGB:
+  case CAM_IFACE_MONO8_BAYER_GRBG:
+  case CAM_IFACE_MONO8_BAYER_GBRG:
+    printf("Bayer image will not be de-mosaiced\n");
+  case CAM_IFACE_MONO8:
     save_pgm("image.pgm",pixels, width, height);
     printf("saved last image as image.pgm\n");
-  } else {
+    break;
+  default:
     printf("do not know how to save sample image for this format\n");
   }
 
