@@ -55,6 +55,24 @@ void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
   fclose(fd);
 }
 
+void save_ppm(const char* filename,unsigned char *pixels,int width,int height) {
+  FILE* fd;
+  int row,col;
+  const unsigned char *base;
+  fd = fopen(filename,"w");
+  fprintf(fd,"P3\n");
+  fprintf(fd,"%d %d\n",width,height);
+  fprintf(fd,"255\n");
+  for (row=0; row<height; row++) {
+    for (col=0; col<width; col++) {
+      base = pixels + row*width*3 + col*3;
+      fprintf(fd,"%d %d %d\n",base[0],base[1],base[2]);
+    }
+  }
+  fprintf(fd,"\n");
+  fclose(fd);
+}
+
 void show_usage(char * cmd) {
   printf("usage: %s [num_frames]\n",cmd);
   printf("  where num_frames can be a number or 'forever'\n");
@@ -290,6 +308,10 @@ int main(int argc, char** argv) {
   case CAM_IFACE_MONO8:
     save_pgm("image.pgm",pixels, width, height);
     printf("saved last image as image.pgm\n");
+    break;
+  case CAM_IFACE_RGB8:
+    save_ppm("image.ppm",pixels, width, height);
+    printf("saved last image as image.ppm\n");
     break;
   default:
     printf("do not know how to save sample image for this format\n");
