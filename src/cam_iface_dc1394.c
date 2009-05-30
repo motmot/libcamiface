@@ -7,6 +7,7 @@
 #define DPRINTF(...) printf(__VA_ARGS__)
 #endif
 
+#include <dc1394/conversions.h>
 #include <dc1394/control.h>
 #include <dc1394/utils.h>
 
@@ -92,6 +93,8 @@ typedef struct CCdc1394 {
   fd_set fdset;
   int nfds;
   int capture_is_set;
+
+  int auto_debayer;
 } CCdc1394;
 
 // forward declarations
@@ -953,6 +956,8 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   }
   this->bayer[4]='\0';
 
+  this->auto_debayer = 0;
+
   switch (coding) {
   case DC1394_COLOR_CODING_MONO8:
     if (strcmp(this->bayer,"BGGR")==0) {
@@ -970,6 +975,15 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
     } else {
       this->inherited.coding=CAM_IFACE_MONO8;
       this->inherited.depth = 8;
+    }
+    if (this->inherited.coding!=CAM_IFACE_MONO8) {
+      if (getenv("DC1394_BACKEND_AUTO_DEBAYER")!=NULL) {
+        if (strcmp(getenv("DC1394_BACKEND_AUTO_DEBAYER"),"0")) {
+          this->inherited.coding=CAM_IFACE_RGB8;
+          this->inherited.depth = 24;
+          this->auto_debayer = 1;
+        }
+      }
     }
     break;
   case DC1394_COLOR_CODING_RAW8:
@@ -1356,7 +1370,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 						    unsigned char *out_bytes,
 						    intptr_t stride0, float timeout) {
   dc1394camera_t *camera;
-  dc1394video_frame_t *frame;
+  dc1394video_frame_t *orig_frame, *frame, *converted_frame;
   int row, depth, wb;
   uint32_t w,h;
 #ifdef CAM_IFACE_DC1394_SLOWDEBUG
@@ -1367,6 +1381,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   int retval;
   int errsv;
   dc1394error_t err;
+  size_t malloc_size;
 
   CHECK_CC(this);
   camera = cameras[this->inherited.device_number];
@@ -1421,6 +1436,33 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   h = frame->size[1];
   depth=this->inherited.depth;
 
+  orig_frame = frame;
+  if (this->auto_debayer) {
+    /* remove Bayer image mosaic and convert to RGB8 using libdc1394 */
+    converted_frame = (dc1394video_frame_t*)malloc(sizeof(dc1394video_frame_t));
+    if (converted_frame==NULL) {
+      cam_iface_error = CAM_IFACE_GENERIC_ERROR;
+      CAM_IFACE_ERROR_FORMAT("malloc() failed");
+      return;
+    }
+    bzero(converted_frame,sizeof(dc1394video_frame_t));
+    malloc_size = frame->size[0]*frame->size[1]*3;
+    converted_frame->image = (char*)malloc(malloc_size);
+    if (converted_frame->image==NULL) {
+      cam_iface_error = CAM_IFACE_GENERIC_ERROR;
+      CAM_IFACE_ERROR_FORMAT("malloc() failed");
+      return;
+    }
+    converted_frame->allocated_image_bytes = malloc_size;
+
+    CIDC1394CHK(dc1394_debayer_frames(frame,converted_frame, // comes back rgb8
+                                      DC1394_BAYER_METHOD_HQLINEAR));
+    if (converted_frame->stride==0) {
+      converted_frame->stride=stride0; /* workaround libdc1394 bug in convertion */
+    }
+    frame = converted_frame;
+  }
+
 #ifdef CAM_IFACE_DC1394_SLOWDEBUG
   if (!_get_size_for_video_mode(this->inherited.device_number,
 				camera->video_mode,&h_size,&v_size,&scalable)){
@@ -1469,7 +1511,11 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 
   this->last_timestamp=frame->timestamp; // get timestamp
 
-  CIDC1394CHK(dc1394_capture_enqueue (camera, frame));
+  if (this->auto_debayer) {
+    free(converted_frame->image);
+    free(converted_frame);
+  }
+  CIDC1394CHK(dc1394_capture_enqueue (camera, orig_frame));
 }
 
 void CCdc1394_grab_next_frame_blocking( CCdc1394 *this, unsigned char *out_bytes, float timeout) {

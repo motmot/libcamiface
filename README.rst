@@ -263,6 +263,9 @@ Environment variables:
  * *DC1394_BACKEND_1394B* attempt to force use of firewire
     800. (Otherwise defaults to 400.)
 
+ * *DC1394_BACKEND_AUTO_DEBAYER* use dc1394 to de-Bayer the images,
+    resulting in RGB8 images (rather than MONO8 Bayer images).
+
 unity
 -----
 
