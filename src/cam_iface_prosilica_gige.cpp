@@ -835,7 +835,7 @@ void CCprosil_get_camera_property_info(CCprosil *ccntxt,
     info->max_value = 50000;
     DPRINTF("WARNING: artificially setting max_value of shutter to 50000 in %s, %d\n",__FILE__,__LINE__);
     info->is_scaled_quantity = 1;
-    info->scaled_unit_name = "msec";
+    info->scaled_unit_name = "usec";
     info->scale_offset = 0;
     info->scale_gain = 1e-3; // convert from microsecond to millisecond
     break;
