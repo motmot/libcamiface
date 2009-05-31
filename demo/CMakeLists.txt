@@ -103,7 +103,7 @@ FIND_PACKAGE(OpenGL)
 
 if(GLUT_FOUND)
 
-  set(glut_SRCS liveview-glut.c)
+  set(liveview-glut-SRCS liveview-glut.c)
   set(liveview_DEFINE "-DSHADER_DIR='\"${SHADER_SOURCE_DIR}\"'"
     ${liveview_DEFINE})
 
@@ -127,11 +127,11 @@ if(GLUT_FOUND)
   ENDFOREACH(element)
 
   SET_SOURCE_FILES_PROPERTIES(
-    ${glut_SRCS}
+    ${liveview-glut-SRCS}
     PROPERTIES COMPILE_FLAGS ${liveview_DEFINES})
 
   FOREACH(BACKEND ${all_backends})
-    ADD_EXECUTABLE(liveview-glut-${BACKEND} ${glut_SRCS})
+    ADD_EXECUTABLE(liveview-glut-${BACKEND} ${liveview-glut-SRCS})
     include_directories(${GLUT_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
     IF(GLEW_FOUND)
       target_link_libraries(liveview-glut-${BACKEND} imp_glew)
