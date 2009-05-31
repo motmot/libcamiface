@@ -26,13 +26,14 @@
 
 /* global variables */
 CamContext *cc;
-int width, height;
+int stride, width, height;
 unsigned char *raw_pixels;
 double buf_wf, buf_hf;
 GLuint pbo, textureId;
 int use_pbo;
 int tex_width, tex_height;
 size_t PBO_stride;
+GLint gl_data_format;
 
 #define _check_error() {						\
     int _check_error_err;						\
@@ -59,32 +60,131 @@ void yuv422_to_mono8(src_pixels, dest_pixels, width, height, src_stride, dest_st
   }
 }
 
+#define CLIP(m)					\
+  (m)<0?0:((m)>255?255:(m))
+
+// from http://en.wikipedia.org/wiki/YUV
+#define convert_chunk(src,dest,rgba) {                                  \
+  u = src[0];                                                           \
+  y1 = src[1];                                                          \
+  v = src[2];                                                           \
+  y2 = src[3];                                                          \
+                                                                        \
+  C1 = y1-16;                                                           \
+  C2 = y2-16;                                                           \
+  D = u-128;                                                            \
+  E = v-128;                                                            \
+                                                                        \
+  dest[0] = CLIP(( 298 * C1           + 409 * E + 128) >> 8);           \
+  dest[1] = CLIP(( 298 * C1 - 100 * D - 208 * E + 128) >> 8);           \
+  dest[2] = CLIP(( 298 * C1 + 516 * D           + 128) >> 8);           \
+  if (rgba) {                                                           \
+    dest[3] = 255;                                                      \
+    dest[4] = CLIP(( 298 * C2           + 409 * E + 128) >> 8);         \
+    dest[5] = CLIP(( 298 * C2 - 100 * D - 208 * E + 128) >> 8);         \
+    dest[6] = CLIP(( 298 * C2 + 516 * D           + 128) >> 8);         \
+    dest[7] = 255;                                                      \
+  } else {                                                              \
+    dest[3] = CLIP(( 298 * C2           + 409 * E + 128) >> 8);         \
+    dest[4] = CLIP(( 298 * C2 - 100 * D - 208 * E + 128) >> 8);         \
+    dest[5] = CLIP(( 298 * C2 + 516 * D           + 128) >> 8);         \
+  }                                                                     \
+}
+
+void yuv422_to_rgb8(src_pixels, dest_pixels, width, height, src_stride, dest_stride) {
+  int C1, C2, D, E;
+  int i,j;
+  unsigned char* src_chunk, *dest_chunk;
+  unsigned char u,y1,v,y2;
+  for (i=0; i<height; i++) {
+    src_chunk = src_pixels + i*src_stride;
+    dest_chunk = dest_pixels + i*dest_stride;
+    for (j=0; j<(width/2); j++) {
+      convert_chunk(src_chunk,dest_chunk,0);
+      dest_chunk+=6;
+      src_chunk+=4;
+    }
+  }
+}
+
+void yuv422_to_rgba8(src_pixels, dest_pixels, width, height, src_stride, dest_stride) {
+  int C1, C2, D, E;
+  int i,j;
+  unsigned char* src_chunk, *dest_chunk;
+  unsigned char u,y1,v,y2;
+  for (i=0; i<height; i++) {
+    src_chunk = src_pixels + i*src_stride;
+    dest_chunk = dest_pixels + i*dest_stride;
+    for (j=0; j<(width/2); j++) {
+      convert_chunk(src_chunk,dest_chunk,1);
+      dest_chunk+=8;
+      src_chunk+=4;
+    }
+  }
+}
+
 char* convert_pixels(char* src,
-                   CameraPixelCoding src_coding,
-                   size_t dest_stride,
-                   char* dest, int force_copy) {
+                     CameraPixelCoding src_coding,
+                     size_t dest_stride,
+                     char* dest, int force_copy) {
   static int gave_error=0;
-  char* actual_dest;
+  char *actual_dest, *src_ptr;
   int i;
   int copy_required;
 
-  copy_required = force_copy || (dest_stride!=width);
+  copy_required = force_copy || (dest_stride!=stride);
+  src_ptr = src;
 
-  if (src_coding==CAM_IFACE_MONO8) {
+  if ((src_coding==CAM_IFACE_MONO8) && (gl_data_format==GL_LUMINANCE)) {
     if (copy_required) {
       // update data directly on the mapped buffer
       GLubyte* rowstart = dest;
       for (i=0; i<height; i++) {
-        memcpy(rowstart, src + (width*i), width );
+        memcpy(rowstart, src_ptr + (stride*i), width );
         rowstart += dest_stride;
       }
       return dest;
     } else {
       return src; /* no conversion necessary*/
     }
-  } else if (src_coding==CAM_IFACE_YUV422) {
-    yuv422_to_mono8(src, dest, width, height, width*2, dest_stride);
+  } else if ((src_coding==CAM_IFACE_YUV422) && (gl_data_format==GL_RGB)) {
+    yuv422_to_rgb8(src_ptr, dest, width, height, stride, dest_stride);
     return dest;
+  } else if ((src_coding==CAM_IFACE_YUV422) && (gl_data_format==GL_RGBA)) {
+    yuv422_to_rgba8(src_ptr, dest, width, height, stride, dest_stride);
+    return dest;
+  } else if ((src_coding==CAM_IFACE_RGB8) && (gl_data_format==GL_RGB)) {
+    if (copy_required) {
+      // update data directly on the mapped buffer
+      GLubyte* rowstart = dest;
+      for (i=0; i<height; i++) {
+        memcpy(rowstart, src_ptr, width*3 );
+        rowstart += dest_stride;
+        src_ptr += stride;
+      }
+      return dest;
+    } else {
+      return src; /* no conversion necessary*/
+    }
+  } else if ((src_coding==CAM_IFACE_RGB8) && (gl_data_format==GL_RGBA)) {
+    if (copy_required) {
+      // update data directly on the mapped buffer
+      GLubyte* rowstart = dest;
+      int j;
+      for (i=0; i<height; i++) {
+        for (j=0; j<width; j++) {
+          rowstart[j*4] = src_ptr[j*3];
+          rowstart[j*4+1] = src_ptr[j*3+1];
+          rowstart[j*4+2] = src_ptr[j*3+2];
+          rowstart[j*4+3] = 255;
+        }
+        rowstart += dest_stride;
+        src_ptr += stride;
+      }
+      return dest;
+    } else {
+      return src; /* no conversion necessary*/
+    }
   } else {
     if (!gave_error) {
       fprintf(stderr,"ERROR: unsupported pixel coding %d\n",src_coding);
@@ -94,7 +194,7 @@ char* convert_pixels(char* src,
       // update data directly on the mapped buffer
       GLubyte* rowstart = dest;
       for (i=0; i<height; i++) {
-        memcpy(rowstart, src + (width*i), width );
+        memcpy(rowstart, src_ptr + (stride*i), width );
         rowstart += dest_stride;
       }
       return dest;
@@ -116,15 +216,17 @@ double next_power_of_2(double f) {
 
 void initialize_gl_texture() {
   char *buffer;
+  int bytes_per_pixel;
 
   if (use_pbo) {
-    PBO_stride = ((width/32)*32);
+    // align
+    PBO_stride = (width/32)*32;
     if (PBO_stride<width) PBO_stride+=32;
-    printf("PBO stride: %d\n",PBO_stride);
     tex_width = PBO_stride;
     tex_height = height;
   } else {
-    tex_width = (int)next_power_of_2(width);
+    PBO_stride = width;
+    tex_width = (int)next_power_of_2(stride);
     tex_height = (int)next_power_of_2(height);
   }
 
@@ -134,7 +236,29 @@ void initialize_gl_texture() {
   printf("for %dx%d image, allocating %dx%d texture (fractions: %.2f, %.2f)\n",
          width,height,tex_width,tex_height,buf_wf,buf_hf);
 
-  buffer = malloc( tex_height*tex_width );
+  if ((cc->coding==CAM_IFACE_RGB8) || (cc->coding==CAM_IFACE_YUV422)) {
+    bytes_per_pixel=4;
+    gl_data_format = GL_RGBA;
+
+    /* This gives only grayscale images ATI fglrx Ubuntu Jaunty, but
+       transfers less data:     */
+
+    /*
+    bytes_per_pixel=3;
+    gl_data_format = GL_RGB;
+    */
+
+  } else {
+    bytes_per_pixel=1;
+    gl_data_format = GL_LUMINANCE;
+  }
+  PBO_stride = PBO_stride*bytes_per_pixel; // FIXME this pads the rows more than necessary
+
+  if (use_pbo) {
+    printf("image stride: %d, PBO stride: %d\n",stride,PBO_stride);
+  }
+
+  buffer = malloc( tex_height*PBO_stride );
   if (!buffer) {
     fprintf(stderr,"ERROR: failed to allocate buffer\n");
     exit(1);
@@ -149,7 +273,7 @@ void initialize_gl_texture() {
                GL_RGBA, /* internal format */
                tex_width, tex_height,
                0, /* border */
-               GL_LUMINANCE, /* format */
+               gl_data_format, /* format */
                GL_UNSIGNED_BYTE, /* type */
                buffer);
   free(buffer);
@@ -262,6 +386,9 @@ int main(int argc, char** argv) {
   CamContext_get_frame_roi(cc, &left, &top, &width, &height);
   _check_error();
 
+  stride = width*cc->depth/8;
+  printf("raw image width: %d, stride: %d\n",width,stride);
+
   glutInitWindowPosition(-1,-1);
   glutInitWindowSize(width, height);
   glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE );
@@ -288,8 +415,9 @@ int main(int argc, char** argv) {
     glGenBuffers(1, &pbo);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
     glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB,
-                 tex_width*tex_height, 0, GL_STREAM_DRAW);
+                 PBO_stride*tex_height, 0, GL_STREAM_DRAW);
   }
+
 
   glEnable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -380,9 +508,9 @@ void upload_image_data_to_opengl(const char* raw_image_data,
     glBindTexture(GL_TEXTURE_2D, textureId);
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
 
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height, gl_data_format, GL_UNSIGNED_BYTE, 0);
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, tex_width*tex_height, 0, GL_STREAM_DRAW_ARB);
+    glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, PBO_stride*tex_height, 0, GL_STREAM_DRAW_ARB);
     GLubyte* ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
     if(ptr) {
       convert_pixels(raw_image_data, cc->coding, PBO_stride, ptr, 1);
@@ -393,14 +521,14 @@ void upload_image_data_to_opengl(const char* raw_image_data,
 
     if (show_pixels==NULL) {
       /* allocate memory */
-      show_pixels = (unsigned char *)malloc( width*height );
+      show_pixels = (unsigned char *)malloc( PBO_stride*height );
       if (show_pixels==NULL) {
         fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
         exit(1);
       }
     }
 
-    gl_image_data = convert_pixels(raw_image_data, cc->coding, width, show_pixels, 0);
+    gl_image_data = convert_pixels(raw_image_data, cc->coding, PBO_stride, show_pixels, 0);
 
     glBindTexture(GL_TEXTURE_2D, textureId);
     glTexSubImage2D(GL_TEXTURE_2D, /* target */
@@ -409,7 +537,7 @@ void upload_image_data_to_opengl(const char* raw_image_data,
                     0, /* y offset */
                     width,
                     height,
-                    GL_LUMINANCE, /* data format */
+                    gl_data_format, /* data format */
                     GL_UNSIGNED_BYTE, /* data type */
                     gl_image_data);
 
