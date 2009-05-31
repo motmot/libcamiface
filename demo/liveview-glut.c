@@ -61,6 +61,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "cam_iface.h"
 
+#ifndef SHADER_DIR
+#error "SHADER_DIR is undefined"
+#endif
+
 /* global variables */
 CamContext *cc;
 int stride, width, height;
@@ -511,13 +515,13 @@ void setShaders() {
 		vertex_program = glCreateShader(GL_VERTEX_SHADER);
 		fragment_program = glCreateShader(GL_FRAGMENT_SHADER);
 
-		vs = textFileRead("demosaic.vrt");
+		vs = textFileRead(SHADER_DIR "demosaic.vrt");
                 if (vs==NULL) {
                   fprintf(stderr,"ERROR: failed to read vertex shader\n");
                   use_shaders = 0;
                   return;
                 }
-		fs = textFileRead("demosaic.frg");
+		fs = textFileRead(SHADER_DIR "demosaic.frg");
                 if (fs==NULL) {
                   fprintf(stderr,"ERROR: failed to read fragment shader\n");
                   use_shaders = 0;

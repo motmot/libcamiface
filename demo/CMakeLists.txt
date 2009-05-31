@@ -32,6 +32,12 @@ set(SRCS
     )
 
 set(DEMO_DIR bin)
+IF(UNIX AND NOT APPLE)
+  set(USR_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/libcamiface/")
+  SET(SHADER_SOURCE_DIR ${USR_SHARE_DIR})
+ELSE(UNIX AND NOT APPLE)
+  SET(SHADER_SOURCE_DIR "./")
+ENDIF(UNIX AND NOT APPLE)
 
 FOREACH(SRC ${SRCS})
   FOREACH(BACKEND ${all_backends})
@@ -98,11 +104,13 @@ FIND_PACKAGE(OpenGL)
 if(GLUT_FOUND)
 
   set(glut_SRCS liveview-glut.c)
+  set(liveview_DEFINE "-DSHADER_DIR='\"${SHADER_SOURCE_DIR}\"'"
+    ${liveview_DEFINE})
 
   IF(GLEW_FOUND)
-    SET_SOURCE_FILES_PROPERTIES(
-      ${glut_SRCS}
-      PROPERTIES COMPILE_FLAGS "-DUSE_GLEW")
+    set(liveview_DEFINE "-DUSE_GLEW"
+      ${liveview_DEFINE})
+
     add_library(imp_glew STATIC IMPORTED)
     set_property(TARGET imp_glew PROPERTY
       IMPORTED_LOCATION "${GLEW_LIBRARY}")
@@ -112,6 +120,15 @@ if(GLUT_FOUND)
     SET(GLEW_LIBRARY "")
     message("GLEW not found -- no OpenGL extension support in liveview-glut")
   ENDIF(GLEW_FOUND)
+
+  # concatenate (join) strings to make single argument
+  FOREACH(element ${liveview_DEFINE})
+    set(liveview_DEFINES "${liveview_DEFINES} ${element}")
+  ENDFOREACH(element)
+
+  SET_SOURCE_FILES_PROPERTIES(
+    ${glut_SRCS}
+    PROPERTIES COMPILE_FLAGS ${liveview_DEFINES})
 
   FOREACH(BACKEND ${all_backends})
     ADD_EXECUTABLE(liveview-glut-${BACKEND} ${glut_SRCS})
@@ -132,8 +149,6 @@ if(GLUT_FOUND)
       ARCHIVE DESTINATION lib
       )
 
-    INSTALL(FILES "demosaic.vrt" "demosaic.frg" DESTINATION ${DEMO_DIR})
-
     IF(WIN32)
       GET_FILENAME_COMPONENT(GLUT_LIB_DIR ${GLUT_LIBRARIES} PATH)
       FILE(GLOB GLUT_DLLS ${GLUT_LIB_DIR}/*.dll)
@@ -144,6 +159,15 @@ if(GLUT_FOUND)
     ENDIF(WIN32)
 
   ENDFOREACH(BACKEND)
+
+  IF(UNIX AND NOT APPLE)
+    # Install shaders in /usr/share equivalent for FHS
+    INSTALL(FILES "demosaic.vrt" "demosaic.frg" DESTINATION ${USR_SHARE_DIR})
+  ELSE(UNIX AND NOT APPLE)
+    # Install shaders alongside demos
+    INSTALL(FILES "demosaic.vrt" "demosaic.frg" DESTINATION ${DEMO_DIR})
+  ENDIF(UNIX AND NOT APPLE)
+
 ELSE(GLUT_FOUND)
   message("GLUT not found -- no liveview-glut")
 ENDIF(GLUT_FOUND)
