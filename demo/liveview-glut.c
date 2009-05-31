@@ -178,7 +178,7 @@ char* convert_pixels(char* src,
   char *actual_dest, *src_ptr;
   static int attempted_to_start_glsl_program=0;
   GLubyte* rowstart;
-  int i;
+  int i,j;
   int copy_required;
   GLint firstRed;
 
@@ -297,6 +297,23 @@ char* convert_pixels(char* src,
     return dest;
     break;
 #endif
+  case CAM_IFACE_MONO16:
+    switch (gl_data_format) {
+    case GL_LUMINANCE:
+      rowstart = dest;
+      for (i=0; i<height; i++) {
+        for (j=0; j<width; j++) {
+          rowstart[j] = (src + (stride*i))[j*2];
+        }
+        rowstart += dest_stride;
+      }
+      return dest;
+      break;
+    default:
+      fprintf(stderr,"ERROR: invalid conversion at line %d\n",__LINE__);
+      exit(1);
+      break;
+    }
   default:
     if (!gave_error) {
       fprintf(stderr,"ERROR: unsupported pixel coding %d\n",src_coding);
@@ -357,10 +374,14 @@ void initialize_gl_texture() {
     gl_data_format = GL_RGB;
     */
 
+  } else if (cc->coding==CAM_IFACE_MONO16) {
+    bytes_per_pixel=1;
+    gl_data_format = GL_LUMINANCE;
   } else {
     bytes_per_pixel=1;
     gl_data_format = GL_LUMINANCE;
   }
+  printf("bytes per pixel %d, depth/8 %d\n",bytes_per_pixel,(cc->depth/8));
   PBO_stride = PBO_stride*bytes_per_pixel; // FIXME this pads the rows more than necessary
 
   if (use_pbo) {
