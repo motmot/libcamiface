@@ -77,20 +77,22 @@ if(GLUT_FOUND)
     SET_SOURCE_FILES_PROPERTIES(
       ${glut_SRCS}
       PROPERTIES COMPILE_FLAGS "-DUSE_GLEW")
+    add_library(imp_glew STATIC IMPORTED)
+    set_property(TARGET imp_glew PROPERTY
+      IMPORTED_LOCATION "${GLEW_LIBRARY}")
+
   ELSE(GLEW_FOUND)
     SET(GLEW_INCLUDE_DIR "")
     SET(GLEW_LIBRARY "")
     message("GLEW not found -- no OpenGL extension support in liveview-glut")
   ENDIF(GLEW_FOUND)
 
-  add_library(imp_glew STATIC IMPORTED)
-  set_property(TARGET imp_glew PROPERTY
-               IMPORTED_LOCATION "${GLEW_LIBRARY}")
-
   FOREACH(BACKEND ${all_backends})
     ADD_EXECUTABLE(liveview-glut-${BACKEND} ${glut_SRCS})
     include_directories(${GLUT_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
-    target_link_libraries(liveview-glut-${BACKEND} imp_glew)
+    IF(GLEW_FOUND)
+      target_link_libraries(liveview-glut-${BACKEND} imp_glew)
+    ENDIF(GLEW_FOUND)
 
     TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
       cam_iface_${BACKEND}
