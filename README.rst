@@ -203,6 +203,9 @@ variables prior to my call to cmake.::
 
 This will build a Mac installer, called ``libcamiface-x.y.z-Darwin.dmg``.
 
+To build an Xcode project, run cmake with the argument
+``-DCMAKE_GENERATOR=Xcode``.
+
 Windows
 -------
 
