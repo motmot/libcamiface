@@ -1,3 +1,35 @@
+/*
+
+Copyright (c) 2004-2009, California Institute of Technology.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ */
+
+
 #include <stdio.h>
 #ifdef _WIN32
 #include <Windows.h>
@@ -8,6 +40,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #ifdef USE_GLEW
 #  include <GL/glew.h>
@@ -30,10 +66,12 @@ int stride, width, height;
 unsigned char *raw_pixels;
 double buf_wf, buf_hf;
 GLuint pbo, textureId;
-int use_pbo;
+int use_pbo, use_shaders;
 int tex_width, tex_height;
 size_t PBO_stride;
 GLint gl_data_format;
+
+GLhandleARB glsl_program;
 
 #define _check_error() {						\
     int _check_error_err;						\
@@ -123,84 +161,153 @@ void yuv422_to_rgba8(src_pixels, dest_pixels, width, height, src_stride, dest_st
   }
 }
 
+#define do_copy() {                                       \
+  rowstart = dest;                                        \
+  for (i=0; i<height; i++) {                              \
+    memcpy(rowstart, src + (stride*i), width );           \
+    rowstart += dest_stride;                              \
+  }                                                       \
+}
+
 char* convert_pixels(char* src,
                      CameraPixelCoding src_coding,
                      size_t dest_stride,
                      char* dest, int force_copy) {
   static int gave_error=0;
   char *actual_dest, *src_ptr;
+  static int attempted_to_start_glsl_program=0;
+  GLubyte* rowstart;
   int i;
   int copy_required;
+  GLint firstRed;
 
   copy_required = force_copy || (dest_stride!=stride);
   src_ptr = src;
 
-  if ((src_coding==CAM_IFACE_MONO8) && (gl_data_format==GL_LUMINANCE)) {
-    if (copy_required) {
-      // update data directly on the mapped buffer
-      GLubyte* rowstart = dest;
-      for (i=0; i<height; i++) {
-        memcpy(rowstart, src_ptr + (stride*i), width );
-        rowstart += dest_stride;
+  switch (src_coding) {
+  case CAM_IFACE_MONO8:
+    switch (gl_data_format) {
+    case GL_LUMINANCE:
+      if (copy_required) {
+        do_copy();
+        return dest;
       }
-      return dest;
-    } else {
       return src; /* no conversion necessary*/
+      break;
+    default:
+      fprintf(stderr,"ERROR: will not convert MONO8 image to non-luminance\n");
+      exit(1);
+      break;
     }
-  } else if ((src_coding==CAM_IFACE_YUV422) && (gl_data_format==GL_RGB)) {
-    yuv422_to_rgb8(src_ptr, dest, width, height, stride, dest_stride);
-    return dest;
-  } else if ((src_coding==CAM_IFACE_YUV422) && (gl_data_format==GL_RGBA)) {
-    yuv422_to_rgba8(src_ptr, dest, width, height, stride, dest_stride);
-    return dest;
-  } else if ((src_coding==CAM_IFACE_RGB8) && (gl_data_format==GL_RGB)) {
-    if (copy_required) {
-      // update data directly on the mapped buffer
-      GLubyte* rowstart = dest;
-      for (i=0; i<height; i++) {
-        memcpy(rowstart, src_ptr, width*3 );
-        rowstart += dest_stride;
-        src_ptr += stride;
-      }
+    break;
+  case CAM_IFACE_YUV422:
+    switch (gl_data_format) {
+    case GL_LUMINANCE:
+      yuv422_to_mono8(src_ptr, dest, width, height, stride, dest_stride);
       return dest;
-    } else {
-      return src; /* no conversion necessary*/
+      break;
+    case GL_RGB:
+      yuv422_to_rgb8(src_ptr, dest, width, height, stride, dest_stride);
+      return dest;
+      break;
+    case GL_RGBA:
+      yuv422_to_rgba8(src_ptr, dest, width, height, stride, dest_stride);
+      return dest;
+      break;
+    default:
+      fprintf(stderr,"ERROR: invalid conversion at line %d\n",__LINE__);
+      exit(1);
+      break;
     }
-  } else if ((src_coding==CAM_IFACE_RGB8) && (gl_data_format==GL_RGBA)) {
-    if (copy_required) {
-      // update data directly on the mapped buffer
-      GLubyte* rowstart = dest;
-      int j;
-      for (i=0; i<height; i++) {
-        for (j=0; j<width; j++) {
-          rowstart[j*4] = src_ptr[j*3];
-          rowstart[j*4+1] = src_ptr[j*3+1];
-          rowstart[j*4+2] = src_ptr[j*3+2];
-          rowstart[j*4+3] = 255;
+    break;
+  case CAM_IFACE_RGB8:
+    switch (gl_data_format) {
+    case GL_RGB:
+      if (copy_required) {
+        // update data directly on the mapped buffer
+        GLubyte* rowstart = dest;
+        for (i=0; i<height; i++) {
+          memcpy(rowstart, src_ptr, width*3 );
+          rowstart += dest_stride;
+          src_ptr += stride;
         }
-        rowstart += dest_stride;
-        src_ptr += stride;
+        return dest;
+      } else {
+        return src; /* no conversion necessary*/
       }
-      return dest;
-    } else {
-      return src; /* no conversion necessary*/
+      break;
+    case GL_RGBA:
+      if (copy_required) {
+        // update data directly on the mapped buffer
+        GLubyte* rowstart = dest;
+        int j;
+        for (i=0; i<height; i++) {
+          for (j=0; j<width; j++) {
+            rowstart[j*4] = src_ptr[j*3];
+            rowstart[j*4+1] = src_ptr[j*3+1];
+            rowstart[j*4+2] = src_ptr[j*3+2];
+            rowstart[j*4+3] = 255;
+          }
+          rowstart += dest_stride;
+          src_ptr += stride;
+        }
+        return dest;
+      } else {
+        return src; /* no conversion necessary*/
+      }
+      break;
+    default:
+      fprintf(stderr,"ERROR: invalid conversion at line %d\n",__LINE__);
+      exit(1);
+      break;
     }
-  } else {
+    break;
+#ifdef USE_GLEW
+  case CAM_IFACE_MONO8_BAYER_BGGR:
+  case CAM_IFACE_MONO8_BAYER_RGGB:
+  case CAM_IFACE_MONO8_BAYER_GRBG:
+  case CAM_IFACE_MONO8_BAYER_GBRG:
+    //FIXME: add switch (gl_data_format)
+    if (!attempted_to_start_glsl_program) {
+      setShaders();
+      if (use_shaders) {
+        firstRed = glGetUniformLocation(glsl_program,"firstRed");
+        switch(src_coding) {
+        case CAM_IFACE_MONO8_BAYER_BGGR:
+          glUniform2f(firstRed,0,0);
+          break;
+        case CAM_IFACE_MONO8_BAYER_RGGB:
+          glUniform2f(firstRed,1,1);
+          break;
+        case CAM_IFACE_MONO8_BAYER_GRBG:
+          glUniform2f(firstRed,0,1);
+          break;
+        case CAM_IFACE_MONO8_BAYER_GBRG:
+        default:
+          glUniform2f(firstRed,1,0);
+          break;
+        }
+      } else {
+        fprintf(stderr,"ERROR: Failed to start GLSL Bayer program\n");
+      }
+      attempted_to_start_glsl_program=1;
+    }
+    do_copy();
+    return dest;
+    break;
+#endif
+  default:
     if (!gave_error) {
       fprintf(stderr,"ERROR: unsupported pixel coding %d\n",src_coding);
       gave_error=1;
     }
     if (copy_required) {
-      // update data directly on the mapped buffer
-      GLubyte* rowstart = dest;
-      for (i=0; i<height; i++) {
-        memcpy(rowstart, src_ptr + (stride*i), width );
-        rowstart += dest_stride;
-      }
+      do_copy();
       return dest;
     } else {
       return src; /* no conversion necessary*/
     }
+    break;
   }
 }
 
@@ -224,6 +331,7 @@ void initialize_gl_texture() {
     if (PBO_stride<width) PBO_stride+=32;
     tex_width = PBO_stride;
     tex_height = height;
+
   } else {
     PBO_stride = width;
     tex_width = (int)next_power_of_2(stride);
@@ -394,12 +502,20 @@ int main(int argc, char** argv) {
   glutInitDisplayMode( GLUT_RGBA | GLUT_DOUBLE );
   glutCreateWindow("libcamiface liveview");
 
+  use_shaders=0;
+
 #ifdef USE_GLEW
   glewInit();
   if (glewIsSupported("GL_VERSION_2_0 "
                       "GL_ARB_pixel_buffer_object")) {
     printf("PBO enabled\n");
     use_pbo=1;
+
+    if (GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader) {
+      printf("GLSL shaders present\n");
+      use_shaders=1;
+    }
+
   } else {
     printf("GLEW available, but no pixel buffer support -- not using PBO\n");
     use_pbo=0;
@@ -513,7 +629,7 @@ void upload_image_data_to_opengl(const char* raw_image_data,
     glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, PBO_stride*tex_height, 0, GL_STREAM_DRAW_ARB);
     GLubyte* ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
     if(ptr) {
-      convert_pixels(raw_image_data, cc->coding, PBO_stride, ptr, 1);
+      convert_pixels(raw_image_data, coding, PBO_stride, ptr, 1);
       glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer
     }
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
@@ -528,7 +644,7 @@ void upload_image_data_to_opengl(const char* raw_image_data,
       }
     }
 
-    gl_image_data = convert_pixels(raw_image_data, cc->coding, PBO_stride, show_pixels, 0);
+    gl_image_data = convert_pixels(raw_image_data, coding, PBO_stride, show_pixels, 0);
 
     glBindTexture(GL_TEXTURE_2D, textureId);
     glTexSubImage2D(GL_TEXTURE_2D, /* target */
