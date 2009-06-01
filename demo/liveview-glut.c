@@ -1,6 +1,7 @@
 /*
 
 Copyright (c) 2004-2009, California Institute of Technology.
+Copyright (c) 2009, António Ramires Fernandes.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -413,6 +414,149 @@ void display_pixels() {
     glEnd();
 
     glutSwapBuffers();
+}
+
+char *textFileRead(char *fn) {
+
+
+        FILE *fp;
+        char *content = NULL;
+
+        int f,count;
+        f = open(fn, O_RDONLY);
+
+        count = lseek(f, 0, SEEK_END);
+
+        close(f);
+
+        if (fn != NULL) {
+                fp = fopen(fn,"rt");
+
+                if (fp != NULL) {
+
+
+                        if (count > 0) {
+                                content = (char *)malloc(sizeof(char) * (count+1));
+                                count = fread(content,sizeof(char),count,fp);
+                                content[count] = '\0';
+                        }
+                        fclose(fp);
+                }
+        }
+        return content;
+}
+
+	void printShaderInfoLog(GLuint obj)
+	{
+	    int infologLength = 0;
+	    int charsWritten  = 0;
+	    char *infoLog;
+
+		glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+
+	    if (infologLength > 0)
+	    {
+	        infoLog = (char *)malloc(infologLength);
+	        glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
+			printf("%s\n",infoLog);
+	        free(infoLog);
+	    }
+	}
+
+	void printProgramInfoLog(GLuint obj)
+	{
+	    int infologLength = 0;
+	    int charsWritten  = 0;
+	    char *infoLog;
+
+		glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+
+	    if (infologLength > 0)
+	    {
+	        infoLog = (char *)malloc(infologLength);
+	        glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
+			printf("%s\n",infoLog);
+	        free(infoLog);
+	    }
+	}
+
+void setShaders() {
+
+		char *vs,*fs;
+                GLint status;
+                GLhandleARB vertex_program,fragment_program;
+                GLint sourceSize, shader_texture_source;
+
+		vertex_program = glCreateShader(GL_VERTEX_SHADER);
+		fragment_program = glCreateShader(GL_FRAGMENT_SHADER);
+
+		vs = textFileRead("demosaic.vrt");
+                if (vs==NULL) {
+                  fprintf(stderr,"ERROR: failed to read vertex shader\n");
+                  use_shaders = 0;
+                  return;
+                }
+		fs = textFileRead("demosaic.frg");
+                if (fs==NULL) {
+                  fprintf(stderr,"ERROR: failed to read fragment shader\n");
+                  use_shaders = 0;
+                  return;
+                }
+
+		const char * vv = vs;
+		const char * ff = fs;
+
+		glShaderSource(vertex_program, 1, &vv,NULL);
+		glShaderSource(fragment_program, 1, &ff,NULL);
+
+		free(vs);free(fs);
+
+		glCompileShader(vertex_program);
+                glGetShaderiv(vertex_program,GL_COMPILE_STATUS,&status);
+                if (status!=GL_TRUE) {
+                  fprintf(stderr,
+                          "ERROR: GLSL vertex shader compile error, disabling shaders\n");
+                  use_shaders = 0;
+                  return;
+                }
+
+		glCompileShader(fragment_program);
+                glGetShaderiv(fragment_program,GL_COMPILE_STATUS,&status);
+                if (status!=GL_TRUE) {
+                  fprintf(stderr,
+                          "ERROR: GLSL fragment shader compile error, disabling shaders\n");
+                  use_shaders = 0;
+                  return;
+                }
+
+                printShaderInfoLog(vertex_program);
+                printShaderInfoLog(fragment_program);
+
+		glsl_program = glCreateProgram();
+		glAttachShader(glsl_program,vertex_program);
+		glAttachShader(glsl_program,fragment_program);
+		glLinkProgram(glsl_program);
+
+                printProgramInfoLog(glsl_program);
+
+                glGetProgramiv(glsl_program,GL_LINK_STATUS,&status);
+                if (status!=GL_TRUE) {
+                  fprintf(stderr,"ERROR: GLSL link error, disabling shaders\n");
+                  use_shaders = 0;
+                  return;
+                }
+
+                glUseProgram(glsl_program);
+                printf("GLSL shaders in use\n");
+
+
+                sourceSize = glGetUniformLocation(glsl_program,"sourceSize");
+                shader_texture_source = glGetUniformLocation(glsl_program,"source");
+
+                glUniform4f(sourceSize,
+                            PBO_stride,height,
+                            1.0/PBO_stride,1.0/height);
+                glUniform1i(shader_texture_source, 0);
 }
 
 int main(int argc, char** argv) {
