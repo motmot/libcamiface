@@ -103,7 +103,7 @@ set_target_properties(cam_iface_unity-static PROPERTIES OUTPUT_NAME "cam_iface_u
 SET_TARGET_PROPERTIES(cam_iface_unity PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 SET_TARGET_PROPERTIES(cam_iface_unity-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
-INSTALL(TARGETS cam_iface_unity
+INSTALL(TARGETS cam_iface_unity cam_iface_unity-static
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -129,7 +129,7 @@ IF(DC1394_FOUND)
   SET_TARGET_PROPERTIES(cam_iface_dc1394 PROPERTIES CLEAN_DIRECT_OUTPUT 1)
   SET_TARGET_PROPERTIES(cam_iface_dc1394-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
-  INSTALL(TARGETS cam_iface_dc1394
+  INSTALL(TARGETS cam_iface_dc1394 cam_iface_dc1394-static
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -206,7 +206,7 @@ IF(PROSILICA_GIGE_FOUND)
   )
   endif(NOT WIN32)
 
-  INSTALL(TARGETS cam_iface_prosilica_gige
+  INSTALL(TARGETS cam_iface_prosilica_gige cam_iface_prosilica_gige-static
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -248,7 +248,7 @@ ENDIF(NOT CARBON_FOUND)
   SET_TARGET_PROPERTIES(cam_iface_quicktime PROPERTIES CLEAN_DIRECT_OUTPUT 1)
   SET_TARGET_PROPERTIES(cam_iface_quicktime-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
-  INSTALL(TARGETS cam_iface_quicktime
+  INSTALL(TARGETS cam_iface_quicktime cam_iface_quicktime-static
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
