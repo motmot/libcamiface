@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
   CamContext **cc;
   unsigned char **pixels;
 
-  int num_cameras=2;
+  int num_cameras;
   int num_buffers;
 
   double last_fps_print, now, t_diff;
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
   int n_frames;
   int have_frame;
   int buffer_size;
-  int num_modes, num_props;
+  int num_modes, num_props, num_trigger_modes;
   const char** mode_strings;
   char mode_string[255];
   int i,mode_number,camno;
@@ -143,19 +143,8 @@ int main(int argc, char** argv) {
   }
   printf("using driver %s\n",cam_iface_get_driver_name());
 
+  num_cameras = cam_iface_get_num_cameras();
   printf("%d cameras found\n",cam_iface_get_num_cameras());
-
-  if (cam_iface_get_num_cameras()<num_cameras) {
-    _check_error();
-
-    printf("not enough cameras found, will now exit\n");
-
-    cam_iface_shutdown();
-    _check_error();
-
-    exit(1);
-  }
-  _check_error();
 
   cc = (CamContext**)malloc( num_cameras*sizeof(CamContext**));
   if (cc==NULL) {
@@ -248,6 +237,15 @@ int main(int argc, char** argv) {
       exit(1);
     }
 
+    CamContext_get_num_trigger_modes( cc[camno], &num_trigger_modes );
+    _check_error();
+
+    if (num_trigger_modes) {
+      printf("setting trigger mode 0\n");
+      CamContext_set_trigger_mode_number( cc[camno], 0 );
+      _check_error();
+    }
+
     CamContext_start_camera(cc[camno]);
     _check_error();
   }
@@ -260,11 +258,6 @@ int main(int argc, char** argv) {
   } else {
     printf("will now grab %d frames.\n",do_num_frames);
   }
-
-  /*
-    CamContext_set_trigger_mode_number( cc[camno], 0 );
-    _check_error();
-  */
 
   while (1) {
     if (do_num_frames<0) break;
