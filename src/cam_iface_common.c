@@ -148,3 +148,6 @@ CAM_IFACE_API void CamContext_set_num_framebuffers( CamContext *this,
 				      int num_framebuffers ){
   this->vmt->set_num_framebuffers(this,num_framebuffers);
 }
+
+/* vim: set expandtab=8 ts=8: */
+

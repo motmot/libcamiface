@@ -394,3 +394,6 @@ void cam_iface_get_camera_info(int device_number,
     }
   }
 }
+
+/* vim: set expandtab=8 ts=8: */
+

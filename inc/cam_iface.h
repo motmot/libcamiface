@@ -325,3 +325,6 @@ CAM_IFACE_API void CamContext_set_num_framebuffers( CamContext *ccntxt,
 }
 #endif
 #endif /* CAM_IFACE_H */
+
+/* vim: set expandtab=8 ts=8: */
+
