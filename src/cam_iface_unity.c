@@ -328,6 +328,8 @@ CamContext* CCunity_construct( int device_number, int NumImageBuffers,
   struct backend_info_t* this_backend_info;
   CamContext* result;
   cam_iface_constructor_func_t construct;
+  cam_iface_error = 0;
+  CAM_IFACE_ERROR_FORMAT("NO ERROR");
 
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
