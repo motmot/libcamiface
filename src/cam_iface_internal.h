@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define cam_iface_thread_local
 #warning "Thread local storage not implemented"
 #else
-#define cam_iface_thread_local __thread
+#define cam_iface_thread_local static __thread
 #endif
 #endif
 
