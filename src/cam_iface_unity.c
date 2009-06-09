@@ -82,6 +82,7 @@ static int backends_started = 0;
 #define CHECK_CI_ERR()						\
   if (this_backend_info->have_error()) {			\
     cam_iface_error = this_backend_info->have_error();		\
+    fprintf(stderr,"Backend has error %d, \"%s\"\n",cam_iface_error,this_backend_info->get_error_string());   \
     cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
 	     "unity backend error (%s %d): %s",__FILE__,	\
 	     __LINE__,this_backend_info->get_error_string());	\
@@ -135,7 +136,8 @@ const char * cam_iface_get_error_string() {
   struct backend_info_t* this_backend_info;
   int i,err;
 
-  if (cam_iface_error) {
+  if(cam_iface_error){
+	fprintf(stderr,"Error in unity layer...\n");
     return cam_iface_error_string;
   }
 
@@ -337,6 +339,7 @@ CamContext* CCunity_construct( int device_number, int NumImageBuffers,
 	 (device_number < this_backend_info->cam_stop_idx) ) {
 
       construct = this_backend_info->get_constructor_func( device_number-this_backend_info->cam_start_idx );
+	  fprintf(stderr,"Got constructor function for device number %d\n",device_number);
       result = construct( device_number-this_backend_info->cam_start_idx,
 			  NumImageBuffers, mode_number );
       CHECK_CI_ERR();
