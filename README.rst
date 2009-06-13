@@ -13,6 +13,34 @@ independent image acquisition framework.
 There is also a Python wrapper (:mod:`cam_iface`) of the libcamiface
 libraries.
 
+What cameras are supported?
+===========================
+
+Camera support is determined by a libcamiface "backend". Each backend
+is a piece of code that creates the libcamiface interface for each
+particular camera driver.
+
+As seen below, the supported camera drivers are currently libdc1394,
+the Prosilia Gigabit Ethernet SDK, and the QuickTime
+SequenceGrabber. For a list of cameras supporting the libdc1394
+software, see http://damien.douxchamps.net/ieee1394/cameras/. For the
+Prosilica Gigabit cameras, see http://www.prosilica.com/. The
+QuickTime SequenceGrabber supports any camera available through
+QuickTime. This includes the built-in cameras on Mac laptops and
+desktops.
+
+What frame rates, image sizes, bit depths are possible?
+=======================================================
+
+This depends primarily on the camera and camera interface. A primary
+goal of the Motmot suite is not to limit the capabilities
+possible. The fastest frame rates that we routinely use are 500 fps
+with a Basler A602f camera using a small region of interest and 200
+fps on a Prosilica GE 680 at full frame resolution. The largest image
+size we routinely use is 1600x1200 on a Pt. Grey Scorpion camera. The
+largest bit depths we routinely use are 12 bits/pixel on a Basler
+A622f camera.
+
 Backend status
 ==============
 
@@ -84,29 +112,46 @@ Key to the above symbols:
 Download
 ========
 
-Release tarballs/zip files
---------------------------
-
-.. Also keep motmot/doc/source/overview.rst in sync with download page.
+.. Also keep motmot/doc/source/download.rst in sync with download page.
 
 Download official releases from `the download page`__.
 
-__ http://github.com/motmot/libcamiface/downloads
+__ http://code.astraw.com/libcamiface
 
-git source code repository
---------------------------
+Install from binary releases
+============================
 
-The `development version of libcamiface`__ may be downloaded via git::
+Mac OS X
+--------
 
-  git clone git://github.com/motmot/libcamiface.git
+The Mac installer is called ``libcamiface-x.y.z-Darwin.dmg``.
 
-__ http://github.com/motmot/libcamiface
+This will install the files::
 
-Build and install from source 
-=============================
+  /usr/include/cam_iface.h
+  /usr/bin/liveview-glut-*
+  /usr/bin/ ( other demos )
+  /usr/lib/libcam_iface_*
 
-Prerequisites
--------------
+To run a demo program, open ``/usr/bin/liveview-glut-unity``.
+
+Windows
+-------
+
+The Windows installer is called ``libcamiface-x.y.z-win32.exe``.
+
+This will install the files::
+
+  C:\Program Files\libcamiface x.y.z\bin\simple-prosilica_gige.exe
+  C:\Program Files\libcamiface x.y.z\bin\liveview-glut-prosilica_gige.exe
+  C:\Program Files\libcamiface x.y.z\include\cam_iface.h
+  C:\Program Files\libcamiface x.y.z\lib\cam_iface_prosilica_gige.lib
+  C:\Program Files\libcamiface x.y.z\bin\cam_iface_prosilica_gige.dll
+
+To run a demo program, open ``C:\Program Files\libcamiface x.y.z\bin\liveview-glut-prosilica_gige.exe``.
+
+Compile from source
+===================
 
 On all platforms, you need to install cmake. cmake is available from
 http://www.cmake.org/
@@ -126,6 +171,24 @@ linux
   make
   make install
 
+To build with debug symbols, include the argument
+``-DCMAKE_BUILD_TYPE=Debug`` in your call to cmake. To install in
+/usr, include ``-DCMAKE_INSTALL_PREFIX=/usr``. To make verbose
+makefiles, include ``-DCMAKE_VERBOSE_MAKEFILE=1``.
+
+To cut a source release::
+
+  VERSION="0.5.4"
+  git archive --prefix=libcamiface-$VERSION/ release/$VERSION | gzip -9 > ../libcamiface-$VERSION.tar.gz
+  git archive --prefix=libcamiface-$VERSION/ --format=zip release/$VERSION > ../libcamiface-$VERSION.zip
+
+To make a Debian source package::
+
+  VERSION="0.5.4"
+  ln ../libcamiface-$VERSION.tar.gz ../libcamiface_$VERSION.orig.tar.gz
+  rm -rf ../libcamiface_*.orig.tar.gz.tmp-nest
+  git-buildpackage --git-debian-branch=debian --git-upstream-branch=master --git-no-create-orig --git-tarball-dir=.. --git-ignore-new --git-verbose -rfakeroot -S
+
 Mac OS X
 --------
 
@@ -139,18 +202,22 @@ an Apple ADC member.
   cmake ..
   make
   cpack
-  open libcamiface-x.y.z-Darwin.dmg
 
-This will install the files::
+To build with debug symbols, include the argument
+``-DCMAKE_BUILD_TYPE=Debug`` in your call to cmake.
 
-  /usr/include/cam_iface.h
-  /usr/bin/liveview-glut-*
-  /usr/bin/ ( other demos )
-  /usr/lib/libcam_iface_*
+In fact, I use the following commands to set various environment
+variables prior to my call to cmake.::
 
-(In fact, I use the environment variables ``PROSILICA_CMAKE_DEBUG=1``
-and ``PROSILICA_TEST_LIB_PATHS=/Prosilica\ GigE\ SDK/lib-pc/x86/4.0``
-in my call to cmake.)
+  # You will doubtless need to change these to match your system
+  export PROSILICA_CMAKE_DEBUG=1
+  export PROSILICA_TEST_LIB_PATHS=/Prosilica\ GigE\ SDK/lib-pc/x86/4.0
+  export GLEW_ROOT="/Users/astraw/other-peoples-src/glew/glew-1.5.1"
+
+This will build a Mac installer, called ``libcamiface-x.y.z-Darwin.dmg``.
+
+To build an Xcode project, run cmake with the argument
+``-DCMAKE_GENERATOR=Xcode``.
 
 Windows
 -------
@@ -179,7 +246,9 @@ libcamiface source directory.
   rem Now, to build an NSIS .exe Windows installer.
   cpack
 
-The Windows installer will be called ``libcamiface-x.y.z-win32.exe``.
+This will build a Windows installer, called
+``libcamiface-x.y.z-win32.exe``.
+
 
 Backend notes
 =============
@@ -210,6 +279,9 @@ Environment variables:
  * *DC1394_BACKEND_1394B* attempt to force use of firewire
     800. (Otherwise defaults to 400.)
 
+ * *DC1394_BACKEND_AUTO_DEBAYER* use dc1394 to de-Bayer the images,
+    resulting in RGB8 images (rather than MONO8 Bayer images).
+
 unity
 -----
 
@@ -220,6 +292,14 @@ Environment variables:
  * *UNITY_BACKEND_DIR* set to directory in which to look for
     libcamiface shared libraries.
 
+Git source code repository
+==========================
+
+The `development version of libcamiface`__ may be downloaded via git::
+
+  git clone git://github.com/motmot/libcamiface.git
+
+__ http://github.com/motmot/libcamiface
 
 License
 =======

@@ -1,3 +1,33 @@
+/*
+
+Copyright (c) 2004-2009, California Institute of Technology. All
+rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ */
 #include <stdio.h>
 #ifdef _WIN32
 #include <Windows.h>
@@ -45,13 +75,30 @@ double my_floattime() {
   }									\
 
 void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
-  int i,j;
   FILE* fd;
   fd = fopen(filename,"w");
   fprintf(fd,"P5\n");
   fprintf(fd,"%d %d\n",width,height);
   fprintf(fd,"255\n");
   fwrite(pixels,1,width*height,fd);
+  fprintf(fd,"\n");
+  fclose(fd);
+}
+
+void save_ppm(const char* filename,unsigned char *pixels,int width,int height) {
+  FILE* fd;
+  int row,col;
+  const unsigned char *base;
+  fd = fopen(filename,"w");
+  fprintf(fd,"P3\n");
+  fprintf(fd,"%d %d\n",width,height);
+  fprintf(fd,"255\n");
+  for (row=0; row<height; row++) {
+    for (col=0; col<width; col++) {
+      base = pixels + row*width*3 + col*3;
+      fprintf(fd,"%d %d %d\n",base[0],base[1],base[2]);
+    }
+  }
   fprintf(fd,"\n");
   fclose(fd);
 }
@@ -282,10 +329,21 @@ int main(int argc, char** argv) {
   cam_iface_shutdown();
   _check_error();
 
-  if (coding==CAM_IFACE_MONO8) {
+  switch (coding) {
+  case CAM_IFACE_MONO8_BAYER_BGGR:
+  case CAM_IFACE_MONO8_BAYER_RGGB:
+  case CAM_IFACE_MONO8_BAYER_GRBG:
+  case CAM_IFACE_MONO8_BAYER_GBRG:
+    printf("Bayer image will not be de-mosaiced\n");
+  case CAM_IFACE_MONO8:
     save_pgm("image.pgm",pixels, width, height);
     printf("saved last image as image.pgm\n");
-  } else {
+    break;
+  case CAM_IFACE_RGB8:
+    save_ppm("image.ppm",pixels, width, height);
+    printf("saved last image as image.ppm\n");
+    break;
+  default:
     printf("do not know how to save sample image for this format\n");
   }
 

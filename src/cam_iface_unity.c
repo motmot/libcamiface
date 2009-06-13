@@ -1,4 +1,35 @@
+/*
+
+Copyright (c) 2004-2009, California Institute of Technology. All
+rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ */
 #include "cam_iface.h"
+#include "cam_iface_internal.h"
 #include <stdio.h>
 #include <dlfcn.h>
 #include <stdlib.h>
@@ -36,30 +67,22 @@ struct backend_info_t {
 /* globals -- allocate space */
 int unity_num_cameras = 0;
 
-// See the following for a hint on how to make thread thread-local without __thread.
-// http://lists.apple.com/archives/Xcode-users/2006/Jun/msg00551.html
-#ifdef __APPLE__
-#define myTLS
-#else
-#define myTLS __thread
-#endif
-
-myTLS int cam_iface_error = 0;
+cam_iface_thread_local int cam_iface_error = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-myTLS char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
+cam_iface_thread_local char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 char *backend_names[NUM_BACKENDS] = UNITY_BACKENDS;
 struct backend_info_t backend_info[NUM_BACKENDS] = {};
 static int backends_started = 0;
 
 #define CAM_IFACE_ERROR_FORMAT(m)					\
-  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
+  cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
 	   "%s (%d): %s\n",__FILE__,__LINE__,(m));
 
 #define CHECK_CI_ERR()						\
   if (this_backend_info->have_error()) {			\
     cam_iface_error = this_backend_info->have_error();		\
-    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
+    cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
 	     "unity backend error (%s %d): %s",__FILE__,	\
 	     __LINE__,this_backend_info->get_error_string());	\
     return;							\
@@ -179,20 +202,20 @@ void cam_iface_startup(void) {
 	/* Check environment variables first */
 	envvar = getenv("UNITY_BACKEND_DIR");
 	if (envvar != NULL) {
-	  snprintf(full_backend_name,256,"%s/" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,
+	  cam_iface_snprintf(full_backend_name,256,"%s/" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,
 		   envvar,backend_names[i]);
 	} else {
 	  try_this_name = 0;
-	  snprintf(full_backend_name,256,"");
+	  cam_iface_snprintf(full_backend_name,256,"");
 	}
 	break;
       case 1:
 	/* Check pwd next */
-	snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+	cam_iface_snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
 	break;
       case 2:
 	/* Next check system-install prefix */
-	snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+	cam_iface_snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
 	break;
       default:
 	cam_iface_error=-1;

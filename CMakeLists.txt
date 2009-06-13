@@ -1,3 +1,29 @@
+# Copyright (c) 2004-2009, California Institute of Technology. All
+# rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 cmake_minimum_required(VERSION 2.6)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules )
 
@@ -7,7 +33,7 @@ project(libcamiface)
 # version
 set(V_MAJOR 0)
 set(V_MINOR 5)
-set(V_PATCH 3)
+set(V_PATCH 4)
 
 include_directories( ${CMAKE_SOURCE_DIR}/inc )
 
@@ -61,6 +87,29 @@ add_subdirectory(demo)
 
 INSTALL(FILES inc/cam_iface.h
   DESTINATION include)
+
+# Install linux udev file ---------------------------
+
+IF(UNIX)
+  IF(NOT APPLE)
+    IF(EXISTS /etc/udev/rules.d)
+      INSTALL(FILES 99-pt-grey-firefly-mv-usb.rules
+        DESTINATION /etc/udev/rules.d)
+    ENDIF(EXISTS /etc/udev/rules.d)
+  ENDIF(NOT APPLE)
+ENDIF(UNIX)
+
+# Create pkg-config file
+
+SET(PKG_CONFIG_VERSION "${V_MAJOR}.${V_MINOR}.${V_PATCH}")
+set(prefix      ${CMAKE_INSTALL_PREFIX})
+set(exec_prefix ${CMAKE_INSTALL_PREFIX})
+set(libdir      ${CMAKE_INSTALL_PREFIX}/lib)
+set(includedir  ${CMAKE_INSTALL_PREFIX}/include)
+
+configure_file(libcamiface.pc.in libcamiface.pc)
+set(PC_DIR "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
+INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc" DESTINATION ${PC_DIR})
 
 # CPack for binary and source releases --------------
 

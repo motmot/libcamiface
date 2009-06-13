@@ -30,3 +30,6 @@ def get_prosilica_version():
     minor = ULong()
     libprosilica.PvVersion(ctypes.byref(major), ctypes.byref(minor))
     return major.value, minor.value
+
+if __name__=='__main__':
+    print 'you have Prosilica SDK %s.%s installed'%get_prosilica_version()

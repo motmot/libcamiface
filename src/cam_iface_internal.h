@@ -1,3 +1,5 @@
+/*
+
 Copyright (c) 2004-2009, California Institute of Technology. All
 rights reserved.
 
@@ -24,3 +26,29 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ */
+#ifdef _MSC_VER
+  //#define cam_iface_thread_local __declspec(thread)
+#define cam_iface_thread_local
+#else
+#ifdef __APPLE__
+// See the following for a hint on how to make thread thread-local without __thread.
+// http://lists.apple.com/archives/Xcode-users/2006/Jun/msg00551.html
+#define cam_iface_thread_local
+#warning "Thread local storage not implemented"
+#else
+#define cam_iface_thread_local static __thread
+#endif
+#endif
+
+
+#ifdef _WIN32
+#if _MSC_VER == 1310
+#define cam_iface_snprintf(dst, len, fmt, ...) _snprintf((char*)dst, (size_t)len, (const char*)fmt, __VA_ARGS__)
+#else
+#define cam_iface_snprintf(dst, len, fmt, ...) _snprintf_s((char*)dst, (size_t)len, (size_t)len, (const char*)fmt, __VA_ARGS__)
+#endif
+#else
+#define cam_iface_snprintf(...) snprintf(__VA_ARGS__)
+#endif

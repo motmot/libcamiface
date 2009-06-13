@@ -1,3 +1,33 @@
+/*
+
+Copyright (c) 2004-2009, California Institute of Technology. All
+rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ */
 // from Prosilica GigE SDK/examples/Stream/StdAfx.h
 #if _MSC_VER > 1000
 #pragma once
@@ -28,6 +58,7 @@
 
 extern "C" {
 #include "cam_iface.h"
+#include "cam_iface_internal.h"
 
 #ifdef _WINDOWS
 #define _STDCALL __stdcall
@@ -38,7 +69,7 @@ extern "C" {
 #if 1
 #define DPRINTF(...)
 #else
-#define DPRINTF(...) printf(__VA_ARGS__)
+#define DPRINTF(...) fprintf(stderr,__VA_ARGS__)
 #endif
 
 #if defined(_LINUX) || defined(_QNX) || defined(__APPLE__)
@@ -210,17 +241,6 @@ double ciprosil_floattime() {
 #endif
 }
 
-#ifdef _MSC_VER
-#define cam_iface_thread_local __declspec(thread)
-#else
-#ifdef __APPLE__
-#define cam_iface_thread_local
-#warning "Thread local storage not implemented"
-#else
-#define cam_iface_thread_local __thread
-#endif
-#endif
-
 /* globals -- allocate space */
   u_int64_t prev_ts_uint64; //tmp
 
@@ -300,16 +320,6 @@ const char *pv_error_strings[PV_ERROR_NUM] = {
   "Attribute write forbidden at this time",
   "Attribute is not available at this time"
 };
-
-#ifdef _WIN32
-#if _MSC_VER == 1310
-#define cam_iface_snprintf(dst, len, fmt, ...) _snprintf((char*)dst, (size_t)len, (const char*)fmt, __VA_ARGS__)
-#else
-#define cam_iface_snprintf(dst, len, fmt, ...) _snprintf_s((char*)dst, (size_t)len, (size_t)len, (const char*)fmt, __VA_ARGS__)
-#endif
-#else
-#define cam_iface_snprintf(...) snprintf(__VA_ARGS__)
-#endif
 
 #define CAM_IFACE_ERROR_FORMAT(m)					\
   cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
@@ -511,7 +521,7 @@ void cam_iface_startup() {
   DPRINTF("libcamiface compiled with and loaded PvAPI version %d.%d\n",
           major,minor);
 #else
-  DPRINTF("libcamiface loaded PvAPI version %d.%d\n",
+  DPRINTF("libcamiface loaded PvAPI version %ld.%ld\n",
           major,minor);
 #endif
 
@@ -622,15 +632,18 @@ void CCprosil_CCprosil( CCprosil * ccntxt, int device_number, int NumImageBuffer
     CAM_IFACE_THROW_ERROR("firmware too old - see http://www.prosilica.com/support/gige/ge_download.html");
   }
 
-  const char *attr_names[5] = {
+  const char *attr_names[] = {
     "Width",
     "ExposureValue",
     "FrameStartTriggerMode",
     "RegionX",
     "FrameRate",
+    "PacketSize"
   };
+  const int attr_names_size = sizeof(attr_names)/sizeof(const char *);
+
   tPvAttributeInfo attrInfo;
-  for (int i=0;i<5;i++) {
+  for (int i=0;i<attr_names_size;i++) {
     DPRINTF("%s\n",attr_names[i]);
     CIPVCHK(PvAttrInfo(*handle_ptr,attr_names[i],&attrInfo));
     DPRINTF("     impact: %s\n",attrInfo.Impact);
@@ -647,6 +660,16 @@ void CCprosil_CCprosil( CCprosil * ccntxt, int device_number, int NumImageBuffer
     if (attrInfo.Flags & ePvFlagConst) {
       DPRINTF("       Value is read only and never changes\n");
     }
+  }
+
+  // code to adjust packet size, taken from SampleViewer -- JP May 2009.
+  if(!cam_iface_have_error()){
+	DPRINTF("Setting PacketSize automatically...\n");
+    tPvUint32 lMaxSize = 8228;
+    // get the last packet size set on the camera
+    CIPVCHK(PvAttrUint32Get(*handle_ptr,"PacketSize",&lMaxSize));
+    // adjust the packet size according to the current network capacity
+    CIPVCHK(PvCaptureAdjustPacketSize(*handle_ptr,lMaxSize));
   }
 
   /*
@@ -842,7 +865,7 @@ void CCprosil_get_camera_property_info(CCprosil *ccntxt,
     info->max_value = 50000;
     DPRINTF("WARNING: artificially setting max_value of shutter to 50000 in %s, %d\n",__FILE__,__LINE__);
     info->is_scaled_quantity = 1;
-    info->scaled_unit_name = "msec";
+    info->scaled_unit_name = "usec";
     info->scale_offset = 0;
     info->scale_gain = 1e-3; // convert from microsecond to millisecond
     break;
