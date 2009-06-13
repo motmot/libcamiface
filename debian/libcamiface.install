@@ -1,3 +1,5 @@
 builddir/src/libcam_iface_dc1394.so*  usr/lib
 builddir/src/libcam_iface_unity.so*  usr/lib
 99-pt-grey-firefly-mv-usb.rules etc/udev/rules.d
+demo/*.vrt usr/share/libcamiface
+demo/*.frg usr/share/libcamiface
