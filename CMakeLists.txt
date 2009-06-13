@@ -108,8 +108,13 @@ set(libdir      ${CMAKE_INSTALL_PREFIX}/lib)
 set(includedir  ${CMAKE_INSTALL_PREFIX}/include)
 
 configure_file(libcamiface.pc.in libcamiface.pc)
-set(PC_DIR "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
-INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc" DESTINATION ${PC_DIR})
+IF(UNIX)
+  IF(NOT APPLE)
+    set(PC_DIR "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
+    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc" 
+	    DESTINATION ${PC_DIR})
+  ENDIF(NOT APPLE)
+ENDIF(UNIX)
 
 # CPack for binary and source releases --------------
 
