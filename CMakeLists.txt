@@ -88,6 +88,17 @@ add_subdirectory(demo)
 INSTALL(FILES inc/cam_iface.h
   DESTINATION include)
 
+# Install linux udev file ---------------------------
+
+IF(UNIX)
+  IF(NOT APPLE)
+    IF(EXISTS /etc/udev/rules.d)
+      INSTALL(FILES 99-pt-grey-firefly-mv-usb.rules
+        DESTINATION /etc/udev/rules.d)
+    ENDIF(EXISTS /etc/udev/rules.d)
+  ENDIF(NOT APPLE)
+ENDIF(UNIX)
+
 # Create pkg-config file
 
 SET(PKG_CONFIG_VERSION "${V_MAJOR}.${V_MINOR}.${V_PATCH}")
