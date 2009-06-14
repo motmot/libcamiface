@@ -76,7 +76,9 @@ int tex_width, tex_height;
 size_t PBO_stride;
 GLint gl_data_format;
 
+#ifdef USE_GLEW
 GLhandleARB glsl_program;
+#endif
 
 #define _check_error() {						\
     int _check_error_err;						\
@@ -471,6 +473,7 @@ char *textFileRead(char *fn) {
         return content;
 }
 
+#ifdef USE_GLEW
 	void printShaderInfoLog(GLuint obj)
 	{
 	    int infologLength = 0;
@@ -583,6 +586,7 @@ void setShaders() {
                             1.0/PBO_stride,1.0/height);
                 glUniform1i(shader_texture_source, 0);
 }
+#endif  /* ifdef USE_GLEW */
 
 int main(int argc, char** argv) {
   int device_number,ncams,num_buffers;
@@ -696,13 +700,14 @@ int main(int argc, char** argv) {
 
   initialize_gl_texture();
 
+#ifdef USE_GLEW
   if (use_pbo) {
     glGenBuffers(1, &pbo);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
     glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB,
                  PBO_stride*tex_height, 0, GL_STREAM_DRAW);
   }
-
+#endif  /* ifdef USE_GLEW */
 
   glEnable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -790,6 +795,7 @@ void upload_image_data_to_opengl(const char* raw_image_data,
   static char* show_pixels=NULL;
 
   if (use_pbo) {
+#ifdef USE_GLEW
     glBindTexture(GL_TEXTURE_2D, textureId);
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
 
@@ -802,6 +808,7 @@ void upload_image_data_to_opengl(const char* raw_image_data,
       glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer
     }
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+#endif  /* ifdef USE_GLEW */
   } else {
 
     if (show_pixels==NULL) {
