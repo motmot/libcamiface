@@ -1,3 +1,9 @@
+libcamiface (0.5.5-0ads1) hardy; urgency=low
+
+  * New upstream release
+
+ -- Andrew Straw <strawman@astraw.com>  Sat, 13 Jun 2009 18:06:06 -0700
+
 libcamiface (0.5.4-0ads2) hardy; urgency=low
 
   * Install missing GLSL shader source code
