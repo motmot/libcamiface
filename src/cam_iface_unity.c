@@ -75,17 +75,17 @@ char *backend_names[NUM_BACKENDS] = UNITY_BACKENDS;
 struct backend_info_t backend_info[NUM_BACKENDS] = {};
 static int backends_started = 0;
 
-#define CAM_IFACE_ERROR_FORMAT(m)					\
-  cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
-	   "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#define CAM_IFACE_ERROR_FORMAT(m)                                       \
+  cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,            \
+           "%s (%d): %s\n",__FILE__,__LINE__,(m));
 
-#define CHECK_CI_ERR()						\
-  if (this_backend_info->have_error()) {			\
-    cam_iface_error = this_backend_info->have_error();		\
-    cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,	\
-	     "unity backend error (%s %d): %s",__FILE__,	\
-	     __LINE__,this_backend_info->get_error_string());	\
-    return;							\
+#define CHECK_CI_ERR()                                          \
+  if (this_backend_info->have_error()) {                        \
+    cam_iface_error = this_backend_info->have_error();          \
+    cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,  \
+             "unity backend error (%s %d): %s",__FILE__,        \
+             __LINE__,this_backend_info->get_error_string());   \
+    return;                                                     \
   }
 
 
@@ -107,8 +107,8 @@ int cam_iface_have_error() {
     for (i=0; i<NUM_BACKENDS; i++) {
       this_backend_info = &(backend_info[i]);
       if (this_backend_info->started) {
-	err = this_backend_info->have_error();
-	if (err) return err;
+        err = this_backend_info->have_error();
+        if (err) return err;
       }
     }
   }
@@ -125,7 +125,7 @@ void cam_iface_clear_error() {
     for (i=0; i<NUM_BACKENDS; i++) {
       this_backend_info = &(backend_info[i]);
       if (this_backend_info->started) {
-	this_backend_info->clear_error();
+        this_backend_info->clear_error();
       }
     }
   }
@@ -144,21 +144,21 @@ const char * cam_iface_get_error_string() {
     for (i=0; i<NUM_BACKENDS; i++) {
       this_backend_info = &(backend_info[i]);
       if (this_backend_info->started) {
-	err = this_backend_info->have_error();
-	if (err) return this_backend_info->get_error_string();
+        err = this_backend_info->have_error();
+        if (err) return this_backend_info->get_error_string();
       }
     }
   }
   return "";
 }
 
-#define LOAD_DLSYM(var,name) {					\
-    (var) = dlsym(libhandle,(name));				\
-    if ((var)==NULL) {						\
-      cam_iface_error = -1;					\
-      CAM_IFACE_ERROR_FORMAT("dlsym() error");			\
-      return;							\
-    }								\
+#define LOAD_DLSYM(var,name) {                                  \
+    (var) = dlsym(libhandle,(name));                            \
+    if ((var)==NULL) {                                          \
+      cam_iface_error = -1;                                     \
+      CAM_IFACE_ERROR_FORMAT("dlsym() error");                  \
+      return;                                                   \
+    }                                                           \
   }
 
 const char *cam_iface_get_driver_name(void) {
@@ -186,11 +186,11 @@ void cam_iface_startup(void) {
 
     if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
       fprintf(stderr,"%s: %d: this_backend_info = %p\n",
-	      __FILE__,__LINE__,this_backend_info);
+              __FILE__,__LINE__,this_backend_info);
       fprintf(stderr,"%s: %d: this_backend_info->name = %s\n",
-	      __FILE__,__LINE__,this_backend_info->name);
+              __FILE__,__LINE__,this_backend_info->name);
       fprintf(stderr,"%s: %d: this_backend_info->started = %d\n",
-	      __FILE__,__LINE__,this_backend_info->started);
+              __FILE__,__LINE__,this_backend_info->started);
     }
 
     for (j=0; j<3; j++) {
@@ -199,58 +199,58 @@ void cam_iface_startup(void) {
       try_this_name = 1;
       switch (j) {
       case 0:
-	/* Check environment variables first */
-	envvar = getenv("UNITY_BACKEND_DIR");
-	if (envvar != NULL) {
-	  cam_iface_snprintf(full_backend_name,256,"%s/" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,
-		   envvar,backend_names[i]);
-	} else {
-	  try_this_name = 0;
-	  cam_iface_snprintf(full_backend_name,256,"");
-	}
-	break;
+        /* Check environment variables first */
+        envvar = getenv("UNITY_BACKEND_DIR");
+        if (envvar != NULL) {
+          cam_iface_snprintf(full_backend_name,256,"%s/" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,
+                   envvar,backend_names[i]);
+        } else {
+          try_this_name = 0;
+          cam_iface_snprintf(full_backend_name,256,"");
+        }
+        break;
       case 1:
-	/* Check pwd next */
-	cam_iface_snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
-	break;
+        /* Check pwd next */
+        cam_iface_snprintf(full_backend_name,256,"./" UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+        break;
       case 2:
-	/* Next check system-install prefix */
-	cam_iface_snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
-	break;
+        /* Next check system-install prefix */
+        cam_iface_snprintf(full_backend_name,256,UNITY_BACKEND_DIR UNITY_BACKEND_PREFIX "cam_iface_%s" UNITY_BACKEND_SUFFIX ,backend_names[i]);
+        break;
       default:
-	cam_iface_error=-1;
-	CAM_IFACE_ERROR_FORMAT("error in switch statement");
-	return;
+        cam_iface_error=-1;
+        CAM_IFACE_ERROR_FORMAT("error in switch statement");
+        return;
       }
 
       if (!try_this_name) {
-	free(full_backend_name);
-	continue;
+        free(full_backend_name);
+        continue;
       }
 
       // RTLD_GLOBAL needed for embedded Python to work. (For examples, see pythoncall.c
       // and pymplug.c.)
 
       if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
-	fprintf(stderr,"%s: %d: attempting to open: %s\n",__FILE__,__LINE__,full_backend_name);
+        fprintf(stderr,"%s: %d: attempting to open: %s\n",__FILE__,__LINE__,full_backend_name);
       }
       libhandle = dlopen(full_backend_name, RTLD_NOW | RTLD_GLOBAL );
       if (libhandle==NULL) {
-	if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
-	  fprintf(stderr,"%s: %d: Failed.\n",__FILE__,__LINE__,full_backend_name);
-	}
-	this_backend_info->cam_start_idx = unity_num_cameras;
-	this_backend_info->cam_stop_idx = unity_num_cameras;
-	free(full_backend_name);
-	continue;
+        if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+          fprintf(stderr,"%s: %d: Failed.\n",__FILE__,__LINE__,full_backend_name);
+        }
+        this_backend_info->cam_start_idx = unity_num_cameras;
+        this_backend_info->cam_stop_idx = unity_num_cameras;
+        free(full_backend_name);
+        continue;
       } else {
-	if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
-	  fprintf(stderr,"%s: %d: %s OK, libhandle = %p\n",
-		  __FILE__,__LINE__,
-		  full_backend_name,libhandle);
-	}
-	free(full_backend_name);
-	break; // found backend, stop searching
+        if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
+          fprintf(stderr,"%s: %d: %s OK, libhandle = %p\n",
+                  __FILE__,__LINE__,
+                  full_backend_name,libhandle);
+        }
+        free(full_backend_name);
+        break; // found backend, stop searching
       }
     }
 
@@ -260,7 +260,7 @@ void cam_iface_startup(void) {
 
     if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
       fprintf(stderr,"%s: %d: Loading symbols from libhandle %p\n",
-	      __FILE__,__LINE__,libhandle);
+              __FILE__,__LINE__,libhandle);
     }
 
     LOAD_DLSYM(this_backend_info->have_error,"cam_iface_have_error");
@@ -277,13 +277,13 @@ void cam_iface_startup(void) {
 
     if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
       fprintf(stderr,"%s: %d: this_backend_info = %p\n",
-	      __FILE__,__LINE__,this_backend_info);
+              __FILE__,__LINE__,this_backend_info);
       fprintf(stderr,"%s: %d: this_backend_info->name = %s\n",
-	      __FILE__,__LINE__,this_backend_info->name);
+              __FILE__,__LINE__,this_backend_info->name);
       fprintf(stderr,"%s: %d: this_backend_info->started = %d\n",
-	      __FILE__,__LINE__,this_backend_info->started);
+              __FILE__,__LINE__,this_backend_info->started);
       fprintf(stderr,"%s: %d: this_backend_info->have_error = %p\n",
-	      __FILE__,__LINE__,this_backend_info->have_error);
+              __FILE__,__LINE__,this_backend_info->have_error);
     }
 
     this_backend_info->clear_error();
@@ -292,10 +292,10 @@ void cam_iface_startup(void) {
     this_backend_info->startup();
     if (this_backend_info->have_error()) {
       if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
-	fprintf(stderr,"%s: %d: %s backend startup() had error '%s'\n",
-		__FILE__,__LINE__,
-		this_backend_info->name,
-		this_backend_info->get_error_string());
+        fprintf(stderr,"%s: %d: %s backend startup() had error '%s'\n",
+                __FILE__,__LINE__,
+                this_backend_info->name,
+                this_backend_info->get_error_string());
       }
       continue; //  backend startup had error
     }
@@ -323,7 +323,7 @@ void cam_iface_shutdown(void) {
 }
 
 CamContext* CCunity_construct( int device_number, int NumImageBuffers,
-			       int mode_number) {
+                               int mode_number) {
   int i;
   struct backend_info_t* this_backend_info;
   CamContext* result;
@@ -332,11 +332,11 @@ CamContext* CCunity_construct( int device_number, int NumImageBuffers,
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
-	 (device_number < this_backend_info->cam_stop_idx) ) {
+         (device_number < this_backend_info->cam_stop_idx) ) {
 
       construct = this_backend_info->get_constructor_func( device_number-this_backend_info->cam_start_idx );
       result = construct( device_number-this_backend_info->cam_start_idx,
-			  NumImageBuffers, mode_number );
+                          NumImageBuffers, mode_number );
       CHECK_CI_ERR();
     }
   }
@@ -348,17 +348,17 @@ cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number) {
 }
 
 void cam_iface_get_mode_string(int device_number,
-			       int mode_number,
-			       char* mode_string, //output parameter
-			       int mode_string_maxlen) {
+                               int mode_number,
+                               char* mode_string, //output parameter
+                               int mode_string_maxlen) {
   int i;
   struct backend_info_t* this_backend_info;
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
-	 (device_number < this_backend_info->cam_stop_idx) ) {
+         (device_number < this_backend_info->cam_stop_idx) ) {
       this_backend_info->get_mode_string(device_number-this_backend_info->cam_start_idx,
-					 mode_number, mode_string, mode_string_maxlen);
+                                         mode_number, mode_string, mode_string_maxlen);
       CHECK_CI_ERR();
     }
   }
@@ -371,7 +371,7 @@ void cam_iface_get_num_modes(int device_number,int* num_modes) {
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
-	 (device_number < this_backend_info->cam_stop_idx) ) {
+         (device_number < this_backend_info->cam_stop_idx) ) {
       this_backend_info->get_num_modes(device_number-this_backend_info->cam_start_idx,num_modes);
       CHECK_CI_ERR();
     }
@@ -379,15 +379,15 @@ void cam_iface_get_num_modes(int device_number,int* num_modes) {
 }
 
 void cam_iface_get_camera_info(int device_number,
-			       Camwire_id *out_camid) { //output parameter
+                               Camwire_id *out_camid) { //output parameter
   int i;
   struct backend_info_t* this_backend_info;
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
-	 (device_number < this_backend_info->cam_stop_idx) ) {
+         (device_number < this_backend_info->cam_stop_idx) ) {
       this_backend_info->get_camera_info(device_number-this_backend_info->cam_start_idx,
-					 out_camid);
+                                         out_camid);
       CHECK_CI_ERR();
     }
   }

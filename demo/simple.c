@@ -64,15 +64,15 @@ double my_floattime() {
 #endif
 }
 
-#define _check_error() {						\
-    int _check_error_err;						\
-    _check_error_err = cam_iface_have_error();				\
-    if (_check_error_err != 0) {					\
-      									\
+#define _check_error() {                                                \
+    int _check_error_err;                                               \
+    _check_error_err = cam_iface_have_error();                          \
+    if (_check_error_err != 0) {                                        \
+                                                                        \
       fprintf(stderr,"%s:%d %s\n", __FILE__,__LINE__,cam_iface_get_error_string()); \
-      exit(1);								\
-    }									\
-  }									\
+      exit(1);                                                          \
+    }                                                                   \
+  }                                                                     \
 
 void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
   FILE* fd;
@@ -189,8 +189,8 @@ int main(int argc, char** argv) {
     cam_iface_get_mode_string(device_number,i,mode_string,255);
     if (strstr(mode_string,"FORMAT7_0")!=NULL) {
       if (strstr(mode_string,"MONO8")!=NULL) {
-	// pick this mode
-	mode_number = i;
+        // pick this mode
+        mode_number = i;
       }
     }
     printf("  %d: %s\n",i,mode_string);

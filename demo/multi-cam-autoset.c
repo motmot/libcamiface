@@ -70,15 +70,15 @@ double my_floattime() {
 #endif
 }
 
-#define _check_error() {						\
-    int _check_error_err;						\
-    _check_error_err = cam_iface_have_error();				\
-    if (_check_error_err != 0) {					\
-      									\
+#define _check_error() {                                                \
+    int _check_error_err;                                               \
+    _check_error_err = cam_iface_have_error();                          \
+    if (_check_error_err != 0) {                                        \
+                                                                        \
       fprintf(stderr,"%s:%d %s\n", __FILE__,__LINE__,cam_iface_get_error_string()); \
-      exit(1);								\
-    }									\
-  }									\
+      exit(1);                                                          \
+    }                                                                   \
+  }                                                                     \
 
 void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
   int i,j;
@@ -203,23 +203,23 @@ int main(int argc, char** argv) {
       _check_error();
 
       if (strcmp(cam_props.name,"white balance")==0) {
-	fprintf(stderr,"WARNING: ignoring white balance property\n");
-	continue;
+        fprintf(stderr,"WARNING: ignoring white balance property\n");
+        continue;
       }
 
       if (cam_props.is_present) {
-	CamContext_get_camera_property(cc[camno],i,&prop_value,&prop_auto);
-	_check_error();
-	printf("  %s: %ld (%s)\n",cam_props.name,prop_value, prop_auto ? "AUTO" : "MANUAL");
+        CamContext_get_camera_property(cc[camno],i,&prop_value,&prop_auto);
+        _check_error();
+        printf("  %s: %ld (%s)\n",cam_props.name,prop_value, prop_auto ? "AUTO" : "MANUAL");
       } else {
-	printf("  %s: not present\n",cam_props.name);
+        printf("  %s: not present\n",cam_props.name);
       }
 
       if (cam_props.has_auto_mode) {
-	prop_auto = 1;
-	CamContext_set_camera_property(cc[camno],i,prop_value,prop_auto);
-	_check_error();
-	printf("  %s: set to AUTO\n",cam_props.name);
+        prop_auto = 1;
+        CamContext_set_camera_property(cc[camno],i,prop_value,prop_auto);
+        _check_error();
+        printf("  %s: set to AUTO\n",cam_props.name);
       }
     }
 
@@ -268,18 +268,18 @@ int main(int argc, char** argv) {
       errnum = cam_iface_have_error();
 
       if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
-	cam_iface_clear_error();
-	continue; // wait again on next camera
+        cam_iface_clear_error();
+        continue; // wait again on next camera
       } else if (errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) {
-	cam_iface_clear_error();
-	fprintf(stdout,"M");
-	fflush(stdout);
-	continue; // wait again on next camera
+        cam_iface_clear_error();
+        fprintf(stdout,"M");
+        fflush(stdout);
+        continue; // wait again on next camera
       } else if (errnum == CAM_IFACE_FRAME_INTERRUPTED_SYSCALL) {
         cam_iface_clear_error();
         fprintf(stdout,"I");
         fflush(stdout);
-	continue; // wait again on next camera
+        continue; // wait again on next camera
       }
 
       _check_error();

@@ -194,6 +194,8 @@ IF(PROSILICA_GIGE_FOUND)
     CLEAN_DIRECT_OUTPUT 1
   )
 
+  SET(CI_PROSIL_TARGETS cam_iface_prosilica_gige)
+
   if(NOT WIN32)
   # Trouble building static lib on Windows, so disabled for now...
   ADD_LIBRARY(cam_iface_prosilica_gige-static STATIC ${prosilica_gige_SRCS})
@@ -204,9 +206,10 @@ IF(PROSILICA_GIGE_FOUND)
   SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES
     CLEAN_DIRECT_OUTPUT 1
   )
+  SET(CI_PROSIL_TARGETS ${CI_PROSIL_TARGETS} cam_iface_prosilica_gige-static)
   endif(NOT WIN32)
 
-  INSTALL(TARGETS cam_iface_prosilica_gige cam_iface_prosilica_gige-static
+  INSTALL(TARGETS ${CI_PROSIL_TARGETS}
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

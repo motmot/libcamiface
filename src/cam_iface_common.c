@@ -35,7 +35,7 @@ CAM_IFACE_API void delete_CamContext(CamContext*this) {
 }
 
 CAM_IFACE_API void CamContext_CamContext(CamContext *this,int device_number, int NumImageBuffers,
-			   int mode_number ) {
+                           int mode_number ) {
   // Must call derived class to make instance.
   this->vmt = NULL;
 }
@@ -53,27 +53,27 @@ CAM_IFACE_API void CamContext_stop_camera(CamContext *this) {
 }
 
 CAM_IFACE_API void CamContext_get_num_camera_properties(CamContext *this,
-					  int* num_properties){
+                                          int* num_properties){
   this->vmt->get_num_camera_properties(this,num_properties);
 }
 
 CAM_IFACE_API void CamContext_get_camera_property_info(CamContext *this,
-					 int property_number,
-					 CameraPropertyInfo *info){
+                                         int property_number,
+                                         CameraPropertyInfo *info){
   this->vmt->get_camera_property_info(this,property_number,info);
 }
 
 CAM_IFACE_API void CamContext_get_camera_property(CamContext *this,
-				    int property_number,
-				    long* Value,
-				    int* Auto){
+                                    int property_number,
+                                    long* Value,
+                                    int* Auto){
   this->vmt->get_camera_property(this,property_number,Value,Auto);
 }
 
 CAM_IFACE_API void CamContext_set_camera_property(CamContext *this,
-				    int property_number,
-				    long Value,
-				    int Auto) {
+                                    int property_number,
+                                    long Value,
+                                    int Auto) {
   this->vmt->set_camera_property(this,property_number,Value,Auto);
 }
 
@@ -90,61 +90,61 @@ CAM_IFACE_API void CamContext_unpoint_frame(CamContext *this){
   this->vmt->unpoint_frame(this);
 }
 CAM_IFACE_API void CamContext_get_last_timestamp( CamContext *this,
-				    double* timestamp ){
+                                    double* timestamp ){
   this->vmt->get_last_timestamp(this,timestamp);
 }
 CAM_IFACE_API void CamContext_get_last_framenumber( CamContext *this,
-				      unsigned long* framenumber ){
+                                      unsigned long* framenumber ){
   this->vmt->get_last_framenumber(this,framenumber);
 }
 CAM_IFACE_API void CamContext_get_num_trigger_modes( CamContext *this,
-				       int *num_exposure_modes ){
+                                       int *num_exposure_modes ){
   this->vmt->get_num_trigger_modes(this,num_exposure_modes);
 }
 CAM_IFACE_API void CamContext_get_trigger_mode_string( CamContext *this,
-					 int exposure_mode_number,
-					 char* exposure_mode_string, //output parameter
-					 int exposure_mode_string_maxlen){
+                                         int exposure_mode_number,
+                                         char* exposure_mode_string, //output parameter
+                                         int exposure_mode_string_maxlen){
   this->vmt->get_trigger_mode_string(this,exposure_mode_number,exposure_mode_string,exposure_mode_string_maxlen);
 }
 CAM_IFACE_API void CamContext_get_trigger_mode_number( CamContext *this,
-					 int *exposure_mode_number ){
+                                         int *exposure_mode_number ){
   this->vmt->get_trigger_mode_number(this,exposure_mode_number);
 }
 CAM_IFACE_API void CamContext_set_trigger_mode_number( CamContext *this,
-					 int exposure_mode_number ){
+                                         int exposure_mode_number ){
   this->vmt->set_trigger_mode_number(this,exposure_mode_number);
 }
 CAM_IFACE_API void CamContext_get_frame_roi( CamContext *this,
-			       int *left, int *top, int *width, int *height ){
+                               int *left, int *top, int *width, int *height ){
   this->vmt->get_frame_roi(this,left,top,width,height);
 }
 CAM_IFACE_API void CamContext_set_frame_roi( CamContext *this,
-			       int left, int top, int width, int height ){
+                               int left, int top, int width, int height ){
   this->vmt->set_frame_roi(this,left,top, width, height);
 }
 CAM_IFACE_API void CamContext_get_max_frame_size( CamContext *this,
-				    int *width,
-				    int *height ){
+                                    int *width,
+                                    int *height ){
   this->vmt->get_max_frame_size(this,width,height);
 }
 CAM_IFACE_API void CamContext_get_buffer_size( CamContext *this,
-				 int *size){
+                                 int *size){
   this->vmt->get_buffer_size(this,size);
 }
 CAM_IFACE_API void CamContext_get_framerate( CamContext *this,
-			       float *framerate ) {
+                               float *framerate ) {
   this->vmt->get_framerate(this,framerate);
 }
 CAM_IFACE_API void CamContext_set_framerate( CamContext *this,
-			       float framerate ){
+                               float framerate ){
   this->vmt->set_framerate(this,framerate);
 }
 CAM_IFACE_API void CamContext_get_num_framebuffers( CamContext *this,
-				      int *num_framebuffers ){
+                                      int *num_framebuffers ){
   this->vmt->get_num_framebuffers(this,num_framebuffers);
 }
 CAM_IFACE_API void CamContext_set_num_framebuffers( CamContext *this,
-				      int num_framebuffers ){
+                                      int num_framebuffers ){
   this->vmt->set_num_framebuffers(this,num_framebuffers);
 }

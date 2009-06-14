@@ -76,17 +76,19 @@ int tex_width, tex_height;
 size_t PBO_stride;
 GLint gl_data_format;
 
+#ifdef USE_GLEW
 GLhandleARB glsl_program;
+#endif
 
-#define _check_error() {						\
-    int _check_error_err;						\
-    _check_error_err = cam_iface_have_error();				\
-    if (_check_error_err != 0) {					\
-      									\
+#define _check_error() {                                                \
+    int _check_error_err;                                               \
+    _check_error_err = cam_iface_have_error();                          \
+    if (_check_error_err != 0) {                                        \
+                                                                        \
       fprintf(stderr,"%s:%d %s\n", __FILE__,__LINE__,cam_iface_get_error_string()); \
-      exit(1);								\
-    }									\
-  }									\
+      exit(1);                                                          \
+    }                                                                   \
+  }                                                                     \
 
 void yuv422_to_mono8(src_pixels, dest_pixels, width, height, src_stride, dest_stride) {
   int i,j;
@@ -103,7 +105,7 @@ void yuv422_to_mono8(src_pixels, dest_pixels, width, height, src_stride, dest_st
   }
 }
 
-#define CLIP(m)					\
+#define CLIP(m)                                 \
   (m)<0?0:((m)>255?255:(m))
 
 // from http://en.wikipedia.org/wiki/YUV
@@ -471,72 +473,73 @@ char *textFileRead(char *fn) {
         return content;
 }
 
-	void printShaderInfoLog(GLuint obj)
-	{
-	    int infologLength = 0;
-	    int charsWritten  = 0;
-	    char *infoLog;
+#ifdef USE_GLEW
+        void printShaderInfoLog(GLuint obj)
+        {
+            int infologLength = 0;
+            int charsWritten  = 0;
+            char *infoLog;
 
-		glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+                glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
 
-	    if (infologLength > 0)
-	    {
-	        infoLog = (char *)malloc(infologLength);
-	        glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
-			printf("%s\n",infoLog);
-	        free(infoLog);
-	    }
-	}
+            if (infologLength > 0)
+            {
+                infoLog = (char *)malloc(infologLength);
+                glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
+                        printf("%s\n",infoLog);
+                free(infoLog);
+            }
+        }
 
-	void printProgramInfoLog(GLuint obj)
-	{
-	    int infologLength = 0;
-	    int charsWritten  = 0;
-	    char *infoLog;
+        void printProgramInfoLog(GLuint obj)
+        {
+            int infologLength = 0;
+            int charsWritten  = 0;
+            char *infoLog;
 
-		glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+                glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
 
-	    if (infologLength > 0)
-	    {
-	        infoLog = (char *)malloc(infologLength);
-	        glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
-			printf("%s\n",infoLog);
-	        free(infoLog);
-	    }
-	}
+            if (infologLength > 0)
+            {
+                infoLog = (char *)malloc(infologLength);
+                glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
+                        printf("%s\n",infoLog);
+                free(infoLog);
+            }
+        }
 
 void setShaders() {
 
-		char *vs,*fs;
+                char *vs,*fs;
                 GLint status;
                 GLhandleARB vertex_program,fragment_program;
                 GLint sourceSize, shader_texture_source;
 
-		vertex_program = glCreateShader(GL_VERTEX_SHADER);
-		fragment_program = glCreateShader(GL_FRAGMENT_SHADER);
+                vertex_program = glCreateShader(GL_VERTEX_SHADER);
+                fragment_program = glCreateShader(GL_FRAGMENT_SHADER);
 
-		vs = textFileRead(SHADER_DIR "demosaic.vrt");
+                vs = textFileRead(SHADER_DIR "demosaic.vrt");
                 if (vs==NULL) {
                   fprintf(stderr,"ERROR: failed to read vertex shader\n");
                   use_shaders = 0;
                   return;
                 }
-		fs = textFileRead(SHADER_DIR "demosaic.frg");
+                fs = textFileRead(SHADER_DIR "demosaic.frg");
                 if (fs==NULL) {
                   fprintf(stderr,"ERROR: failed to read fragment shader\n");
                   use_shaders = 0;
                   return;
                 }
 
-		const char * vv = vs;
-		const char * ff = fs;
+                const char * vv = vs;
+                const char * ff = fs;
 
-		glShaderSource(vertex_program, 1, &vv,NULL);
-		glShaderSource(fragment_program, 1, &ff,NULL);
+                glShaderSource(vertex_program, 1, &vv,NULL);
+                glShaderSource(fragment_program, 1, &ff,NULL);
 
-		free(vs);free(fs);
+                free(vs);free(fs);
 
-		glCompileShader(vertex_program);
+                glCompileShader(vertex_program);
                 glGetShaderiv(vertex_program,GL_COMPILE_STATUS,&status);
                 if (status!=GL_TRUE) {
                   fprintf(stderr,
@@ -545,7 +548,7 @@ void setShaders() {
                   return;
                 }
 
-		glCompileShader(fragment_program);
+                glCompileShader(fragment_program);
                 glGetShaderiv(fragment_program,GL_COMPILE_STATUS,&status);
                 if (status!=GL_TRUE) {
                   fprintf(stderr,
@@ -557,10 +560,10 @@ void setShaders() {
                 printShaderInfoLog(vertex_program);
                 printShaderInfoLog(fragment_program);
 
-		glsl_program = glCreateProgram();
-		glAttachShader(glsl_program,vertex_program);
-		glAttachShader(glsl_program,fragment_program);
-		glLinkProgram(glsl_program);
+                glsl_program = glCreateProgram();
+                glAttachShader(glsl_program,vertex_program);
+                glAttachShader(glsl_program,fragment_program);
+                glLinkProgram(glsl_program);
 
                 printProgramInfoLog(glsl_program);
 
@@ -583,6 +586,7 @@ void setShaders() {
                             1.0/PBO_stride,1.0/height);
                 glUniform1i(shader_texture_source, 0);
 }
+#endif  /* ifdef USE_GLEW */
 
 int main(int argc, char** argv) {
   int device_number,ncams,num_buffers;
@@ -645,8 +649,8 @@ int main(int argc, char** argv) {
     cam_iface_get_mode_string(device_number,i,mode_string,255);
     if (strstr(mode_string,"FORMAT7_0")!=NULL) {
       if (strstr(mode_string,"MONO8")!=NULL) {
-	// pick this mode
-	mode_number = i;
+        // pick this mode
+        mode_number = i;
       }
     }
     printf("  %d: %s\n",i,mode_string);
@@ -696,13 +700,14 @@ int main(int argc, char** argv) {
 
   initialize_gl_texture();
 
+#ifdef USE_GLEW
   if (use_pbo) {
     glGenBuffers(1, &pbo);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
     glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB,
                  PBO_stride*tex_height, 0, GL_STREAM_DRAW);
   }
-
+#endif  /* ifdef USE_GLEW */
 
   glEnable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -790,6 +795,7 @@ void upload_image_data_to_opengl(const char* raw_image_data,
   static char* show_pixels=NULL;
 
   if (use_pbo) {
+#ifdef USE_GLEW
     glBindTexture(GL_TEXTURE_2D, textureId);
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
 
@@ -802,6 +808,7 @@ void upload_image_data_to_opengl(const char* raw_image_data,
       glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer
     }
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+#endif  /* ifdef USE_GLEW */
   } else {
 
     if (show_pixels==NULL) {

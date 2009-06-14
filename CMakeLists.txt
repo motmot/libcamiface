@@ -33,7 +33,7 @@ project(libcamiface)
 # version
 set(V_MAJOR 0)
 set(V_MINOR 5)
-set(V_PATCH 4)
+set(V_PATCH 5)
 
 include_directories( ${CMAKE_SOURCE_DIR}/inc )
 
@@ -108,8 +108,13 @@ set(libdir      ${CMAKE_INSTALL_PREFIX}/lib)
 set(includedir  ${CMAKE_INSTALL_PREFIX}/include)
 
 configure_file(libcamiface.pc.in libcamiface.pc)
-set(PC_DIR "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
-INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc" DESTINATION ${PC_DIR})
+IF(UNIX)
+  IF(NOT APPLE)
+    set(PC_DIR "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
+    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc" 
+	    DESTINATION ${PC_DIR})
+  ENDIF(NOT APPLE)
+ENDIF(UNIX)
 
 # CPack for binary and source releases --------------
 
