@@ -58,17 +58,17 @@ typedef struct {
   void (*stop_camera)(struct CCquicktime*);
   void (*get_num_camera_properties)(struct CCquicktime*,int*);
   void (*get_camera_property_info)(struct CCquicktime*,
-				   int,
-				   CameraPropertyInfo*);
+                                   int,
+                                   CameraPropertyInfo*);
   void (*get_camera_property)(struct CCquicktime*,int,long*,int*);
   void (*set_camera_property)(struct CCquicktime*,int,long,int);
   void (*grab_next_frame_blocking)(struct CCquicktime*,
-				   unsigned char*,
-				   float);
+                                   unsigned char*,
+                                   float);
   void (*grab_next_frame_blocking_with_stride)(struct CCquicktime*,
-					       unsigned char*,
-					       intptr_t,
-					       float);
+                                               unsigned char*,
+                                               intptr_t,
+                                               float);
   void (*point_next_frame_blocking)(struct CCquicktime*,unsigned char**,float);
   void (*unpoint_frame)(struct CCquicktime*);
   void (*get_last_timestamp)(struct CCquicktime*,double*);
@@ -106,7 +106,7 @@ typedef struct CCquicktime {
 
 // forward declarations
 CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
-			      int mode_number);
+                              int mode_number);
 void delete_CCquicktime(struct CCquicktime*);
 
 void CCquicktime_CCquicktime(struct CCquicktime*,int,int,int);
@@ -115,17 +115,17 @@ void CCquicktime_start_camera(struct CCquicktime*);
 void CCquicktime_stop_camera(struct CCquicktime*);
 void CCquicktime_get_num_camera_properties(struct CCquicktime*,int*);
 void CCquicktime_get_camera_property_info(struct CCquicktime*,
-			      int,
-			      CameraPropertyInfo*);
+                              int,
+                              CameraPropertyInfo*);
 void CCquicktime_get_camera_property(struct CCquicktime*,int,long*,int*);
 void CCquicktime_set_camera_property(struct CCquicktime*,int,long,int);
 void CCquicktime_grab_next_frame_blocking(struct CCquicktime*,
-			      unsigned char*,
-			      float);
+                              unsigned char*,
+                              float);
 void CCquicktime_grab_next_frame_blocking_with_stride(struct CCquicktime*,
-					  unsigned char*,
-					  intptr_t,
-					  float);
+                                          unsigned char*,
+                                          intptr_t,
+                                          float);
 void CCquicktime_point_next_frame_blocking(struct CCquicktime*,unsigned char**,float);
 void CCquicktime_unpoint_frame(struct CCquicktime*);
 void CCquicktime_get_last_timestamp(struct CCquicktime*,double*);
@@ -189,22 +189,22 @@ char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 uint32_t num_cameras = 0;
 Component *components_by_device_number=NULL;
 
-#define CAM_IFACE_ERROR_FORMAT(m)					\
-  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
-	   "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#define CAM_IFACE_ERROR_FORMAT(m)                                       \
+  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,              \
+           "%s (%d): %s\n",__FILE__,__LINE__,(m));
 
-#define CAM_IFACE_CHECK_DEVICE_NUMBER(m)				\
-  if ( ((m)<0) | ((m)>=num_cameras) ) {					\
-    cam_iface_error = -1;						\
-    CAM_IFACE_ERROR_FORMAT("invalid device_number");			\
-    return;								\
+#define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
+  if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
+    cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
+    return;                                                             \
   }
 
-#define CAM_IFACE_CHECK_MODE_NUMBER(m)			\
-  if ((m)!=0) {						\
-    cam_iface_error = -1;				\
-    CAM_IFACE_ERROR_FORMAT("only mode 0 exists");	\
-    return;						\
+#define CAM_IFACE_CHECK_MODE_NUMBER(m)                  \
+  if ((m)!=0) {                                         \
+    cam_iface_error = -1;                               \
+    CAM_IFACE_ERROR_FORMAT("only mode 0 exists");       \
+    return;                                             \
   }
 
 
@@ -224,38 +224,38 @@ void do_qt_error(OSErr err,char* file,int line) {
   }
   else {
     snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, "Mac OS error code %d (%s,line %d)",
-	     err,file,line);
+             err,file,line);
   }
 
   cam_iface_error = -1;
   return;
 }
 
-#define CHK_QT(m) {							\
-    if ((m)!=noErr) {							\
-      do_qt_error(m,__FILE__,__LINE__);					\
-      return;								\
-    }									\
+#define CHK_QT(m) {                                                     \
+    if ((m)!=noErr) {                                                   \
+      do_qt_error(m,__FILE__,__LINE__);                                 \
+      return;                                                           \
+    }                                                                   \
 }
 
-#define CHECK_CC(m)							\
-  if (!(m)) {								\
-    cam_iface_error = -1;						\
-    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");	\
-    return;								\
+#define CHECK_CC(m)                                                     \
+  if (!(m)) {                                                           \
+    cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
+    return;                                                             \
   }
 
-#define CHECK_CCV(m)							\
-  if (!(m)) {								\
-    cam_iface_error = -1;						\
-    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");	\
-    return NULL;							\
+#define CHECK_CCV(m)                                                    \
+  if (!(m)) {                                                           \
+    cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
+    return NULL;                                                        \
   }
 
 
-#define NOT_IMPLEMENTED					\
-  cam_iface_error = -1;					\
-  CAM_IFACE_ERROR_FORMAT("not yet implemented");	\
+#define NOT_IMPLEMENTED                                 \
+  cam_iface_error = -1;                                 \
+  CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
   return;
 
 
@@ -307,8 +307,8 @@ OSErr handle_frame_func(SGChannel chan, Rect *source_rect, GWorldPtr gworldptr, 
 }
 
 pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
-				   long chRefCon, TimeValue time, short writeType,
-				   long refCon) {
+                                   long chRefCon, TimeValue time, short writeType,
+                                   long refCon) {
   /* This is called within SGIdle */
   ComponentResult err;
   CodecFlags ignore;
@@ -328,7 +328,7 @@ pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
   GetPortBounds(be->gworld, &bounds);
   OffsetRect(&bounds, -bounds.left, -bounds.top); // XXX deprecated call
 
-  PixMapHandle	pix = GetGWorldPixMap(be->gworld); // XXX deprecated call
+  PixMapHandle  pix = GetGWorldPixMap(be->gworld); // XXX deprecated call
   int h = bounds.bottom;
   int wb = GetPixRowBytes(pix); // XXX deprecated call
   int row;
@@ -339,8 +339,8 @@ pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
   for (row=0; row<h; row++) {
     //fprintf(stdout, "row = %d, baseAddr = %d, wb = %d, stride0 = %d\n",row,baseAddr,wb,be->stride0);
     memcpy( (void*)(be->image_buf + row*be->stride0), // dest
-	    baseAddr, // src
-	    be->stride0 );
+            baseAddr, // src
+            be->stride0 );
     baseAddr += wb;
   }
 
@@ -384,8 +384,8 @@ void cam_iface_startup() {
 
 
 
-  ComponentDescription	theDesc;
-  Component		sgCompID;
+  ComponentDescription  theDesc;
+  Component             sgCompID;
   int i,j,k;
 
   char name[256];
@@ -413,7 +413,7 @@ void cam_iface_startup() {
   }
 
   for (i=0; i<num_cameras; i++) {
-    sgCompID 	= FindNextComponent(sgCompID, &theDesc);
+    sgCompID    = FindNextComponent(sgCompID, &theDesc);
     components_by_device_number[i] = sgCompID;
 
     // Used http://muonics.net/extras/GRL_ROTTERDAM_KPN_APP/kpnAppSourceCode.zip
@@ -456,9 +456,9 @@ void cam_iface_get_num_modes(int device_number, int *num_modes) {
 }
 
 void cam_iface_get_mode_string(int device_number,
-			       int mode_number,
-			       char* mode_string,
-			       int mode_string_maxlen) {
+                               int mode_number,
+                               char* mode_string,
+                               int mode_string_maxlen) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   CAM_IFACE_CHECK_MODE_NUMBER(mode_number);
   snprintf(mode_string,mode_string_maxlen,"default mode");
@@ -470,7 +470,7 @@ cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number) {
 }
 
 CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
-				    int mode_number) {
+                                    int mode_number) {
   CCquicktime* this=NULL;
 
   this = malloc(sizeof(CCquicktime));
@@ -479,8 +479,8 @@ CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
   } else {
     CCquicktime_CCquicktime( this,
-			     device_number, NumImageBuffers,
-			     mode_number);
+                             device_number, NumImageBuffers,
+                             mode_number);
     if (cam_iface_error) {
       free(this);
       return NULL;
@@ -497,8 +497,8 @@ void delete_CCquicktime( CCquicktime *this ) {
 }
 
 void CCquicktime_CCquicktime( CCquicktime* in_cr,
-			      int device_number, int NumImageBuffers,
-			      int mode_number) {
+                              int device_number, int NumImageBuffers,
+                              int mode_number) {
   SeqGrabComponent cam;
   Component sgCompID;
   OSErr err;
@@ -545,17 +545,17 @@ void CCquicktime_CCquicktime( CCquicktime* in_cr,
   in_cr->coding = CAM_IFACE_ARGB8;
   in_cr->depth=32;
   err = QTNewGWorld( &(in_cr->gworld),
-		     k32ARGBPixelFormat,// let Mac do conversion to RGB
-		     &(in_cr->rect),
-		     0, NULL, 0);
+                     k32ARGBPixelFormat,// let Mac do conversion to RGB
+                     &(in_cr->rect),
+                     0, NULL, 0);
   CHK_QT(err);
 #else
   in_cr->inherited.coding = CAM_IFACE_YUV422,
   in_cr->inherited.depth=16;
   err = QTNewGWorld( &(in_cr->gworld),
-		     k422YpCbCr8PixelFormat,
-		     &(in_cr->rect),
-		     0, NULL, 0);
+                     k422YpCbCr8PixelFormat,
+                     &(in_cr->rect),
+                     0, NULL, 0);
   CHK_QT(err);
 #endif
 
@@ -587,41 +587,41 @@ void CCquicktime_close( CCquicktime *in_cr) {
 }
 
 void CCquicktime_get_max_frame_size( CCquicktime *in_cr,
-				     int *width,
-				     int *height ) {
+                                     int *width,
+                                     int *height ) {
   CHECK_CC(in_cr);
   *width=in_cr->rect.right;
   *height=in_cr->rect.bottom;
 }
 
 void CCquicktime_get_num_camera_properties(CCquicktime *in_cr,
-					   int* num_properties) {
+                                           int* num_properties) {
   CHECK_CC(in_cr);
   *num_properties = 0;
 }
 
 void CCquicktime_get_camera_property_info(CCquicktime *in_cr,
-					  int property_number,
-					  CameraPropertyInfo *info) {
+                                          int property_number,
+                                          CameraPropertyInfo *info) {
   NOT_IMPLEMENTED;
 }
 
 void CCquicktime_get_camera_property(CCquicktime *in_cr,
-				     int property_number,
-				     long* Value,
-				     int* Auto ) {
+                                     int property_number,
+                                     long* Value,
+                                     int* Auto ) {
   NOT_IMPLEMENTED;
 }
 
 void CCquicktime_set_camera_property(CCquicktime *in_cr,
-				     int property_number,
-				     long Value,
-				     int Auto ) {
+                                     int property_number,
+                                     long Value,
+                                     int Auto ) {
   NOT_IMPLEMENTED;
 }
 
 void CCquicktime_get_buffer_size( CCquicktime *in_cr,
-				  int *size) {
+                                  int *size) {
   CHECK_CC(in_cr);
   *size=in_cr->buffer_size;
 }
@@ -641,9 +641,9 @@ void CCquicktime_stop_camera( CCquicktime *in_cr ) {
 }
 
 void CCquicktime_grab_next_frame_blocking_with_stride( CCquicktime *ccntxt,
-						       unsigned char *out_bytes,
-						       intptr_t stride0,
-						       float timeout) {
+                                                       unsigned char *out_bytes,
+                                                       intptr_t stride0,
+                                                       float timeout) {
   SeqGrabComponent cam;
   OSErr err=noErr;
 
@@ -675,8 +675,8 @@ void CCquicktime_grab_next_frame_blocking_with_stride( CCquicktime *ccntxt,
 }
 
 void CCquicktime_grab_next_frame_blocking( CCquicktime *ccntxt,
-					   unsigned char *out_bytes,
-					   float timeout ) {
+                                           unsigned char *out_bytes,
+                                           float timeout ) {
   intptr_t stride0;
 
   CHECK_CC(ccntxt);
@@ -706,14 +706,14 @@ void CCquicktime_get_last_framenumber( CCquicktime *in_cr, unsigned long* framen
 }
 
 void CCquicktime_get_num_trigger_modes( CCquicktime *in_cr,
-					int *num_exposure_modes ) {
+                                        int *num_exposure_modes ) {
   *num_exposure_modes = 1;
 }
 
 void CCquicktime_get_trigger_mode_string( CCquicktime *ccntxt,
-					  int exposure_mode_number,
-					  char* exposure_mode_string, //output parameter
-					  int exposure_mode_string_maxlen) {
+                                          int exposure_mode_number,
+                                          char* exposure_mode_string, //output parameter
+                                          int exposure_mode_string_maxlen) {
   CHECK_CC(ccntxt);
   if (exposure_mode_number!=0) {
     cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("only trigger mode 0 supported"); return;
@@ -722,13 +722,13 @@ void CCquicktime_get_trigger_mode_string( CCquicktime *ccntxt,
 }
 
 void CCquicktime_get_trigger_mode_number( CCquicktime *ccntxt,
-					  int *exposure_mode_number ) {
+                                          int *exposure_mode_number ) {
   CHECK_CC(ccntxt);
   *exposure_mode_number=0;
 }
 
 void CCquicktime_set_trigger_mode_number( CCquicktime *ccntxt,
-					  int exposure_mode_number ) {
+                                          int exposure_mode_number ) {
   CHECK_CC(ccntxt);
   if (exposure_mode_number!=0) {
     cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("only trigger mode 0 supported"); return;
@@ -736,7 +736,7 @@ void CCquicktime_set_trigger_mode_number( CCquicktime *ccntxt,
 }
 
 void CCquicktime_get_frame_roi( CCquicktime *in_cr,
-				int *left, int *top, int *width, int *height ) {
+                                int *left, int *top, int *width, int *height ) {
   CHECK_CC(in_cr);
   *left = 0;
   *top = 0;
@@ -745,7 +745,7 @@ void CCquicktime_get_frame_roi( CCquicktime *in_cr,
 }
 
 void CCquicktime_set_frame_roi( CCquicktime *in_cr,
-				int left, int top, int width, int height ) {
+                                int left, int top, int width, int height ) {
   CHECK_CC(in_cr);
   if ((left != 0) | (top != 0) ) {
      cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame offset can only be 0,0"); return;
@@ -758,25 +758,25 @@ void CCquicktime_set_frame_roi( CCquicktime *in_cr,
   }
 }
 void CCquicktime_get_framerate( CCquicktime *in_cr,
-				float *framerate ) {
+                                float *framerate ) {
   CHECK_CC(in_cr);
   *framerate=30.0;
 }
 
 void CCquicktime_set_framerate( CCquicktime *in_cr,
-				float framerate ) {
+                                float framerate ) {
   NOT_IMPLEMENTED;
 }
 
 void CCquicktime_get_num_framebuffers( CCquicktime *in_cr,
-				       int *num_framebuffers ) {
+                                       int *num_framebuffers ) {
 
   CHECK_CC(in_cr);
   *num_framebuffers=4; // unknown, really
 }
 
 void CCquicktime_set_num_framebuffers( CCquicktime *in_cr,
-				       int num_framebuffers ) {
+                                       int num_framebuffers ) {
   CHECK_CC(in_cr);
   NOT_IMPLEMENTED;
 }

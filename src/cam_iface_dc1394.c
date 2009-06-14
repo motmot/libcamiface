@@ -70,17 +70,17 @@ typedef struct {
   void (*stop_camera)(struct CCdc1394*);
   void (*get_num_camera_properties)(struct CCdc1394*,int*);
   void (*get_camera_property_info)(struct CCdc1394*,
-				   int,
-				   CameraPropertyInfo*);
+                                   int,
+                                   CameraPropertyInfo*);
   void (*get_camera_property)(struct CCdc1394*,int,long*,int*);
   void (*set_camera_property)(struct CCdc1394*,int,long,int);
   void (*grab_next_frame_blocking)(struct CCdc1394*,
-				   unsigned char*,
-				   float);
+                                   unsigned char*,
+                                   float);
   void (*grab_next_frame_blocking_with_stride)(struct CCdc1394*,
-					       unsigned char*,
-					       intptr_t,
-					       float);
+                                               unsigned char*,
+                                               intptr_t,
+                                               float);
   void (*point_next_frame_blocking)(struct CCdc1394*,unsigned char**,float);
   void (*unpoint_frame)(struct CCdc1394*);
   void (*get_last_timestamp)(struct CCdc1394*,double*);
@@ -129,7 +129,7 @@ typedef struct CCdc1394 {
 
 // forward declarations
 CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
-			      int mode_number);
+                              int mode_number);
 void delete_CCdc1394(struct CCdc1394*);
 
 void CCdc1394_CCdc1394(struct CCdc1394*,int,int,int);
@@ -138,17 +138,17 @@ void CCdc1394_start_camera(struct CCdc1394*);
 void CCdc1394_stop_camera(struct CCdc1394*);
 void CCdc1394_get_num_camera_properties(struct CCdc1394*,int*);
 void CCdc1394_get_camera_property_info(struct CCdc1394*,
-			      int,
-			      CameraPropertyInfo*);
+                              int,
+                              CameraPropertyInfo*);
 void CCdc1394_get_camera_property(struct CCdc1394*,int,long*,int*);
 void CCdc1394_set_camera_property(struct CCdc1394*,int,long,int);
 void CCdc1394_grab_next_frame_blocking(struct CCdc1394*,
-			      unsigned char*,
-			      float);
+                              unsigned char*,
+                              float);
 void CCdc1394_grab_next_frame_blocking_with_stride(struct CCdc1394*,
-					  unsigned char*,
-					  intptr_t,
-					  float);
+                                          unsigned char*,
+                                          intptr_t,
+                                          float);
 void CCdc1394_point_next_frame_blocking(struct CCdc1394*,unsigned char**,float);
 void CCdc1394_unpoint_frame(struct CCdc1394*);
 void CCdc1394_get_last_timestamp(struct CCdc1394*,double*);
@@ -248,60 +248,60 @@ cam_iface_dc1394_modes_t *modes_by_device_number=NULL;
 cam_iface_dc1394_feature_list_t *features_by_device_number=NULL;
 cam_iface_dc1394_trigger_list_t *trigger_list_by_device_number=NULL;
 
-#define CAM_IFACE_ERROR_FORMAT(m)					\
-  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
-	   "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#define CAM_IFACE_ERROR_FORMAT(m)                                       \
+  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,              \
+           "%s (%d): %s\n",__FILE__,__LINE__,(m));
 
-#define CAM_IFACE_CHECK_DEVICE_NUMBER(m)				\
-  if ( ((m)<0) | ((m)>=num_cameras) ) {					\
-    cam_iface_error = -1;						\
-    CAM_IFACE_ERROR_FORMAT("invalid device_number");			\
-    return;								\
+#define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
+  if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
+    cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
+    return;                                                             \
   }
 
-#define CIDC1394CHK(err) {						\
-    dc1394error_t m = (err);						\
-    if (m!=DC1394_SUCCESS) {						\
-      cam_iface_error = -1;						\
-      snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
-	       "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,	\
-	       m,							\
-	       dc1394_error_get_string(m));				\
-      return;								\
-    }									\
+#define CIDC1394CHK(err) {                                              \
+    dc1394error_t m = (err);                                            \
+    if (m!=DC1394_SUCCESS) {                                            \
+      cam_iface_error = -1;                                             \
+      snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,          \
+               "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,     \
+               m,                                                       \
+               dc1394_error_get_string(m));                             \
+      return;                                                           \
+    }                                                                   \
   }
 
-#define CIDC1394CHKV(err) {						\
-    dc1394error_t m = (err);						\
-    if (m!=DC1394_SUCCESS) {						\
-      cam_iface_error = -1;						\
-      snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
-	       "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,	\
-	       m,							\
-	       dc1394_error_get_string(m));				\
-      return NULL;							\
-    }									\
-  }
-
-
-#define CHECK_CC(m)							\
-  if (!(m)) {								\
-    cam_iface_error = -1;						\
-    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");	\
-    return;								\
-  }
-
-#define CHECK_CCV(m)							\
-  if (!(m)) {								\
-    cam_iface_error = -1;						\
-    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");	\
-    return NULL;							\
+#define CIDC1394CHKV(err) {                                             \
+    dc1394error_t m = (err);                                            \
+    if (m!=DC1394_SUCCESS) {                                            \
+      cam_iface_error = -1;                                             \
+      snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,          \
+               "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,     \
+               m,                                                       \
+               dc1394_error_get_string(m));                             \
+      return NULL;                                                      \
+    }                                                                   \
   }
 
 
-#define NOT_IMPLEMENTED					\
-  cam_iface_error = -1;					\
-  CAM_IFACE_ERROR_FORMAT("not yet implemented");	\
+#define CHECK_CC(m)                                                     \
+  if (!(m)) {                                                           \
+    cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
+    return;                                                             \
+  }
+
+#define CHECK_CCV(m)                                                    \
+  if (!(m)) {                                                           \
+    cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
+    return NULL;                                                        \
+  }
+
+
+#define NOT_IMPLEMENTED                                 \
+  cam_iface_error = -1;                                 \
+  CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
   return;
 
 int cam_iface_is_video_mode_scalable(dc1394video_mode_t video_mode)
@@ -342,7 +342,7 @@ const char* cam_iface_get_api_version() {
 }
 
 #define MODE_CASE(m) case m:\
-    result = #m;	      \
+    result = #m;              \
   break;
 
 void fprint_dc1394format7mode_t(FILE* fd, dc1394format7mode_t* mode) {
@@ -525,76 +525,76 @@ void cam_iface_startup() {
       feature_info = &(features.feature[i]);
 
       if (_available_feature_filter( feature_info->id, feature_info->available)) {
-	features_by_device_number[device_number].num_features++;
+        features_by_device_number[device_number].num_features++;
       }
 
       if (feature_info->id == DC1394_FEATURE_TRIGGER) {
-	trig_count = 1;
+        trig_count = 1;
 
-	trigger_list_by_device_number[device_number].trigger_polarity_changeable = feature_info->polarity_capable;
-	if (feature_info->polarity_capable) {
-	  num_polarities = 2;
-	} else {
-	  num_polarities = 1;
-	}
-	trig_count += num_polarities*(feature_info->trigger_modes.num)*(feature_info->trigger_sources.num);
+        trigger_list_by_device_number[device_number].trigger_polarity_changeable = feature_info->polarity_capable;
+        if (feature_info->polarity_capable) {
+          num_polarities = 2;
+        } else {
+          num_polarities = 1;
+        }
+        trig_count += num_polarities*(feature_info->trigger_modes.num)*(feature_info->trigger_sources.num);
 
-	trigger_list_by_device_number[device_number].num_trigger_modes = trig_count;
-	trigger_list_by_device_number[device_number].is_internal_freerunning = malloc(trig_count*sizeof(uint8_t));
-	trigger_list_by_device_number[device_number].mode = malloc(trig_count*sizeof(dc1394trigger_mode_t));
-	trigger_list_by_device_number[device_number].polarity = malloc(trig_count*sizeof(dc1394trigger_polarity_t));
-	trigger_list_by_device_number[device_number].source = malloc(trig_count*sizeof(dc1394trigger_source_t));
-	// XXX TODO: check for memory error
+        trigger_list_by_device_number[device_number].num_trigger_modes = trig_count;
+        trigger_list_by_device_number[device_number].is_internal_freerunning = malloc(trig_count*sizeof(uint8_t));
+        trigger_list_by_device_number[device_number].mode = malloc(trig_count*sizeof(dc1394trigger_mode_t));
+        trigger_list_by_device_number[device_number].polarity = malloc(trig_count*sizeof(dc1394trigger_polarity_t));
+        trigger_list_by_device_number[device_number].source = malloc(trig_count*sizeof(dc1394trigger_source_t));
+        // XXX TODO: check for memory error
 
-	// internal, freerunning
-	trigger_list_by_device_number[device_number].is_internal_freerunning[0] = 1;
+        // internal, freerunning
+        trigger_list_by_device_number[device_number].is_internal_freerunning[0] = 1;
 
-	trig_count = 1;
-	for (kk=0; kk<num_polarities; kk++) {
-	  for (j=0; j<(feature_info->trigger_modes.num); j++) {
-	    for (k=0; k<(feature_info->trigger_sources.num); k++) {
-	      trigger_list_by_device_number[device_number].is_internal_freerunning[trig_count] = 0;
-	      trigger_list_by_device_number[device_number].mode[trig_count] = feature_info->trigger_modes.modes[j];
-	      if (kk==0) {
-		trigger_list_by_device_number[device_number].polarity[trig_count] = DC1394_TRIGGER_ACTIVE_HIGH;
-	      } else {
-		trigger_list_by_device_number[device_number].polarity[trig_count] = DC1394_TRIGGER_ACTIVE_LOW;
-	      }
-	      trigger_list_by_device_number[device_number].source[trig_count] = feature_info->trigger_sources.sources[k];
-	      trig_count++;
-	    }
-	  }
-	}
+        trig_count = 1;
+        for (kk=0; kk<num_polarities; kk++) {
+          for (j=0; j<(feature_info->trigger_modes.num); j++) {
+            for (k=0; k<(feature_info->trigger_sources.num); k++) {
+              trigger_list_by_device_number[device_number].is_internal_freerunning[trig_count] = 0;
+              trigger_list_by_device_number[device_number].mode[trig_count] = feature_info->trigger_modes.modes[j];
+              if (kk==0) {
+                trigger_list_by_device_number[device_number].polarity[trig_count] = DC1394_TRIGGER_ACTIVE_HIGH;
+              } else {
+                trigger_list_by_device_number[device_number].polarity[trig_count] = DC1394_TRIGGER_ACTIVE_LOW;
+              }
+              trigger_list_by_device_number[device_number].source[trig_count] = feature_info->trigger_sources.sources[k];
+              trig_count++;
+            }
+          }
+        }
       }
 
     }
 
     // modes:
     CIDC1394CHK(dc1394_video_get_supported_modes(cameras[device_number],
-						 &video_modes));
+                                                 &video_modes));
 
     // enumerate total number of modes ("mode" = dc1394 mode + dc1394 framerate)
     for (i=video_modes.num-1;i>=0;i--) {
       // framerates don't work for format 7
       //fprintf(stderr,"mode: %s ",get_dc1394_mode_string(video_modes.modes[i]));
       if (cam_iface_is_video_mode_scalable(video_modes.modes[i])) {
-	// format7
-	//dc1394_format7_get_mode_info(cameras[device_number], video_modes.modes[i],&sf7mode);
-	//fprint_dc1394format7mode_t(stderr,&sf7mode);
-	CIDC1394CHK(dc1394_format7_get_color_codings(cameras[device_number],
-						     video_modes.modes[i],
-						     &color_codings));
-	for (j=0;j<color_codings.num;j++) {
-	  modes_by_device_number[device_number].num_modes++; // a single mode entry
-	}
+        // format7
+        //dc1394_format7_get_mode_info(cameras[device_number], video_modes.modes[i],&sf7mode);
+        //fprint_dc1394format7mode_t(stderr,&sf7mode);
+        CIDC1394CHK(dc1394_format7_get_color_codings(cameras[device_number],
+                                                     video_modes.modes[i],
+                                                     &color_codings));
+        for (j=0;j<color_codings.num;j++) {
+          modes_by_device_number[device_number].num_modes++; // a single mode entry
+        }
       } else {
-	CIDC1394CHK(dc1394_video_get_supported_framerates(cameras[device_number],
-							  video_modes.modes[i],
-							  &framerates));
-	for (j=framerates.num-1;j>=0;j--) {
-	  modes_by_device_number[device_number].num_modes++;
-	  //fprintf(stderr,"non-format7: num_modes++\n");
-	}
+        CIDC1394CHK(dc1394_video_get_supported_framerates(cameras[device_number],
+                                                          video_modes.modes[i],
+                                                          &framerates));
+        for (j=framerates.num-1;j>=0;j--) {
+          modes_by_device_number[device_number].num_modes++;
+          //fprintf(stderr,"non-format7: num_modes++\n");
+        }
       }
     }
 
@@ -609,8 +609,8 @@ void cam_iface_startup() {
     for (i=0; i<DC1394_FEATURE_NUM; i++) {
       feature_info = &(features.feature[i]);
       if (_available_feature_filter( feature_info->id, feature_info->available)) {
-	features_by_device_number[device_number].dc1394_feature_ids[feature_number] = feature_info->id;
-	feature_number++;
+        features_by_device_number[device_number].dc1394_feature_ids[feature_number] = feature_info->id;
+        feature_number++;
       }
     }
 
@@ -629,28 +629,28 @@ void cam_iface_startup() {
     // enumerate total number of modes ("mode" = dc1394 mode + dc1394 framerate)
     for (i=video_modes.num-1;i>=0;i--) {
       if (cam_iface_is_video_mode_scalable(video_modes.modes[i])) {
-	// format7
-	CIDC1394CHK(dc1394_format7_get_color_codings(cameras[device_number],
-						     video_modes.modes[i],
-						     &color_codings));
-	for (j=0;j<color_codings.num;j++) {
-	  modes_by_device_number[device_number].modes[current_mode].video_mode = video_modes.modes[i];
-	  modes_by_device_number[device_number].modes[current_mode].framerate = -1; // format7 - no framerate
-	  modes_by_device_number[device_number].modes[current_mode].color_coding = color_codings.codings[j];
-	  current_mode++;
-	}
+        // format7
+        CIDC1394CHK(dc1394_format7_get_color_codings(cameras[device_number],
+                                                     video_modes.modes[i],
+                                                     &color_codings));
+        for (j=0;j<color_codings.num;j++) {
+          modes_by_device_number[device_number].modes[current_mode].video_mode = video_modes.modes[i];
+          modes_by_device_number[device_number].modes[current_mode].framerate = -1; // format7 - no framerate
+          modes_by_device_number[device_number].modes[current_mode].color_coding = color_codings.codings[j];
+          current_mode++;
+        }
       } else {
-	CIDC1394CHK(dc1394_video_get_supported_framerates(cameras[device_number],
-							  video_modes.modes[i],
-							  &framerates));
-	for (j=framerates.num-1;j>=0;j--) {
-	  modes_by_device_number[device_number].modes[current_mode].video_mode = video_modes.modes[i];
-	  modes_by_device_number[device_number].modes[current_mode].framerate = framerates.framerates[j];
-	  CIDC1394CHK(dc1394_get_color_coding_from_video_mode(cameras[device_number],
-							      video_modes.modes[i],
-							      &(modes_by_device_number[device_number].modes[current_mode].color_coding)));
-	  current_mode++;
-	}
+        CIDC1394CHK(dc1394_video_get_supported_framerates(cameras[device_number],
+                                                          video_modes.modes[i],
+                                                          &framerates));
+        for (j=framerates.num-1;j>=0;j--) {
+          modes_by_device_number[device_number].modes[current_mode].video_mode = video_modes.modes[i];
+          modes_by_device_number[device_number].modes[current_mode].framerate = framerates.framerates[j];
+          CIDC1394CHK(dc1394_get_color_coding_from_video_mode(cameras[device_number],
+                                                              video_modes.modes[i],
+                                                              &(modes_by_device_number[device_number].modes[current_mode].color_coding)));
+          current_mode++;
+        }
       }
     }
 
@@ -664,26 +664,26 @@ void cam_iface_shutdown() {
   for (device_number=0;device_number<num_cameras;device_number++) {
     if (modes_by_device_number!=NULL) {
       if (modes_by_device_number[device_number].modes!=NULL) {
-	free(modes_by_device_number[device_number].modes);
+        free(modes_by_device_number[device_number].modes);
       }
     }
     if (features_by_device_number!=NULL) {
       if (features_by_device_number[device_number].dc1394_feature_ids!=NULL) {
-	free(features_by_device_number[device_number].dc1394_feature_ids);
+        free(features_by_device_number[device_number].dc1394_feature_ids);
       }
     }
     if (trigger_list_by_device_number!=NULL) {
       if (trigger_list_by_device_number[device_number].is_internal_freerunning!=NULL) {
-	free(trigger_list_by_device_number[device_number].is_internal_freerunning);
+        free(trigger_list_by_device_number[device_number].is_internal_freerunning);
       }
       if (trigger_list_by_device_number[device_number].mode!=NULL) {
-	free(trigger_list_by_device_number[device_number].mode);
+        free(trigger_list_by_device_number[device_number].mode);
       }
       if (trigger_list_by_device_number[device_number].polarity!=NULL) {
-	free(trigger_list_by_device_number[device_number].polarity);
+        free(trigger_list_by_device_number[device_number].polarity);
       }
       if (trigger_list_by_device_number[device_number].source!=NULL) {
-	free(trigger_list_by_device_number[device_number].source);
+        free(trigger_list_by_device_number[device_number].source);
       }
     }
   }
@@ -733,9 +733,9 @@ void cam_iface_get_num_modes(int device_number, int *num_modes) {
 }
 
 int _get_size_for_video_mode(int device_number,
-			     dc1394video_mode_t video_mode,
-			     uint32_t *h_size,uint32_t *v_size,
-			     int *scalable){
+                             dc1394video_mode_t video_mode,
+                             uint32_t *h_size,uint32_t *v_size,
+                             int *scalable){
   switch (video_mode) {
   case DC1394_VIDEO_MODE_160x120_YUV444: *h_size=160; *v_size=120; break;
   case DC1394_VIDEO_MODE_320x240_YUV422: *h_size=320; *v_size=240; break;
@@ -765,8 +765,8 @@ int _get_size_for_video_mode(int device_number,
 
   if (dc1394_is_video_mode_scalable(video_mode)) {
     if (DC1394_SUCCESS!=dc1394_format7_get_max_image_size(cameras[device_number],
-							  video_mode,
-							  h_size,v_size)) {
+                                                          video_mode,
+                                                          h_size,v_size)) {
       return 0;
     }
     *scalable = 1;
@@ -777,9 +777,9 @@ int _get_size_for_video_mode(int device_number,
 }
 
 void cam_iface_get_mode_string(int device_number,
-			       int mode_number,
-			       char* mode_string,
-			       int mode_string_maxlen) {
+                               int mode_number,
+                               char* mode_string,
+                               int mode_string_maxlen) {
   dc1394video_mode_t video_mode;
   dc1394framerate_t framerate;
   char *coding_string, *framerate_string;
@@ -837,10 +837,10 @@ void cam_iface_get_mode_string(int device_number,
   dc1394_mode_string = get_dc1394_mode_string(video_mode);
   if (dc1394_is_video_mode_scalable(video_mode)) {
     snprintf(mode_string,mode_string_maxlen,"%d x %d %s %s %s",
-	     h_size,v_size,dc1394_mode_string,coding_string,framerate_string);
+             h_size,v_size,dc1394_mode_string,coding_string,framerate_string);
   } else {
     snprintf(mode_string,mode_string_maxlen,"%d x %d %s %s",
-	     h_size,v_size,dc1394_mode_string,framerate_string);
+             h_size,v_size,dc1394_mode_string,framerate_string);
   }
 }
 
@@ -849,7 +849,7 @@ cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number) {
 }
 
 CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
-			      int mode_number) {
+                              int mode_number) {
   CCdc1394* this=NULL;
 
   this = malloc(sizeof(CCdc1394));
@@ -858,8 +858,8 @@ CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
   } else {
     CCdc1394_CCdc1394( this,
-		       device_number, NumImageBuffers,
-		       mode_number);
+                       device_number, NumImageBuffers,
+                       mode_number);
     if (cam_iface_error) {
       free(this);
       return NULL;
@@ -876,8 +876,8 @@ void delete_CCdc1394( CCdc1394 *this ) {
 }
 
 void CCdc1394_CCdc1394( CCdc1394 *this,
-			int device_number, int NumImageBuffers,
-			int mode_number) {
+                        int device_number, int NumImageBuffers,
+                        int mode_number) {
   dc1394video_mode_t video_mode, test_video_mode;
   dc1394framerate_t framerate;
   uint32_t h_size,v_size,tmp_depth;
@@ -931,7 +931,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   FD_ZERO(&(this->fdset));
 
   CIDC1394CHK(dc1394_video_set_transmission(cameras[device_number],
-					    DC1394_OFF));
+                                            DC1394_OFF));
   this->capture_is_set=0;
 
   this->inherited.device_number = device_number;
@@ -974,8 +974,8 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   } else {
     // format7
     CIDC1394CHK(dc1394_format7_set_color_coding(cameras[device_number],
-						video_mode,
-						coding));
+                                                video_mode,
+                                                coding));
   }
 
   CIDC1394CHK(dc1394_get_control_register(cameras[device_number],
@@ -1068,11 +1068,11 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
       return;
     }
     CIDC1394CHK(dc1394_format7_set_roi(cameras[device_number], video_mode,
-					coding,
-					DC1394_USE_MAX_AVAIL, // use max packet size
+                                        coding,
+                                        DC1394_USE_MAX_AVAIL, // use max packet size
                                         this->roi_left, this->roi_top,
-					this->roi_width,
-					this->roi_height));  // width, height
+                                        this->roi_width,
+                                        this->roi_height));  // width, height
   }
 
   this->num_dma_buffers=NumImageBuffers;
@@ -1094,7 +1094,7 @@ void CCdc1394_close(CCdc1394 *this) {
 
   /* make sure the camera stops sending data */
   CIDC1394CHK(dc1394_video_set_transmission(camera,
-					    DC1394_OFF));
+                                            DC1394_OFF));
 
   if (this->capture_is_set>0) {
     CIDC1394CHK(dc1394_capture_stop(camera));
@@ -1124,15 +1124,15 @@ void CCdc1394_start_camera( CCdc1394 *this ) {
     CCdc1394_stop_camera(this);
   }
   err = dc1394_capture_setup(camera,
-			     this->num_dma_buffers,
-			     DC1394_CAPTURE_FLAGS_DEFAULT);
+                             this->num_dma_buffers,
+                             DC1394_CAPTURE_FLAGS_DEFAULT);
 
   if (err==DC1394_IOCTL_FAILURE) {
     cam_iface_error = -1;
-    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,		\
-	     "%s (%d): libdc1394 err %d: %s. (Did you request too many DMA buffers?)\n",__FILE__,__LINE__, \
-	     err,							\
-	     dc1394_error_get_string(err));
+    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,            \
+             "%s (%d): libdc1394 err %d: %s. (Did you request too many DMA buffers?)\n",__FILE__,__LINE__, \
+             err,                                                       \
+             dc1394_error_get_string(err));
     return;
   }
 
@@ -1142,7 +1142,7 @@ void CCdc1394_start_camera( CCdc1394 *this ) {
 
   /*have the camera start sending data*/
   CIDC1394CHK(dc1394_video_set_transmission(camera,
-					    DC1394_ON));
+                                            DC1394_ON));
 #ifdef CAM_IFACE_DEBUG
   fprintf(stdout,"start_camera 3\n");
   fflush(stdout);
@@ -1168,7 +1168,7 @@ void CCdc1394_stop_camera( CCdc1394 *this ) {
 
   /* have the camera stop sending data */
   CIDC1394CHK(dc1394_video_set_transmission(camera,
-					    DC1394_OFF));
+                                            DC1394_OFF));
 
   if (this->capture_is_set>0) {
     CIDC1394CHK(dc1394_capture_stop(camera));
@@ -1187,7 +1187,7 @@ void CCdc1394_stop_camera( CCdc1394 *this ) {
 }
 
 void CCdc1394_get_num_camera_properties(CCdc1394 *this,
-					int* num_properties) {
+                                        int* num_properties) {
   dc1394featureset_t features;
   dc1394feature_info_t    *feature_info;
   int i;
@@ -1219,8 +1219,8 @@ void feature_has_manual_mode(dc1394feature_modes_t* modes, dc1394bool_t* result)
 }
 
 void CCdc1394_get_camera_property_info(CCdc1394 *this,
-				       int property_number,
-				       CameraPropertyInfo *info) {
+                                       int property_number,
+                                       CameraPropertyInfo *info) {
   dc1394camera_t *camera;
   int feature_id;
   dc1394feature_info_t feature_info;
@@ -1307,9 +1307,9 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
 }
 
 void CCdc1394_get_camera_property(CCdc1394 *this,
-				  int property_number,
-				  long* Value,
-				  int* Auto ) {
+                                  int property_number,
+                                  long* Value,
+                                  int* Auto ) {
   dc1394camera_t *camera;
   int feature_id;
   uint32_t this_val;
@@ -1354,9 +1354,9 @@ void CCdc1394_get_camera_property(CCdc1394 *this,
 }
 
 void CCdc1394_set_camera_property(CCdc1394 *this,
-				  int property_number,
-				  long Value,
-				  int Auto ) {
+                                  int property_number,
+                                  long Value,
+                                  int Auto ) {
   dc1394camera_t *camera;
   int feature_id;
   uint32_t this_val;
@@ -1397,8 +1397,8 @@ void CCdc1394_set_camera_property(CCdc1394 *this,
 }
 
 void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
-						    unsigned char *out_bytes,
-						    intptr_t stride0, float timeout) {
+                                                    unsigned char *out_bytes,
+                                                    intptr_t stride0, float timeout) {
   dc1394camera_t *camera;
   dc1394video_frame_t *orig_frame, *frame, *converted_frame;
   int row, depth, wb;
@@ -1495,7 +1495,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 
 #ifdef CAM_IFACE_DC1394_SLOWDEBUG
   if (!_get_size_for_video_mode(this->inherited.device_number,
-				camera->video_mode,&h_size,&v_size,&scalable)){
+                                camera->video_mode,&h_size,&v_size,&scalable)){
     cam_iface_error = -1;
     CAM_IFACE_ERROR_FORMAT("Could not get size for video mode");
     return;
@@ -1535,8 +1535,8 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 
   for (row=0;row<h;row++) {
     memcpy((void*)(out_bytes+row*stride0), /*dest*/
-    	   (const void*)(frame->image + row*(frame->stride)),/*src*/
-    	   wb);/*size*/
+           (const void*)(frame->image + row*(frame->stride)),/*src*/
+           wb);/*size*/
   }
 
   this->last_timestamp=frame->timestamp; // get timestamp
@@ -1576,7 +1576,7 @@ void CCdc1394_get_last_framenumber( CCdc1394 *this, unsigned long* framenumber )
 }
 
 void CCdc1394_get_num_trigger_modes( CCdc1394 *this,
-				     int *num_trigger_modes ) {
+                                     int *num_trigger_modes ) {
   dc1394camera_t *camera;
   dc1394bool_t has_trigger;
 
@@ -1585,9 +1585,9 @@ void CCdc1394_get_num_trigger_modes( CCdc1394 *this,
 }
 
 void CCdc1394_get_trigger_mode_string( CCdc1394 *this,
-				       int trigger_mode_number,
-				       char* trigger_mode_string, //output parameter
-				       int trigger_mode_string_maxlen) {
+                                       int trigger_mode_number,
+                                       char* trigger_mode_string, //output parameter
+                                       int trigger_mode_string_maxlen) {
   dc1394camera_t *camera;
   dc1394bool_t has_trigger;
 
@@ -1604,22 +1604,22 @@ void CCdc1394_get_trigger_mode_string( CCdc1394 *this,
   } else {
     if (trigger_list_by_device_number[this->inherited.device_number].trigger_polarity_changeable) {
       snprintf(trigger_mode_string,trigger_mode_string_maxlen,"external, polarity: %s, mode: %s, source: %s",
-	       trig_polarity_str(trigger_list_by_device_number[this->inherited.device_number].polarity[trigger_mode_number]),
-	       trig_mode_str(trigger_list_by_device_number[this->inherited.device_number].mode[trigger_mode_number]),
-	       trig_sources_str(trigger_list_by_device_number[this->inherited.device_number].source[trigger_mode_number])
-	       );
+               trig_polarity_str(trigger_list_by_device_number[this->inherited.device_number].polarity[trigger_mode_number]),
+               trig_mode_str(trigger_list_by_device_number[this->inherited.device_number].mode[trigger_mode_number]),
+               trig_sources_str(trigger_list_by_device_number[this->inherited.device_number].source[trigger_mode_number])
+               );
     } else {
       snprintf(trigger_mode_string,trigger_mode_string_maxlen,"external, mode: %s, source: %s",
-	       trig_mode_str(trigger_list_by_device_number[this->inherited.device_number].mode[trigger_mode_number]),
-	       trig_sources_str(trigger_list_by_device_number[this->inherited.device_number].source[trigger_mode_number])
-	       );
+               trig_mode_str(trigger_list_by_device_number[this->inherited.device_number].mode[trigger_mode_number]),
+               trig_sources_str(trigger_list_by_device_number[this->inherited.device_number].source[trigger_mode_number])
+               );
     }
   }
   return;
 }
 
 void CCdc1394_get_trigger_mode_number( CCdc1394 *this,
-				       int *trigger_mode_number ) {
+                                       int *trigger_mode_number ) {
   dc1394camera_t *camera;
   dc1394bool_t has_trigger;
   dc1394switch_t pwr;
@@ -1633,8 +1633,8 @@ void CCdc1394_get_trigger_mode_number( CCdc1394 *this,
   CHECK_CC(this);
   camera = cameras[this->inherited.device_number];
   CIDC1394CHK(dc1394_feature_is_present(camera,
-					DC1394_FEATURE_TRIGGER,
-					&has_trigger));
+                                        DC1394_FEATURE_TRIGGER,
+                                        &has_trigger));
   if (!has_trigger) {
     *trigger_mode_number = 0;
     return;
@@ -1681,7 +1681,7 @@ void CCdc1394_get_trigger_mode_number( CCdc1394 *this,
 }
 
 void CCdc1394_set_trigger_mode_number( CCdc1394 *this,
-				       int trigger_mode_number ) {
+                                       int trigger_mode_number ) {
   dc1394camera_t *camera;
   dc1394bool_t has_trigger;
   dc1394switch_t pwr;
@@ -1709,7 +1709,7 @@ void CCdc1394_set_trigger_mode_number( CCdc1394 *this,
 }
 
 void CCdc1394_get_frame_roi( CCdc1394 *this,
-			     int *left, int *top, int* width, int* height ) {
+                             int *left, int *top, int* width, int* height ) {
   uint32_t l,t;
   dc1394camera_t *camera;
   dc1394video_mode_t video_mode;
@@ -1724,7 +1724,7 @@ void CCdc1394_get_frame_roi( CCdc1394 *this,
 }
 
 void CCdc1394_set_frame_roi( CCdc1394 *this,
-			     int left, int top, int width, int height ) {
+                             int left, int top, int width, int height ) {
   dc1394camera_t *camera;
   dc1394video_mode_t video_mode;
   uint32_t h_unit,v_unit;
@@ -1745,8 +1745,8 @@ void CCdc1394_set_frame_roi( CCdc1394 *this,
   }
 
   CIDC1394CHK(dc1394_format7_get_unit_size(camera,
-					   video_mode,
-					   &h_unit, &v_unit));
+                                           video_mode,
+                                           &h_unit, &v_unit));
 
   if ((width%h_unit != 0) || (height%v_unit != 0)) {
     CAM_IFACE_ERROR_FORMAT("specified ROI size not attainable with this camera");
@@ -1754,9 +1754,9 @@ void CCdc1394_set_frame_roi( CCdc1394 *this,
   }
 
   CIDC1394CHK(dc1394_format7_get_unit_position(camera,
-					       video_mode,
-					       &h_unit_pos,
-					       &v_unit_pos));
+                                               video_mode,
+                                               &h_unit_pos,
+                                               &v_unit_pos));
   left = left/h_unit_pos * h_unit_pos;
   top = top/v_unit_pos * v_unit_pos;
 
@@ -1771,10 +1771,10 @@ void CCdc1394_set_frame_roi( CCdc1394 *this,
   DPRINTF("setting width: %d, height: %d\n",width,height);
 
   CIDC1394CHK(dc1394_format7_set_roi(camera, video_mode, coding,
-				     DC1394_USE_MAX_AVAIL, // use max packet size
-				     left, top,
-				     width,
-				     height));
+                                     DC1394_USE_MAX_AVAIL, // use max packet size
+                                     left, top,
+                                     width,
+                                     height));
 
   /*
   if (test_width != width) {
@@ -1788,7 +1788,7 @@ void CCdc1394_set_frame_roi( CCdc1394 *this,
   }
   */
   CIDC1394CHK(dc1394_format7_get_image_size(camera, video_mode,
-					    &test_width, &test_height));
+                                            &test_width, &test_height));
 
   CIDC1394CHK(dc1394_format7_get_image_position(cameras[this->inherited.device_number],
                                                 video_mode,
@@ -1809,7 +1809,7 @@ void CCdc1394_set_frame_roi( CCdc1394 *this,
 }
 
 void CCdc1394_get_framerate( CCdc1394 *this,
-			     float *framerate ) {
+                             float *framerate ) {
 
   dc1394camera_t *camera;
   uint32_t ppf;
@@ -1827,8 +1827,8 @@ void CCdc1394_get_framerate( CCdc1394 *this,
   if (cam_iface_is_video_mode_scalable(video_mode)) {
     // Format 7
     CIDC1394CHK(dc1394_format7_get_packets_per_frame(camera,
-						     video_mode,
-						     &ppf));
+                                                     video_mode,
+                                                     &ppf));
 
     CIDC1394CHK(dc1394_video_get_iso_speed(camera,&speed));
     switch (speed) {
@@ -1861,7 +1861,7 @@ void CCdc1394_get_framerate( CCdc1394 *this,
 }
 
 void CCdc1394_set_framerate( CCdc1394 *this,
-			     float framerate ) {
+                             float framerate ) {
   dc1394camera_t *camera;
   int num_packets, denominator;
   uint64_t total_bytes;
@@ -1925,27 +1925,27 @@ void CCdc1394_set_framerate( CCdc1394 *this,
 }
 
 void CCdc1394_get_max_frame_size( CCdc1394 *this,
-				  int *width, int *height ){
+                                  int *width, int *height ){
   CHECK_CC(this);
   *width=this->max_width;
   *height=this->max_height;
 }
 
 void CCdc1394_get_buffer_size( CCdc1394 *this,
-			       int *size) {
+                               int *size) {
   CHECK_CC(this);
   *size=this->buffer_size;
 }
 
 void CCdc1394_get_num_framebuffers( CCdc1394 *this,
-				    int *num_framebuffers ) {
+                                    int *num_framebuffers ) {
 
   CHECK_CC(this);
   *num_framebuffers=this->num_dma_buffers;
 }
 
 void CCdc1394_set_num_framebuffers( CCdc1394 *this,
-				    int num_framebuffers ) {
+                                    int num_framebuffers ) {
   CHECK_CC(this);
   NOT_IMPLEMENTED;
 }

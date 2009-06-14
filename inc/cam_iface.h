@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <process.h> // for intptr_t
 
 #ifndef _INTPTR_T_DEFINED
-typedef int		intptr_t;
+typedef int             intptr_t;
 #  define _INTPTR_T_DEFINED
 #endif
 
@@ -75,7 +75,7 @@ extern "C" {
    natively by camwire. */
 
 /* Limits for Camwire_id: */
-#define CAMWIRE_ID_MAX_CHARS	100
+#define CAMWIRE_ID_MAX_CHARS    100
 
 typedef struct
 {
@@ -110,13 +110,13 @@ CAM_IFACE_API const char* cam_iface_get_api_version(void);
 CAM_IFACE_API void cam_iface_startup(void); /* call cam_iface_startup_with_version_check() */
 CAM_IFACE_API void cam_iface_shutdown(void);
 
-#define cam_iface_startup_with_version_check() {			\
-  if (strcmp(CAM_IFACE_API_VERSION,cam_iface_get_api_version())) {	\
+#define cam_iface_startup_with_version_check() {                        \
+  if (strcmp(CAM_IFACE_API_VERSION,cam_iface_get_api_version())) {      \
     fprintf(stderr,"cam_iface error: code uses API version %s, ",CAM_IFACE_API_VERSION); \
     fprintf(stderr,"but library implements %s. Exiting.\n",cam_iface_get_api_version()); \
-    exit(1);								\
-  }									\
-  cam_iface_startup();							\
+    exit(1);                                                            \
+  }                                                                     \
+  cam_iface_startup();                                                  \
 }
 
 CAM_IFACE_API int cam_iface_get_num_cameras(void);
@@ -167,9 +167,9 @@ CAM_IFACE_API void cam_iface_get_num_modes(int device_number, int *num_modes);
 
 /* Describe the video mode possible (returns string "640x480xMONO8") */
 CAM_IFACE_API void cam_iface_get_mode_string(int device_number,
-					     int mode_number,
-					     char* mode_string, /* output parameter */
-					     int mode_string_maxlen);
+                                             int mode_number,
+                                             char* mode_string, /* output parameter */
+                                             int mode_string_maxlen);
 
 
 /*
@@ -206,17 +206,17 @@ typedef struct {
   void (*stop_camera)(struct CamContext*);
   void (*get_num_camera_properties)(struct CamContext*,int*);
   void (*get_camera_property_info)(struct CamContext*,
-				   int,
-				   CameraPropertyInfo*);
+                                   int,
+                                   CameraPropertyInfo*);
   void (*get_camera_property)(struct CamContext*,int,long*,int*);
   void (*set_camera_property)(struct CamContext*,int,long,int);
   void (*grab_next_frame_blocking)(struct CamContext*,
-				   unsigned char*,
-				   float);
+                                   unsigned char*,
+                                   float);
   void (*grab_next_frame_blocking_with_stride)(struct CamContext*,
-					       unsigned char*,
-					       intptr_t,
-					       float);
+                                               unsigned char*,
+                                               intptr_t,
+                                               float);
   void (*point_next_frame_blocking)(struct CamContext*,unsigned char**,float);
   void (*unpoint_frame)(struct CamContext*);
   void (*get_last_timestamp)(struct CamContext*,double*);
@@ -247,29 +247,29 @@ typedef struct CamContext { /* These are READ ONLY. To change, call the appropri
 
 CAM_IFACE_API void delete_CamContext(CamContext*);
 CAM_IFACE_API void CamContext_CamContext(CamContext *ccntxt,
-					 int device_number,int NumImageBuffers,
-					 int mode_number);
+                                         int device_number,int NumImageBuffers,
+                                         int mode_number);
 CAM_IFACE_API void CamContext_close(CamContext *ccntxt);
 
 CAM_IFACE_API void CamContext_start_camera(CamContext *ccntxt);
 CAM_IFACE_API void CamContext_stop_camera(CamContext *ccntxt);
 
 CAM_IFACE_API void CamContext_get_num_camera_properties(CamContext *ccntxt,
-							int* num_properties); /* output parameter */
+                                                        int* num_properties); /* output parameter */
 
 CAM_IFACE_API void CamContext_get_camera_property_info(CamContext *ccntxt,
-						       int property_number,
-						       CameraPropertyInfo *info);
+                                                       int property_number,
+                                                       CameraPropertyInfo *info);
 
 CAM_IFACE_API void CamContext_get_camera_property(CamContext *ccntxt,
-						  int property_number,
-						  long* Value,
-						  int* Auto);
+                                                  int property_number,
+                                                  long* Value,
+                                                  int* Auto);
 
 CAM_IFACE_API void CamContext_set_camera_property(CamContext *ccntxt,
-						  int property_number,
-						  long Value,
-						  int Auto);
+                                                  int property_number,
+                                                  long Value,
+                                                  int Auto);
 
 /* copy the image data into a buffer passed in */
 CAM_IFACE_API void CamContext_grab_next_frame_blocking(CamContext *ccntxt, unsigned char* out_bytes, float timeout);
@@ -283,43 +283,43 @@ CAM_IFACE_API void CamContext_point_next_frame_blocking(CamContext *ccntxt, unsi
 CAM_IFACE_API void CamContext_unpoint_frame(CamContext *ccntxt);
 
 CAM_IFACE_API void CamContext_get_last_timestamp( CamContext *ccntxt,
-					   double* timestamp );
+                                           double* timestamp );
 CAM_IFACE_API void CamContext_get_last_framenumber( CamContext *ccntxt,
-						    unsigned long* framenumber );
+                                                    unsigned long* framenumber );
 
 CAM_IFACE_API void CamContext_get_num_trigger_modes( CamContext *ccntxt,
-						     int *num_exposure_modes ); /* output parameter */
+                                                     int *num_exposure_modes ); /* output parameter */
 CAM_IFACE_API void CamContext_get_trigger_mode_string( CamContext *ccntxt,
-						       int exposure_mode_number,
-						       char* exposure_mode_string, /* output parameter */
-						       int exposure_mode_string_maxlen);
+                                                       int exposure_mode_number,
+                                                       char* exposure_mode_string, /* output parameter */
+                                                       int exposure_mode_string_maxlen);
 CAM_IFACE_API void CamContext_get_trigger_mode_number( CamContext *ccntxt,
-						       int *exposure_mode_number ); /* output parameter */
+                                                       int *exposure_mode_number ); /* output parameter */
 CAM_IFACE_API void CamContext_set_trigger_mode_number( CamContext *ccntxt,
-						       int exposure_mode_number );
+                                                       int exposure_mode_number );
 
 CAM_IFACE_API void CamContext_get_frame_roi( CamContext *ccntxt,
-					     int *left, int *top, int* width, int* height );
+                                             int *left, int *top, int* width, int* height );
 CAM_IFACE_API void CamContext_set_frame_roi( CamContext *ccntxt,
-					     int left, int top, int width, int height );
+                                             int left, int top, int width, int height );
 
 CAM_IFACE_API void CamContext_get_max_frame_size( CamContext *ccntxt,
-						  int *width,
-						  int *height );
+                                                  int *width,
+                                                  int *height );
 
 CAM_IFACE_API void CamContext_get_buffer_size( CamContext *ccntxt,
-					       int *size);
+                                               int *size);
 
 CAM_IFACE_API void CamContext_get_framerate( CamContext *ccntxt,
-					     float *framerate );
+                                             float *framerate );
 CAM_IFACE_API void CamContext_set_framerate( CamContext *ccntxt,
-					     float framerate );
+                                             float framerate );
 
 CAM_IFACE_API void CamContext_get_num_framebuffers( CamContext *ccntxt,
-					     int *num_framebuffers );
+                                             int *num_framebuffers );
 
 CAM_IFACE_API void CamContext_set_num_framebuffers( CamContext *ccntxt,
-					     int num_framebuffers );
+                                             int num_framebuffers );
 
 #ifdef __cplusplus
 }
