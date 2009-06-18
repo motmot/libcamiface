@@ -79,6 +79,51 @@ if(OPENCV_FOUND)
   ENDFOREACH(BACKEND)
 ENDIF(OPENCV_FOUND)
 
+#  cam2theora.c
+#   Check for libtheora using pkg-config
+pkg_check_modules(THEORA theora)
+
+if(THEORA_FOUND)
+
+  set(cam2theora_SRCS cam2theora.c)
+
+  FOREACH(BACKEND ${all_backends})
+    ADD_EXECUTABLE(cam2theora-${BACKEND} ${cam2theora_SRCS})
+    include_directories(${THEORA_INCLUDE_DIRS})
+
+    TARGET_LINK_LIBRARIES(cam2theora-${BACKEND}
+      cam_iface_${BACKEND}
+      ${THEORA_LIBRARIES}
+      )
+
+    INSTALL(TARGETS cam2theora-${BACKEND}
+      RUNTIME DESTINATION ${DEMO_DIR}
+      LIBRARY DESTINATION lib
+      ARCHIVE DESTINATION lib
+      )
+  ENDFOREACH(BACKEND)
+
+# temporary: png2theora
+  pkg_check_modules(LIBPNG libpng)
+
+  set(png2theora_SRCS png2theora.c)
+
+  ADD_EXECUTABLE(png2theora ${png2theora_SRCS})
+  include_directories(${THEORA_INCLUDE_DIRS} ${LIBPNG_INCLUDE_DIRS})
+
+  TARGET_LINK_LIBRARIES(png2theora
+    ${THEORA_LIBRARIES}
+    ${LIBPNG_LIBRARIES}
+    )
+
+  INSTALL(TARGETS png2theora
+    RUNTIME DESTINATION ${DEMO_DIR}
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    )
+
+ENDIF(THEORA_FOUND)
+
 #  glut.c
 
 IF(WIN32)
