@@ -1,3 +1,5 @@
-# linux udev rules for Pt. Grey Firefly MV USB
-SUBSYSTEM=="usb_device", ACTION=="add", SYSFS{idVendor}=="1e10",
-SYSFS{idProduct}=="2000", GROUP="plugdev", MODE="0660"
+# linux udev rules for Pt. Grey USB cameras
+ATTRS{idVendor}=="1e10", ATTRS{idProduct}=="2000", MODE="0664", GROUP="plugdev"
+ATTRS{idVendor}=="1e10", ATTRS{idProduct}=="2001", MODE="0664", GROUP="plugdev"
+ATTRS{idVendor}=="1e10", ATTRS{idProduct}=="2005", MODE="0664", GROUP="plugdev"
+ATTRS{idVendor}=="1e10", ATTRS{idProduct}=="2004", MODE="0664", GROUP="plugdev"

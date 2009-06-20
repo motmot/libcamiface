@@ -1,3 +1,9 @@
+libcamiface (0.5.5-0ads3) hardy; urgency=low
+
+  * Install more Pt. Grey camera udev rules, change mode to 0664
+
+ -- Andrew Straw <strawman@astraw.com>  Fri, 19 Jun 2009 17:49:11 -0700
+
 libcamiface (0.5.5-0ads2) hardy; urgency=low
 
   * Put Firefly MV USB camera in plugdev group
