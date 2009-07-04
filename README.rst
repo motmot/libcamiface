@@ -13,6 +13,8 @@ independent image acquisition framework.
 There is also a Python wrapper (:mod:`cam_iface`) of the libcamiface
 libraries.
 
+.. _libcamiface-supported-cameras:
+
 What cameras are supported?
 ===========================
 
@@ -28,6 +30,8 @@ Prosilica Gigabit cameras, see http://www.prosilica.com/. The
 QuickTime SequenceGrabber supports any camera available through
 QuickTime. This includes the built-in cameras on Mac laptops and
 desktops.
+
+.. _libcamiface-supported-rates:
 
 What frame rates, image sizes, bit depths are possible?
 =======================================================
