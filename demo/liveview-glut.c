@@ -65,12 +65,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #error "SHADER_DIR is undefined"
 #endif
 
+#define MAX_N_CAMERAS 10
+
 /* global variables */
-CamContext *cc;
+CamContext *cc_all[MAX_N_CAMERAS];
+int ncams=0;
+
 int stride, width, height;
 unsigned char *raw_pixels;
 double buf_wf, buf_hf;
-GLuint pbo, textureId;
+GLuint pbo;
+GLuint textureId_all[MAX_N_CAMERAS];
 int use_pbo, use_shaders;
 int tex_width, tex_height;
 size_t PBO_stride;
@@ -348,6 +353,9 @@ double next_power_of_2(double f) {
 void initialize_gl_texture() {
   char *buffer;
   int bytes_per_pixel;
+  CamContext *cc = cc_all[0];
+  GLuint textureId;
+  int i;
 
   if (use_pbo) {
     // align
@@ -400,7 +408,9 @@ void initialize_gl_texture() {
     exit(1);
   }
 
-  glGenTextures(1, &textureId);
+  glGenTextures(ncams, &(textureId_all[0]));
+for (i=0; i<ncams; i++) {
+  textureId = textureId_all[i];
   glBindTexture(GL_TEXTURE_2D, textureId);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -412,6 +422,7 @@ void initialize_gl_texture() {
                gl_data_format, /* format */
                GL_UNSIGNED_BYTE, /* type */
                buffer);
+ }
   free(buffer);
   glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -419,7 +430,35 @@ void initialize_gl_texture() {
 void grab_frame(void); /* forward declaration */
 
 void display_pixels() {
-    glClear(GL_COLOR_BUFFER_BIT);
+  GLuint textureId;
+  int i;
+  int ncols,nrows,col_idx,row_idx;
+  float wfrac, hfrac, lowx, highx, lowy, highy;
+  nrows = 2;
+  ncols = (ncams+1) / 2;
+  wfrac = 2.0f/ncols;
+  hfrac = 2.0f/nrows;
+
+for (i=0; i<ncams; i++) {
+
+  if (i < ncols) {
+    row_idx = 0;
+  } else {
+    row_idx = 1;
+  }
+
+  col_idx = i % ncols;
+  lowx = col_idx*wfrac-1.0f;
+  highx = (col_idx+1)*wfrac-1.0f;
+  lowy = row_idx*hfrac-1.0f;
+  highy = (row_idx+1)*hfrac-1.0f;
+
+  //  printf("i %d\n col_idx %d, row_idx %d, lowx %f, highx %f, lowy %f, highy %f\n",
+  // i,col_idx, row_idx, lowx, highx, lowy, highy );
+  
+  textureId = textureId_all[i];
+
+  //glClear(GL_COLOR_BUFFER_BIT);
     glBindTexture(GL_TEXTURE_2D, textureId);
     glColor4f(1, 1, 1, 1);
     glBegin(GL_QUADS);
@@ -427,20 +466,21 @@ void display_pixels() {
     glNormal3d(0, 0, 1);
 
     glTexCoord2f(0,0);
-    glVertex3f(-1,1,0);
+    glVertex3f(lowx,highy,0);
 
     glTexCoord2f(0,buf_hf);
-    glVertex3f(-1,-1,0);
+    glVertex3f(lowx,lowy,0);
 
     glTexCoord2f(buf_wf,buf_hf);
-    glVertex3f(1,-1,0);
+    glVertex3f(highx,lowy,0);
 
     glTexCoord2f(buf_wf,0);
-    glVertex3f(1,1,0);
+    glVertex3f(highx,highy,0);
 
     glEnd();
 
     glutSwapBuffers();
+}
 }
 
 char *textFileRead(char *fn) {
@@ -520,13 +560,15 @@ void setShaders() {
 
                 vs = textFileRead(SHADER_DIR "demosaic.vrt");
                 if (vs==NULL) {
-                  fprintf(stderr,"ERROR: failed to read vertex shader\n");
+                  fprintf(stderr,"ERROR: failed to read vertex shader %s\n",
+			  SHADER_DIR "demosaic.vrt");
                   use_shaders = 0;
                   return;
                 }
                 fs = textFileRead(SHADER_DIR "demosaic.frg");
                 if (fs==NULL) {
-                  fprintf(stderr,"ERROR: failed to read fragment shader\n");
+                  fprintf(stderr,"ERROR: failed to read fragment shader %s\n",
+			  SHADER_DIR "demosaic.frg");
                   use_shaders = 0;
                   return;
                 }
@@ -589,7 +631,8 @@ void setShaders() {
 #endif  /* ifdef USE_GLEW */
 
 int main(int argc, char** argv) {
-  int device_number,ncams,num_buffers;
+  int device_number,num_buffers;
+
 
   double last_fps_print, now, t_diff;
   double fps;
@@ -601,8 +644,10 @@ int main(int argc, char** argv) {
   long prop_value;
   int prop_auto;
   int left, top;
+  int orig_left, orig_top, orig_width, orig_height, orig_stride;
   cam_iface_constructor_func_t new_CamContext;
   Camwire_id cam_info_struct;
+  CamContext *cc;
 
   glutInit(&argc, argv);
 
@@ -634,7 +679,7 @@ int main(int argc, char** argv) {
     printf("    chip: %s\n",cam_info_struct.chip);
   }
 
-  device_number = ncams-1;
+for (device_number = 0; device_number < ncams; device_number++) {
 
   printf("choosing camera %d\n",device_number);
 
@@ -661,14 +706,34 @@ int main(int argc, char** argv) {
   num_buffers = 5;
 
   new_CamContext = cam_iface_get_constructor_func(device_number);
-  cc = new_CamContext(device_number,num_buffers,mode_number);
+  cc_all[device_number] = new_CamContext(device_number,num_buffers,mode_number);
   _check_error();
+
+  cc = cc_all[device_number];
 
   CamContext_get_frame_roi(cc, &left, &top, &width, &height);
   _check_error();
 
   stride = width*cc->depth/8;
   printf("raw image width: %d, stride: %d\n",width,stride);
+
+  if (device_number==0) {
+    orig_left = left;
+    orig_top = top;
+    orig_width = width;
+    orig_height = height;
+    orig_stride = stride;
+  } else {
+    if (!((orig_left == left) &&
+	  (orig_top == top) &&
+	  (orig_width == width) &&
+	  (orig_height == height) &&
+	  (orig_stride = stride))) {
+      fprintf(stderr,"not all cameras have same shape\n");
+      exit(1);
+    }
+  }
+}
 
   glutInitWindowPosition(-1,-1);
   glutInitWindowSize(width, height);
@@ -712,6 +777,9 @@ int main(int argc, char** argv) {
   glEnable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
+for (device_number=0; device_number < ncams; device_number++) {
+  cc = cc_all[device_number];
+
   CamContext_get_num_framebuffers(cc,&num_buffers);
   printf("allocated %d buffers\n",num_buffers);
 
@@ -743,6 +811,7 @@ int main(int argc, char** argv) {
     fprintf(stderr,"buffer size was 0 in %s, line %d\n",__FILE__,__LINE__);
     exit(1);
   }
+ }
 
 #define USE_COPY
 #ifdef USE_COPY
@@ -753,13 +822,16 @@ int main(int argc, char** argv) {
   }
 #endif
 
-  glutDisplayFunc(display_pixels); /* set the display callback */
-  glutIdleFunc(grab_frame); /* set the idle callback */
-
+for (device_number=0; device_number < ncams; device_number++) {
+  cc = cc_all[device_number];
   CamContext_start_camera(cc);
   _check_error();
+}
 
   printf("will now run forever. press Ctrl-C to interrupt\n");
+
+for (device_number=0; device_number < ncams; device_number++) {
+  cc = cc_all[device_number];
 
   CamContext_get_num_trigger_modes( cc, &num_trigger_modes );
   _check_error();
@@ -770,11 +842,19 @@ int main(int argc, char** argv) {
     printf("  %d: %s\n",i,mode_string);
   }
   printf("\n");
+ }
+
+  glutDisplayFunc(display_pixels); /* set the display callback */
+  glutIdleFunc(grab_frame); /* set the idle callback */
 
   glutMainLoop();
   printf("\n");
+
+for (device_number=0; device_number < ncams; device_number++) {
+  cc = cc_all[device_number];
   delete_CamContext(cc);
   _check_error();
+}
 
   cam_iface_shutdown();
   _check_error();
@@ -789,10 +869,14 @@ int main(int argc, char** argv) {
 /* Send the data to OpenGL. Use the fastest possible method. */
 
 void upload_image_data_to_opengl(const char* raw_image_data,
-                                 CameraPixelCoding coding) {
+                                 CameraPixelCoding coding,
+				 int device_number) {
   int i;
   char * gl_image_data;
   static char* show_pixels=NULL;
+  GLuint textureId;
+
+  textureId = textureId_all[device_number];
 
   if (use_pbo) {
 #ifdef USE_GLEW
@@ -842,14 +926,16 @@ void upload_image_data_to_opengl(const char* raw_image_data,
 
 void grab_frame(void) {
   int errnum;
+  CamContext *cc;
+  static int next_device_number=0;
 
 #ifdef USE_COPY
-    CamContext_grab_next_frame_blocking(cc,raw_pixels,-1.0f); // never timeout
+    cc = cc_all[next_device_number];
+
+    CamContext_grab_next_frame_blocking(cc,raw_pixels,0.001); // 1msec timeout
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
       cam_iface_clear_error();
-      fprintf(stdout,"T");
-      fflush(stdout);
       return; // wait again
     }
     if (errnum == CAM_IFACE_FRAME_DATA_MISSING_ERROR) {
@@ -864,18 +950,20 @@ void grab_frame(void) {
       _check_error();
     }
 
-    upload_image_data_to_opengl(raw_pixels,cc->coding);
+    next_device_number++;
+    next_device_number = next_device_number % ncams;
+    upload_image_data_to_opengl(raw_pixels,cc->coding,next_device_number);
 
 #else
     CamContext_point_next_frame_blocking(cc,&raw_pixels,-1.0f);
     _check_error();
 
-    upload_image_data_to_opengl(raw_pixels,cc->coding);
+    upload_image_data_to_opengl(raw_pixels,cc->coding,next_device_number);
 
     CamContext_unpoint_frame(cc);
     _check_error();
 #endif
-
+    
     glutPostRedisplay(); /* trigger display redraw */
 
 }
