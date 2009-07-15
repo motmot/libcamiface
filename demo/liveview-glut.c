@@ -434,7 +434,11 @@ void display_pixels() {
   int i;
   int ncols,nrows,col_idx,row_idx;
   float wfrac, hfrac, lowx, highx, lowy, highy;
-  nrows = 2;
+  if (ncams > 2) {
+    nrows = 2;
+  } else {
+    nrows = 1;
+  }
   ncols = (ncams+1) / 2;
   wfrac = 2.0f/ncols;
   hfrac = 2.0f/nrows;
