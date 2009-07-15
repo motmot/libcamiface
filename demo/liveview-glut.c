@@ -936,7 +936,7 @@ void grab_frame(void) {
 #ifdef USE_COPY
     cc = cc_all[next_device_number];
 
-    CamContext_grab_next_frame_blocking(cc,raw_pixels,0.001); // 1msec timeout
+    CamContext_grab_next_frame_blocking(cc,raw_pixels,-1); // block forever
     errnum = cam_iface_have_error();
     if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
       cam_iface_clear_error();
