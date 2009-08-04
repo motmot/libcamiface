@@ -29,6 +29,7 @@ set(SRCS
     multi-cam-autoset
     multi-cam
     simple
+    save_fmf
     )
 
 set(DEMO_DIR bin)
