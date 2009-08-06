@@ -880,7 +880,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
                         int mode_number) {
   dc1394video_mode_t video_mode, test_video_mode;
   dc1394framerate_t framerate;
-  uint32_t h_size,v_size,tmp_depth;
+  uint32_t h_size,v_size;
   dc1394color_coding_t coding;
   int scalable;
   uint32_t bayer_register;
@@ -1188,10 +1188,6 @@ void CCdc1394_stop_camera( CCdc1394 *this ) {
 
 void CCdc1394_get_num_camera_properties(CCdc1394 *this,
                                         int* num_properties) {
-  dc1394featureset_t features;
-  dc1394feature_info_t    *feature_info;
-  int i;
-
   CHECK_CC(this);
   *num_properties = features_by_device_number[this->inherited.device_number].num_features;
 }
@@ -1410,7 +1406,6 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   struct timeval tv;
   int retval;
   int errsv;
-  dc1394error_t err;
   size_t malloc_size;
 
   CHECK_CC(this);
@@ -1477,7 +1472,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
     }
     bzero(converted_frame,sizeof(dc1394video_frame_t));
     malloc_size = frame->size[0]*frame->size[1]*3;
-    converted_frame->image = (char*)malloc(malloc_size);
+    converted_frame->image = (unsigned char*)malloc(malloc_size);
     if (converted_frame->image==NULL) {
       cam_iface_error = CAM_IFACE_GENERIC_ERROR;
       CAM_IFACE_ERROR_FORMAT("malloc() failed");
@@ -1577,9 +1572,6 @@ void CCdc1394_get_last_framenumber( CCdc1394 *this, unsigned long* framenumber )
 
 void CCdc1394_get_num_trigger_modes( CCdc1394 *this,
                                      int *num_trigger_modes ) {
-  dc1394camera_t *camera;
-  dc1394bool_t has_trigger;
-
   CHECK_CC(this);
   *num_trigger_modes = trigger_list_by_device_number[this->inherited.device_number].num_trigger_modes;
 }
@@ -1588,9 +1580,6 @@ void CCdc1394_get_trigger_mode_string( CCdc1394 *this,
                                        int trigger_mode_number,
                                        char* trigger_mode_string, //output parameter
                                        int trigger_mode_string_maxlen) {
-  dc1394camera_t *camera;
-  dc1394bool_t has_trigger;
-
   CHECK_CC(this);
   if ((trigger_mode_number < 0) ||
       (trigger_mode_number >= trigger_list_by_device_number[this->inherited.device_number].num_trigger_modes)) {
@@ -1683,7 +1672,6 @@ void CCdc1394_get_trigger_mode_number( CCdc1394 *this,
 void CCdc1394_set_trigger_mode_number( CCdc1394 *this,
                                        int trigger_mode_number ) {
   dc1394camera_t *camera;
-  dc1394bool_t has_trigger;
   dc1394switch_t pwr;
 
   CHECK_CC(this);
@@ -1710,10 +1698,6 @@ void CCdc1394_set_trigger_mode_number( CCdc1394 *this,
 
 void CCdc1394_get_frame_roi( CCdc1394 *this,
                              int *left, int *top, int* width, int* height ) {
-  uint32_t l,t;
-  dc1394camera_t *camera;
-  dc1394video_mode_t video_mode;
-
   CHECK_CC(this);
 
   *left=this->roi_left;

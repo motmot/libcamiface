@@ -88,6 +88,14 @@ static int backends_started = 0;
     return;                                                     \
   }
 
+#define CHECK_CI_ERRV()                                         \
+if (this_backend_info->have_error()) {                          \
+cam_iface_error = this_backend_info->have_error();              \
+cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,  \
+"unity backend error (%s %d): %s",__FILE__,                     \
+__LINE__,this_backend_info->get_error_string());                \
+return NULL;                                         \
+}
 
 const char* cam_iface_get_api_version() {
   return CAM_IFACE_API_VERSION;
@@ -206,8 +214,7 @@ void cam_iface_startup(void) {
                    envvar,backend_names[i]);
         } else {
           try_this_name = 0;
-          cam_iface_snprintf(full_backend_name,256,"");
-        }
+		}
         break;
       case 1:
         /* Check pwd next */
@@ -237,7 +244,7 @@ void cam_iface_startup(void) {
       libhandle = dlopen(full_backend_name, RTLD_NOW | RTLD_GLOBAL );
       if (libhandle==NULL) {
         if (getenv("UNITY_BACKEND_DEBUG")!=NULL) {
-          fprintf(stderr,"%s: %d: Failed.\n",__FILE__,__LINE__,full_backend_name);
+          fprintf(stderr,"%s: %d: %s failed.\n",__FILE__,__LINE__,full_backend_name);
         }
         this_backend_info->cam_start_idx = unity_num_cameras;
         this_backend_info->cam_stop_idx = unity_num_cameras;
@@ -337,7 +344,7 @@ CamContext* CCunity_construct( int device_number, int NumImageBuffers,
       construct = this_backend_info->get_constructor_func( device_number-this_backend_info->cam_start_idx );
       result = construct( device_number-this_backend_info->cam_start_idx,
                           NumImageBuffers, mode_number );
-      CHECK_CI_ERR();
+      CHECK_CI_ERRV();
     }
   }
   return result;

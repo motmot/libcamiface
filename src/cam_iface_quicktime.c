@@ -310,10 +310,8 @@ pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
                                    long chRefCon, TimeValue time, short writeType,
                                    long refCon) {
   /* This is called within SGIdle */
-  ComponentResult err;
   CodecFlags ignore;
   CCquicktime* be=(CCquicktime*)refCon;
-  unsigned char* pucs;
   Rect bounds;
 
   /*
@@ -332,7 +330,7 @@ pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
   int h = bounds.bottom;
   int wb = GetPixRowBytes(pix); // XXX deprecated call
   int row;
-  unsigned char *baseAddr;
+  char *baseAddr;
 
   baseAddr = GetPixBaseAddr(pix); // XXX deprecated call
 
@@ -378,15 +376,9 @@ pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
 
 void cam_iface_startup() {
   OSErr err;
-  OSType resType;
-  short resID;
-  Handle theResource;
-
-
-
   ComponentDescription  theDesc;
   Component             sgCompID;
-  int i,j,k;
+  int i;
 
   char name[256];
   Handle componentName=NULL;
@@ -579,7 +571,7 @@ void CCquicktime_CCquicktime( CCquicktime* in_cr,
   err = handle_frame_func(in_cr->sg_video_channel, &(in_cr->rect), in_cr->gworld, &(in_cr->decompression_sequence));
   CHK_QT(err);
 
-  return in_cr;
+  return;
 }
 
 void CCquicktime_close( CCquicktime *in_cr) {

@@ -95,9 +95,13 @@ GLhandleARB glsl_program;
     }                                                                   \
   }                                                                     \
 
-void yuv422_to_mono8(src_pixels, dest_pixels, width, height, src_stride, dest_stride) {
-  int i,j;
-  unsigned char* src_chunk, *dest_chunk;
+void setShaders();
+
+void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels, int width, int height, 
+					 size_t src_stride, size_t dest_stride) {
+  size_t i,j;
+  const unsigned char *src_chunk;
+  unsigned char *dest_chunk;
   for (i=0; i<height; i++) {
     src_chunk = src_pixels + i*src_stride;
     dest_chunk = dest_pixels + i*dest_stride;
@@ -141,10 +145,13 @@ void yuv422_to_mono8(src_pixels, dest_pixels, width, height, src_stride, dest_st
   }                                                                     \
 }
 
-void yuv422_to_rgb8(src_pixels, dest_pixels, width, height, src_stride, dest_stride) {
+void yuv422_to_rgb8(const unsigned char *src_pixels, unsigned char *dest_pixels, 
+					int width, int height, size_t src_stride,
+					size_t dest_stride) {
   int C1, C2, D, E;
   int i,j;
-  unsigned char* src_chunk, *dest_chunk;
+  const unsigned char* src_chunk;
+  unsigned char* dest_chunk;
   unsigned char u,y1,v,y2;
   for (i=0; i<height; i++) {
     src_chunk = src_pixels + i*src_stride;
@@ -157,10 +164,12 @@ void yuv422_to_rgb8(src_pixels, dest_pixels, width, height, src_stride, dest_str
   }
 }
 
-void yuv422_to_rgba8(src_pixels, dest_pixels, width, height, src_stride, dest_stride) {
+void yuv422_to_rgba8(const unsigned char *src_pixels, unsigned char *dest_pixels, int width, int height,
+					 size_t src_stride, size_t dest_stride) {
   int C1, C2, D, E;
   int i,j;
-  unsigned char* src_chunk, *dest_chunk;
+  const unsigned char* src_chunk;
+  unsigned char* dest_chunk;
   unsigned char u,y1,v,y2;
   for (i=0; i<height; i++) {
     src_chunk = src_pixels + i*src_stride;
@@ -181,12 +190,12 @@ void yuv422_to_rgba8(src_pixels, dest_pixels, width, height, src_stride, dest_st
   }                                                       \
 }
 
-char* convert_pixels(char* src,
+unsigned char* convert_pixels(unsigned char* src,
                      CameraPixelCoding src_coding,
                      size_t dest_stride,
-                     char* dest, int force_copy) {
+                     unsigned char* dest, int force_copy) {
   static int gave_error=0;
-  char *actual_dest, *src_ptr;
+  unsigned char *src_ptr;
   static int attempted_to_start_glsl_program=0;
   GLubyte* rowstart;
   int i,j;
@@ -399,7 +408,7 @@ void initialize_gl_texture() {
   PBO_stride = PBO_stride*bytes_per_pixel; // FIXME this pads the rows more than necessary
 
   if (use_pbo) {
-    printf("image stride: %d, PBO stride: %d\n",stride,PBO_stride);
+    printf("image stride: %d, PBO stride: %d\n",stride,(int)PBO_stride);
   }
 
   buffer = malloc( tex_height*PBO_stride );
@@ -637,9 +646,6 @@ void setShaders() {
 int main(int argc, char** argv) {
   int device_number,num_buffers;
 
-
-  double last_fps_print, now, t_diff;
-  double fps;
   int buffer_size;
   int num_modes, num_props, num_trigger_modes;
   char mode_string[255];
@@ -872,12 +878,11 @@ for (device_number=0; device_number < ncams; device_number++) {
 
 /* Send the data to OpenGL. Use the fastest possible method. */
 
-void upload_image_data_to_opengl(const char* raw_image_data,
+void upload_image_data_to_opengl(unsigned char* raw_image_data,
                                  CameraPixelCoding coding,
 				 int device_number) {
-  int i;
-  char * gl_image_data;
-  static char* show_pixels=NULL;
+  unsigned char * gl_image_data;
+  static unsigned char* show_pixels=NULL;
   GLuint textureId;
 
   textureId = textureId_all[device_number];
