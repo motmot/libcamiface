@@ -104,6 +104,7 @@ CAM_IFACE_API const char * cam_iface_get_error_string(void);
 #define CAM_IFACE_OTHER_ERROR -392077
 #define CAM_IFACE_FRAME_INTERRUPTED_SYSCALL -392078
 #define CAM_IFACE_SELECT_RETURNED_BUT_NO_FRAME_AVAILABLE -392079
+#define CAM_IFACE_FRAME_DATA_CORRUPT_ERROR -392080
 #define CAM_IFACE_GENERIC_ERROR -1
 
 CAM_IFACE_API const char* cam_iface_get_api_version(void);

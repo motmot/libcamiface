@@ -1455,6 +1455,12 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
     return;
   }
 
+  if (dc1394_capture_is_frame_corrupt(camera,frame)==DC1394_TRUE) {
+    cam_iface_error = CAM_IFACE_FRAME_DATA_CORRUPT_ERROR;
+    CAM_IFACE_ERROR_FORMAT("frame data is corrupt");
+    return;
+  }
+
   (this->nframe_hack)+=1;
 
   w = frame->size[0];
