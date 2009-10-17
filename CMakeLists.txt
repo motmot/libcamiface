@@ -35,7 +35,7 @@ set(V_MAJOR 0)
 set(V_MINOR 5)
 set(V_PATCH 5)
 
-include_directories( ${CMAKE_SOURCE_DIR}/inc )
+include_directories( ${CMAKE_SOURCE_DIR}/include )
 
 FIND_PACKAGE(PkgConfig)
 
@@ -85,7 +85,7 @@ add_subdirectory(demo)
 
 # Install header ------------------------------------
 
-INSTALL(FILES inc/cam_iface.h
+INSTALL(FILES include/cam_iface.h
   DESTINATION include)
 
 # Install linux udev file ---------------------------
