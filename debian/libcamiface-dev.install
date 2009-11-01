@@ -1,2 +1,2 @@
 builddir/src/*.a usr/lib
-inc/cam_iface.h usr/include
+include/cam_iface.h usr/include
