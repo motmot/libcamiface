@@ -74,40 +74,23 @@ double my_floattime() {
     }                                                                   \
   }                                                                     \
 
-void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
-  FILE* fd;
-  fd = fopen(filename,"w");
-  fprintf(fd,"P5\n");
-  fprintf(fd,"%d %d\n",width,height);
-  fprintf(fd,"255\n");
-  fwrite(pixels,1,width*height,fd);
-  fprintf(fd,"\n");
-  fclose(fd);
-}
+#pragma pack(push)  /* push current alignment to stack */
+#pragma pack(1)     /* set alignment to 1 byte boundary */
 
-void save_ppm(const char* filename,unsigned char *pixels,int width,int height) {
-  FILE* fd;
-  int row,col;
-  const unsigned char *base;
-  fd = fopen(filename,"w");
-  fprintf(fd,"P3\n");
-  fprintf(fd,"%d %d\n",width,height);
-  fprintf(fd,"255\n");
-  for (row=0; row<height; row++) {
-    for (col=0; col<width; col++) {
-      base = pixels + row*width*3 + col*3;
-      fprintf(fd,"%d %d %d\n",base[0],base[1],base[2]);
-    }
-  }
-  fprintf(fd,"\n");
-  fclose(fd);
-}
+typedef struct {
+  unsigned int version;
+  unsigned int len_format;
+} fmf_v3_header_part1;
 
-void show_usage(char * cmd) {
-  printf("usage: %s [num_frames]\n",cmd);
-  printf("  where num_frames can be a number or 'forever'\n");
-  exit(1);
-}
+typedef struct {
+  unsigned int bpp;
+  unsigned int rows;
+  unsigned int cols;
+  unsigned long long bytes_per_chunk;
+  unsigned long long n_frames;
+} fmf_v3_header_part2;
+
+#pragma pack(pop)   /* restore original alignment from stack */
 
 int main(int argc, char** argv) {
   CamContext *cc;
@@ -128,23 +111,16 @@ int main(int argc, char** argv) {
   int errnum;
   int left, top;
   int width, height;
-  int do_num_frames;
+  fmf_v3_header_part1 hstart;
+  fmf_v3_header_part2 hstop;
   CameraPixelCoding coding;
+  char * format_str;
+  int bpp;
   cam_iface_constructor_func_t new_CamContext;
   Camwire_id cam_info_struct;
 
   cam_iface_startup_with_version_check();
   _check_error();
-
-  if (argc>1) {
-    if (strcmp(argv[1],"forever")==0) {
-      do_num_frames = -1;
-    } else if (sscanf(argv[1],"%d",&do_num_frames)==0) {
-      show_usage(argv[0]);
-    }
-  } else {
-    do_num_frames = 50;
-  }
 
   for (i=0;i<argc;i++) {
     printf("%d: %s\n",i,argv[i]);
@@ -222,14 +198,12 @@ int main(int argc, char** argv) {
       continue;
     }
 
-    printf("  %s: ",cam_props.name);
-
     if (cam_props.is_present) {
       CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
       _check_error();
-      printf("%ld\n",prop_value);
+      printf("  %s: %ld\n",cam_props.name,prop_value);
     } else {
-      printf("not present\n");
+      printf("  %s: not present\n",cam_props.name);
     }
   }
 
@@ -256,12 +230,6 @@ int main(int argc, char** argv) {
   last_fps_print = my_floattime();
   n_frames = 0;
 
-  if (do_num_frames < 0) {
-    printf("will now run forever. press Ctrl-C to interrupt\n");
-  } else {
-    printf("will now grab %d frames.\n",do_num_frames);
-  }
-
   CamContext_get_num_trigger_modes( cc, &num_trigger_modes );
   _check_error();
 
@@ -272,11 +240,55 @@ int main(int argc, char** argv) {
   }
   printf("\n");
 
+  coding = cc->coding;
+  bpp = 8;
+
+  switch (coding) {
+  case CAM_IFACE_MONO8_BAYER_BGGR:
+    format_str = "MONO8:BGGR";
+    break;
+  case CAM_IFACE_MONO8_BAYER_RGGB:
+    format_str = "MONO8:RGGB";
+    break;
+  case CAM_IFACE_MONO8_BAYER_GRBG:
+    format_str = "MONO8:GRBG";
+    break;
+  case CAM_IFACE_MONO8_BAYER_GBRG:
+    format_str = "MONO8:GBRG";
+    break;
+  case CAM_IFACE_MONO8:
+    format_str = "MONO8";
+    break;
+  case CAM_IFACE_YUV422:
+    format_str = "YUV422";
+    bpp = 16;
+    break;
+  default:
+    fprintf(stderr,"do not know how to save sample image for this format\n");
+    exit(1);
+  }
+
+  hstart.version = 3;
+  hstart.len_format = strlen(format_str);
+
+  hstop.rows = height;
+  hstop.cols = width;
+  hstop.bytes_per_chunk = sizeof(double) + height*width*bpp/8; /* timestamp, image */
+  hstop.n_frames = 0;
+  hstop.bpp = bpp;
+
+  FILE* fd;
+  char * filename = "movie.fmf";
+  fd = fopen(filename,"w");
+
+  /* write the FMF v3 header */
+  fwrite(&hstart,sizeof(fmf_v3_header_part1),1,fd);
+  fwrite(format_str,hstart.len_format,1,fd);
+  fwrite(&hstop,sizeof(fmf_v3_header_part2),1,fd);
+
+  /* grab frames forever */
+  printf("Press Ctrl-C to quit. Will now save .fmf movie.\n");
   while (1) {
-    if (do_num_frames>=0) {
-      do_num_frames--;
-      if (do_num_frames<0) break;
-    }
 #ifdef USE_COPY
     //CamContext_grab_next_frame_blocking(cc,pixels,0.2); // timeout after 200 msec
     CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
@@ -313,6 +325,10 @@ int main(int argc, char** argv) {
     _check_error();
 #endif
 
+    fwrite(&now,sizeof(double),1,fd);
+    fwrite(pixels,height*width*bpp/8,1,fd);
+
+
     t_diff = now-last_fps_print;
     if (t_diff > 5.0) {
       fps = n_frames/t_diff;
@@ -322,7 +338,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  coding = cc->coding;
 
   printf("\n");
   delete_CamContext(cc);
@@ -330,24 +345,6 @@ int main(int argc, char** argv) {
 
   cam_iface_shutdown();
   _check_error();
-
-  switch (coding) {
-  case CAM_IFACE_MONO8_BAYER_BGGR:
-  case CAM_IFACE_MONO8_BAYER_RGGB:
-  case CAM_IFACE_MONO8_BAYER_GRBG:
-  case CAM_IFACE_MONO8_BAYER_GBRG:
-    printf("Bayer image will not be de-mosaiced\n");
-  case CAM_IFACE_MONO8:
-    save_pgm("image.pgm",pixels, width, height);
-    printf("saved last image as image.pgm\n");
-    break;
-  case CAM_IFACE_RGB8:
-    save_ppm("image.ppm",pixels, width, height);
-    printf("saved last image as image.ppm\n");
-    break;
-  default:
-    printf("do not know how to save sample image for this format\n");
-  }
 
 #ifdef USE_COPY
   free(pixels);

@@ -81,7 +81,6 @@ double my_floattime() {
   }                                                                     \
 
 void save_pgm(const char* filename,unsigned char *pixels,int width,int height) {
-  int i,j;
   FILE* fd;
   fd = fopen(filename,"w");
   fprintf(fd,"P5\n");
@@ -105,13 +104,11 @@ int main(int argc, char** argv) {
   int num_cameras;
   int num_buffers;
 
-  double last_fps_print, now, t_diff;
-  double fps;
+  double last_fps_print;
   int n_frames;
   int have_frame;
   int buffer_size;
   int num_modes, num_props, num_trigger_modes;
-  const char** mode_strings;
   char mode_string[255];
   int i,mode_number,camno;
   CameraPropertyInfo cam_props;
