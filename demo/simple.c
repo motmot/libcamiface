@@ -222,12 +222,14 @@ int main(int argc, char** argv) {
       continue;
     }
 
+    printf("  %s: ",cam_props.name);
+
     if (cam_props.is_present) {
       CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
       _check_error();
-      printf("  %s: %ld\n",cam_props.name,prop_value);
+      printf("%ld\n",prop_value);
     } else {
-      printf("  %s: not present\n",cam_props.name);
+      printf("not present\n");
     }
   }
 
