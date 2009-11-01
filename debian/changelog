@@ -1,3 +1,9 @@
+libcamiface (0.5.6-0ads1) hardy; urgency=low
+
+  * New upstream release
+
+ -- Andrew Straw <strawman@astraw.com>  Sun, 01 Nov 2009 11:16:57 -0800
+
 libcamiface (0.5.5-0ads3) hardy; urgency=low
 
   * Install more Pt. Grey camera udev rules, change mode to 0664
