@@ -97,7 +97,7 @@ GLhandleARB glsl_program;
 
 void setShaders();
 
-void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels, int width, int height, 
+void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels, int width, int height,
 					 size_t src_stride, size_t dest_stride) {
   size_t i,j;
   const unsigned char *src_chunk;
@@ -145,7 +145,7 @@ void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels
   }                                                                     \
 }
 
-void yuv422_to_rgb8(const unsigned char *src_pixels, unsigned char *dest_pixels, 
+void yuv422_to_rgb8(const unsigned char *src_pixels, unsigned char *dest_pixels,
 					int width, int height, size_t src_stride,
 					size_t dest_stride) {
   int C1, C2, D, E;
@@ -468,7 +468,7 @@ for (i=0; i<ncams; i++) {
 
   //  printf("i %d\n col_idx %d, row_idx %d, lowx %f, highx %f, lowy %f, highy %f\n",
   // i,col_idx, row_idx, lowx, highx, lowy, highy );
-  
+
   textureId = textureId_all[i];
 
   //glClear(GL_COLOR_BUFFER_BIT);
@@ -937,6 +937,7 @@ void grab_frame(void) {
   int errnum;
   CamContext *cc;
   static int next_device_number=0;
+  int data_ok = 0;
 
 #ifdef USE_COPY
     cc = cc_all[next_device_number];
@@ -955,13 +956,20 @@ void grab_frame(void) {
       cam_iface_clear_error();
       fprintf(stdout,"I");
       fflush(stdout);
+    } else if (errnum == CAM_IFACE_FRAME_DATA_CORRUPT_ERROR) {
+      cam_iface_clear_error();
+      fprintf(stdout,"C");
+      fflush(stdout);
     } else {
       _check_error();
+      data_ok = 1;
     }
 
     next_device_number++;
     next_device_number = next_device_number % ncams;
-    upload_image_data_to_opengl(raw_pixels,cc->coding,next_device_number);
+    if (data_ok) {
+      upload_image_data_to_opengl(raw_pixels,cc->coding,next_device_number);
+    }
 
 #else
     CamContext_point_next_frame_blocking(cc,&raw_pixels,-1.0f);
@@ -972,7 +980,7 @@ void grab_frame(void) {
     CamContext_unpoint_frame(cc);
     _check_error();
 #endif
-    
+
     glutPostRedisplay(); /* trigger display redraw */
 
 }

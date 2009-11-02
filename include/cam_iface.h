@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CAM_IFACE_H
 #define CAM_IFACE_H
 
-#define CAM_IFACE_API_VERSION "20090531"
+#define CAM_IFACE_API_VERSION "20091102"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -139,6 +139,13 @@ struct CameraPropertyInfo {
   const char* scaled_unit_name; /* e.g. "msec" */
   double scale_offset; /* Value ("val") sent to cam_iface will always be long, */
   double scale_gain;   /* but the display value will be val*scale_gain+scale_offset */
+
+  int available;        /* true if feature is available */
+
+  int absolute_capable; /* true if capable of setting absolute values */
+  int absolute_control_mode; /* true if in absolute control mode */
+  double absolute_min_value;
+  double absolute_max_value;
 };
 
 typedef enum CameraPixelCoding

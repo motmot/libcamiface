@@ -236,11 +236,17 @@ typedef struct cam_iface_dc1394_trigger_list cam_iface_dc1394_trigger_list_t;
 #define myTLS __thread
 #endif
 
+#ifdef MEGA_BACKEND
+  #define BACKEND_GLOBAL(m) dc1394_##m
+#else
+  #define BACKEND_GLOBAL(m) m
+#endif
+
 /* globals -- allocate space */
 dc1394_t * libdc1394_instance=NULL;
-myTLS int cam_iface_error = 0;
+myTLS int BACKEND_GLOBAL(cam_iface_error) = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-myTLS char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
+myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 uint32_t num_cameras = 0;
 dc1394camera_t **cameras = NULL;
@@ -248,17 +254,45 @@ cam_iface_dc1394_modes_t *modes_by_device_number=NULL;
 cam_iface_dc1394_feature_list_t *features_by_device_number=NULL;
 cam_iface_dc1394_trigger_list_t *trigger_list_by_device_number=NULL;
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_ERROR_FORMAT(m)                                       \
+  snprintf(dc1394_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,              \
+           "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#else
 #define CAM_IFACE_ERROR_FORMAT(m)                                       \
   snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,              \
            "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#endif
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
+  if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
+    dc1394_cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
+    return;                                                             \
+  }
+#else
 #define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
   if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
     cam_iface_error = -1;                                               \
     CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
     return;                                                             \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CIDC1394CHK(err) {                                              \
+    dc1394error_t m = (err);                                            \
+    if (m!=DC1394_SUCCESS) {                                            \
+      dc1394_cam_iface_error = -1;                                             \
+      snprintf(dc1394_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,          \
+               "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,     \
+               m,                                                       \
+               dc1394_error_get_string(m));                             \
+      return;                                                           \
+    }                                                                   \
+  }
+#else
 #define CIDC1394CHK(err) {                                              \
     dc1394error_t m = (err);                                            \
     if (m!=DC1394_SUCCESS) {                                            \
@@ -270,7 +304,21 @@ cam_iface_dc1394_trigger_list_t *trigger_list_by_device_number=NULL;
       return;                                                           \
     }                                                                   \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CIDC1394CHKV(err) {                                             \
+    dc1394error_t m = (err);                                            \
+    if (m!=DC1394_SUCCESS) {                                            \
+      dc1394_cam_iface_error = -1;                                             \
+      snprintf(dc1394_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,          \
+               "%s (%d): libdc1394 err %d: %s\n",__FILE__,__LINE__,     \
+               m,                                                       \
+               dc1394_error_get_string(m));                             \
+      return NULL;                                                      \
+    }                                                                   \
+  }
+#else
 #define CIDC1394CHKV(err) {                                             \
     dc1394error_t m = (err);                                            \
     if (m!=DC1394_SUCCESS) {                                            \
@@ -282,49 +330,74 @@ cam_iface_dc1394_trigger_list_t *trigger_list_by_device_number=NULL;
       return NULL;                                                      \
     }                                                                   \
   }
+#endif
 
 
+#ifdef MEGA_BACKEND
+#define CHECK_CC(m)                                                     \
+  if (!(m)) {                                                           \
+    dc1394_cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
+    return;                                                             \
+  }
+#else
 #define CHECK_CC(m)                                                     \
   if (!(m)) {                                                           \
     cam_iface_error = -1;                                               \
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
     return;                                                             \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CHECK_CCV(m)                                                    \
+  if (!(m)) {                                                           \
+    dc1394_cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
+    return NULL;                                                        \
+  }
+#else
 #define CHECK_CCV(m)                                                    \
   if (!(m)) {                                                           \
     cam_iface_error = -1;                                               \
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
     return NULL;                                                        \
   }
+#endif
 
-
+#ifdef MEGA_BACKEND
+#define NOT_IMPLEMENTED                                 \
+  dc1394_cam_iface_error = -1;                                 \
+  CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
+  return;
+#else
 #define NOT_IMPLEMENTED                                 \
   cam_iface_error = -1;                                 \
   CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
   return;
+#endif
 
 int cam_iface_is_video_mode_scalable(dc1394video_mode_t video_mode)
 {
   return ((video_mode>=DC1394_VIDEO_MODE_FORMAT7_MIN)&&(video_mode<=DC1394_VIDEO_MODE_FORMAT7_MAX));
 }
 
-/* internal structures for dc1394 implementation */
+#include "cam_iface_dc1394.h"
 
-const char *cam_iface_get_driver_name() {
+const char *BACKEND_METHOD(cam_iface_get_driver_name)() {
   return "dc1394";
 }
 
-void cam_iface_clear_error() {
-  cam_iface_error = 0;
+void BACKEND_METHOD(cam_iface_clear_error)() {
+  BACKEND_GLOBAL(cam_iface_error) = 0;
 }
 
-int cam_iface_have_error() {
-  return cam_iface_error;
+int BACKEND_METHOD(cam_iface_have_error)() {
+  return BACKEND_GLOBAL(cam_iface_error);
 }
 
-const char * cam_iface_get_error_string() {
-  return cam_iface_error_string;
+const char * BACKEND_METHOD(cam_iface_get_error_string)() {
+  return BACKEND_GLOBAL(cam_iface_error_string);
 }
 
 dc1394bool_t _available_feature_filter( int feature_id, dc1394bool_t was_available ) {
@@ -337,7 +410,7 @@ dc1394bool_t _available_feature_filter( int feature_id, dc1394bool_t was_availab
   }
 }
 
-const char* cam_iface_get_api_version() {
+const char* BACKEND_METHOD(cam_iface_get_api_version)() {
   return CAM_IFACE_API_VERSION;
 }
 
@@ -443,7 +516,7 @@ const char *trig_sources_str(dc1394trigger_source_t mode) {
   return result;
 }
 
-void cam_iface_startup() {
+void BACKEND_METHOD(cam_iface_startup)() {
   int device_number,i,j,k,kk,current_mode,feature_number;
   dc1394video_modes_t video_modes;
   dc1394framerates_t framerates;
@@ -456,7 +529,7 @@ void cam_iface_startup() {
   libdc1394_instance = dc1394_new ();
 
   if (!libdc1394_instance) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error calling dc1394_new()");
     return;
   }
@@ -473,28 +546,28 @@ void cam_iface_startup() {
 
   cameras = malloc( num_cameras*sizeof(dc1394camera_t));
   if (cameras == NULL) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
     return;
   }
 
   modes_by_device_number = malloc( num_cameras*sizeof(cam_iface_dc1394_modes_t));
   if (modes_by_device_number == NULL) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
     return;
   }
 
   features_by_device_number = malloc( num_cameras*sizeof(cam_iface_dc1394_feature_list_t));
   if (features_by_device_number == NULL) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
     return;
   }
 
   trigger_list_by_device_number = malloc( num_cameras*sizeof(cam_iface_dc1394_trigger_list_t));
   if (trigger_list_by_device_number == NULL) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
     return;
   }
@@ -503,7 +576,7 @@ void cam_iface_startup() {
   for (device_number=0;device_number<num_cameras;device_number++) {
     cameras[device_number] = dc1394_camera_new( libdc1394_instance, list->ids[device_number].guid );
     if (!cameras[device_number]) {
-      cam_iface_error = -1;
+      BACKEND_GLOBAL(cam_iface_error) = -1;
       CAM_IFACE_ERROR_FORMAT("Failed to initialize camera.");
       return;
     }
@@ -601,7 +674,7 @@ void cam_iface_startup() {
     // features: pass 2 - allocate memory
     features_by_device_number[device_number].dc1394_feature_ids = malloc(features_by_device_number[device_number].num_features *sizeof(int));
     if (features_by_device_number[device_number].dc1394_feature_ids==NULL) {
-      cam_iface_error = -1;
+      BACKEND_GLOBAL(cam_iface_error) = -1;
       CAM_IFACE_ERROR_FORMAT("error allocating memory");
       return;
     }
@@ -619,7 +692,7 @@ void cam_iface_startup() {
     // allocate memory for each device to store possible modes
     modes_by_device_number[device_number].modes = malloc(modes_by_device_number[device_number].num_modes * sizeof(cam_iface_dc1394_mode_t));
     if (modes_by_device_number[device_number].modes==NULL) {
-      cam_iface_error = -1;
+      BACKEND_GLOBAL(cam_iface_error) = -1;
       CAM_IFACE_ERROR_FORMAT("error allocating memory");
       return;
     }
@@ -658,7 +731,7 @@ void cam_iface_startup() {
   dc1394_camera_free_list (list);
 }
 
-void cam_iface_shutdown() {
+void BACKEND_METHOD(cam_iface_shutdown)() {
   int device_number;
 
   for (device_number=0;device_number<num_cameras;device_number++) {
@@ -707,18 +780,21 @@ void cam_iface_shutdown() {
   free(cameras);
 
   num_cameras=0;
+
+  dc1394_free(libdc1394_instance);
+  libdc1394_instance=NULL;
 }
 
 
-int cam_iface_get_num_cameras() {
+int BACKEND_METHOD(cam_iface_get_num_cameras)() {
   return num_cameras;
 }
 
-void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
+void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
 
   if (out_camid==NULL) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("return structure NULL");
     return;
   }
@@ -727,7 +803,7 @@ void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
   snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%llXh", (long long unsigned int)cameras[device_number]->guid);
 }
 
-void cam_iface_get_num_modes(int device_number, int *num_modes) {
+void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   *num_modes = modes_by_device_number[device_number].num_modes;
 }
@@ -776,7 +852,7 @@ int _get_size_for_video_mode(int device_number,
   return 1;
 }
 
-void cam_iface_get_mode_string(int device_number,
+void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
                                int mode_number,
                                char* mode_string,
                                int mode_string_maxlen) {
@@ -790,7 +866,7 @@ void cam_iface_get_mode_string(int device_number,
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   if ((mode_number<0)|
       (mode_number>=modes_by_device_number[device_number].num_modes)) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("invalid mode_number");
     return;
   }
@@ -798,7 +874,7 @@ void cam_iface_get_mode_string(int device_number,
   framerate = modes_by_device_number[device_number].modes[mode_number].framerate;
 
   if (!_get_size_for_video_mode(device_number,video_mode,&h_size,&v_size,&scalable)){
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("Could not get size for video mode");
     return;
   }
@@ -844,7 +920,7 @@ void cam_iface_get_mode_string(int device_number,
   }
 }
 
-cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number) {
+cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
   return (CamContext* (*)(int, int, int))CCdc1394_construct;
 }
 
@@ -854,13 +930,13 @@ CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
 
   this = malloc(sizeof(CCdc1394));
   if (this==NULL) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
   } else {
     CCdc1394_CCdc1394( this,
                        device_number, NumImageBuffers,
                        mode_number);
-    if (cam_iface_error) {
+    if (BACKEND_GLOBAL(cam_iface_error)) {
       free(this);
       return NULL;
     }
@@ -895,20 +971,20 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
 
   fprintf(stderr,"attempting to start camera %d with mode_number %d\n",device_number,mode_number);
   cam_iface_get_mode_string(device_number,mode_number,mode_string,255);
-  if (cam_iface_error) {
+  if (BACKEND_GLOBAL(cam_iface_error)) {
     return;
   }
   fprintf(stderr,"mode string: %s\n",mode_string);
 #endif
 
   if ((device_number < 0)|(device_number >= num_cameras)) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("requested invalid camera number");
     return;
   }
   if ((mode_number<0)|
       (mode_number>=modes_by_device_number[device_number].num_modes)) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("invalid mode_number");
     return;
   }
@@ -920,7 +996,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   this->inherited.cam = (void *)NULL;
   this->inherited.backend_extras = (void *)NULL;
   if (!this) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("malloc failed");
     return;
   }
@@ -937,7 +1013,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   this->inherited.device_number = device_number;
 
   if (!_get_size_for_video_mode(device_number,video_mode,&h_size,&v_size,&scalable)){
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("Could not get size for video mode");
     return;
   }
@@ -962,7 +1038,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
     fprintf(stderr,"ERROR while setting video modes\n");
     fprintf(stderr,"  video_mode (desired): %s\n",get_dc1394_mode_string(video_mode));
     fprintf(stderr,"  video_mode (actual): %s\n", get_dc1394_mode_string(test_video_mode));
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("Video mode set failed. (Camera may report modes it can't use.)");
     return;
   }
@@ -1038,12 +1114,12 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   case DC1394_COLOR_CODING_MONO16S:
   case DC1394_COLOR_CODING_RGB16S:
   case DC1394_COLOR_CODING_RAW16:
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("Currently unsupported color coding");
     return;
     break;
   default:
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("Unknown color coding");
     return;
     break;
@@ -1063,7 +1139,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   // if format 7
   if (scalable) {
     if (!cam_iface_is_video_mode_scalable(video_mode)) {
-      cam_iface_error = -1;
+      BACKEND_GLOBAL(cam_iface_error) = -1;
       CAM_IFACE_ERROR_FORMAT("Format 7 did not make scalable video mode");
       return;
     }
@@ -1128,8 +1204,8 @@ void CCdc1394_start_camera( CCdc1394 *this ) {
                              DC1394_CAPTURE_FLAGS_DEFAULT);
 
   if (err==DC1394_IOCTL_FAILURE) {
-    cam_iface_error = -1;
-    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,            \
+    BACKEND_GLOBAL(cam_iface_error) = -1;
+    snprintf(BACKEND_GLOBAL(cam_iface_error_string),CAM_IFACE_MAX_ERROR_LEN,            \
              "%s (%d): libdc1394 err %d: %s. (Did you request too many DMA buffers?)\n",__FILE__,__LINE__, \
              err,                                                       \
              dc1394_error_get_string(err));
@@ -1218,21 +1294,23 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
                                        int property_number,
                                        CameraPropertyInfo *info) {
   dc1394camera_t *camera;
-  int feature_id;
+  dc1394feature_t feature_id;
+  dc1394switch_t  absolute_mode;
   dc1394feature_info_t feature_info;
   dc1394bool_t mybool;
+  float absmin, absmax;
 
   CHECK_CC(this);
   camera = cameras[this->inherited.device_number];
 
   if (property_number < 0) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("invalid property_number");
     return;
   }
 
   if (property_number >= features_by_device_number[this->inherited.device_number].num_features) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("invalid property_number");
     return;
   }
@@ -1265,7 +1343,7 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
   case DC1394_FEATURE_CAPTURE_QUALITY: info->name = "capture quality"; break;
   default:
     fprintf(stderr,"unknown feature id = %d\n",feature_id);
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("unknown feature_id");
     return;
   }
@@ -1287,8 +1365,22 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
 
   info->is_scaled_quantity = 0;
 
-  // Hacks for each known camera type should go here, or a more
-  // general way.
+  info->available = feature_info.available;
+  info->absolute_capable = feature_info.absolute_capable;
+  if (info->absolute_capable) {
+    CIDC1394CHK(dc1394_feature_get_absolute_control(camera, feature_id, &absolute_mode));
+    CIDC1394CHK(dc1394_feature_get_absolute_boundaries(camera, feature_id, &absmin, &absmax));
+    info->absolute_control_mode = absolute_mode;
+    info->absolute_min_value = absmin;
+    info->absolute_max_value = absmax;
+  } else {
+    info->absolute_control_mode = 0;
+    info->absolute_min_value = 0.0;
+    info->absolute_max_value = 0.0;
+  }
+  /* Hacks for each known camera type should go here, or a more
+     general way.
+  */
 
   if ((camera->vendor!=NULL) &&
       (camera->model!=NULL) &&
@@ -1315,13 +1407,13 @@ void CCdc1394_get_camera_property(CCdc1394 *this,
   camera = cameras[this->inherited.device_number];
 
   if (property_number < 0) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("invalid property_number");
     return;
   }
 
   if (property_number >= features_by_device_number[this->inherited.device_number].num_features) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("invalid property_number");
     return;
   }
@@ -1343,7 +1435,7 @@ void CCdc1394_get_camera_property(CCdc1394 *this,
   case DC1394_FEATURE_MODE_MANUAL: *Auto = 0; break;
   case DC1394_FEATURE_MODE_AUTO: *Auto = 1; break;
   default:
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("unknown mode");
     return;
   }
@@ -1362,13 +1454,13 @@ void CCdc1394_set_camera_property(CCdc1394 *this,
   camera = cameras[this->inherited.device_number];
 
   if (property_number < 0) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("invalid property_number");
     return;
   }
 
   if (property_number >= features_by_device_number[this->inherited.device_number].num_features) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("invalid property_number");
     return;
   }
@@ -1427,18 +1519,18 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 
   if (retval < 0 ) {
     if (errsv==EINTR) {
-      cam_iface_error = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
+      BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_INTERRUPTED_SYSCALL;
       CAM_IFACE_ERROR_FORMAT("Interrupted syscall (EINTR)");
       return;
     } else {
       // some error that we want to deal with
-      cam_iface_error = -1;
+      BACKEND_GLOBAL(cam_iface_error) = -1;
       CAM_IFACE_ERROR_FORMAT("select() error");
       return;
     }
   } else if (retval==0) {
     // timeout exceeded
-    cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_TIMEOUT;
     CAM_IFACE_ERROR_FORMAT("timeout exceeded");
     return;
   }
@@ -1450,13 +1542,13 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 
   if (frame==NULL) {
     // No error, but no frame: polling ioctl call returned with EINTR.
-    cam_iface_error = CAM_IFACE_SELECT_RETURNED_BUT_NO_FRAME_AVAILABLE;
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_SELECT_RETURNED_BUT_NO_FRAME_AVAILABLE;
     CAM_IFACE_ERROR_FORMAT("select() call returnd, but no frame available");
     return;
   }
 
   if (dc1394_capture_is_frame_corrupt(camera,frame)==DC1394_TRUE) {
-    cam_iface_error = CAM_IFACE_FRAME_DATA_CORRUPT_ERROR;
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_DATA_CORRUPT_ERROR;
     CAM_IFACE_ERROR_FORMAT("frame data is corrupt");
     return;
   }
@@ -1472,7 +1564,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
     /* remove Bayer image mosaic and convert to RGB8 using libdc1394 */
     converted_frame = (dc1394video_frame_t*)malloc(sizeof(dc1394video_frame_t));
     if (converted_frame==NULL) {
-      cam_iface_error = CAM_IFACE_GENERIC_ERROR;
+      BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
       CAM_IFACE_ERROR_FORMAT("malloc() failed");
       return;
     }
@@ -1480,7 +1572,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
     malloc_size = frame->size[0]*frame->size[1]*3;
     converted_frame->image = (unsigned char*)malloc(malloc_size);
     if (converted_frame->image==NULL) {
-      cam_iface_error = CAM_IFACE_GENERIC_ERROR;
+      BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
       CAM_IFACE_ERROR_FORMAT("malloc() failed");
       return;
     }
@@ -1497,18 +1589,18 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
 #ifdef CAM_IFACE_DC1394_SLOWDEBUG
   if (!_get_size_for_video_mode(this->inherited.device_number,
                                 camera->video_mode,&h_size,&v_size,&scalable)){
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("Could not get size for video mode");
     return;
   }
   fprintf(stderr,"h_size %d, v_size %d, scalable %d\n",h_size,v_size,scalable);
   if (h_size!=w) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("Width returned not accurate");
     return;
   }
   if (v_size!=h) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("Height returned not accurate");
     return;
   }
@@ -1517,7 +1609,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   wb=w*depth/8;
 
   if (wb>stride0) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     fprintf(stderr,"w %d, wb %d, stride0 %ld, depth %d\n",w,wb,stride0,depth);
     CAM_IFACE_ERROR_FORMAT("the buffer provided is not large enough");
     return;
@@ -1529,7 +1621,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
      frame to full frame. */
 
   if ( ((frame->size[1])*(frame->stride)) > frame->total_bytes ) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("assumption about image size is wrong");
     return;
   }
@@ -1589,7 +1681,7 @@ void CCdc1394_get_trigger_mode_string( CCdc1394 *this,
   CHECK_CC(this);
   if ((trigger_mode_number < 0) ||
       (trigger_mode_number >= trigger_list_by_device_number[this->inherited.device_number].num_trigger_modes)) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("trigger_mode_number invalid");
     return;
   }
@@ -1669,7 +1761,7 @@ void CCdc1394_get_trigger_mode_number( CCdc1394 *this,
     }
   }
 
-  cam_iface_error = -1;
+  BACKEND_GLOBAL(cam_iface_error) = -1;
   CAM_IFACE_ERROR_FORMAT("unable to determine trigger mode number");
   *trigger_mode_number = -1;
   return;
@@ -1684,7 +1776,7 @@ void CCdc1394_set_trigger_mode_number( CCdc1394 *this,
   camera = cameras[this->inherited.device_number];
   if ((trigger_mode_number < 0) ||
       (trigger_mode_number >= trigger_list_by_device_number[this->inherited.device_number].num_trigger_modes)) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("trigger_mode_number invalid");
     return;
   }
@@ -1843,7 +1935,7 @@ void CCdc1394_get_framerate( CCdc1394 *this,
     case DC1394_FRAMERATE_120:   *framerate=120.0; break;
     case DC1394_FRAMERATE_240:   *framerate=240.0; break;
     default:
-      cam_iface_error = -1;
+      BACKEND_GLOBAL(cam_iface_error) = -1;
       CAM_IFACE_ERROR_FORMAT("invalid framerate index");
       return;
     }

@@ -179,34 +179,63 @@ CCquicktime_functable CCquicktime_vmt = {
 
 /* globals */
 
+#ifdef MEGA_BACKEND
+  #define BACKEND_GLOBAL(m) quicktime_##m
+#else
+  #define BACKEND_GLOBAL(m) m
+#endif
+
 // See the following for a hint on how to make thread thread-local without __thread.
 // http://lists.apple.com/archives/Xcode-users/2006/Jun/msg00551.html
 
-int cam_iface_error = 0;
-#define CAM_IFACE_MAX_ERROR_LEN 255
-char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
+int BACKEND_GLOBAL(cam_iface_error) = 0;
+#define CAM_IFACE_QT_MAX_ERROR_LEN 255
+char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_QT_MAX_ERROR_LEN]  = {0x00}; //...
 
-uint32_t num_cameras = 0;
-Component *components_by_device_number=NULL;
+uint32_t BACKEND_GLOBAL(num_cameras) = 0;
+Component *BACKEND_GLOBAL(components_by_device_number)=NULL;
 
+#ifdef MEGA_BACKEND
 #define CAM_IFACE_ERROR_FORMAT(m)                                       \
-  snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,              \
+  snprintf(quicktime_cam_iface_error_string,CAM_IFACE_QT_MAX_ERROR_LEN,              \
            "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#else
+#define CAM_IFACE_ERROR_FORMAT(m)                                       \
+  snprintf(cam_iface_error_string,CAM_IFACE_QT_MAX_ERROR_LEN,              \
+           "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#endif
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
+  if ( ((m)<0) | ((m)>=quicktime_num_cameras) ) {                                 \
+    quicktime_cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
+    return;                                                             \
+  }
+#else
 #define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
   if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
     cam_iface_error = -1;                                               \
     CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
     return;                                                             \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_CHECK_MODE_NUMBER(m)                  \
+  if ((m)!=0) {                                         \
+    quicktime_cam_iface_error = -1;                               \
+    CAM_IFACE_ERROR_FORMAT("only mode 0 exists");       \
+    return;                                             \
+  }
+#else
 #define CAM_IFACE_CHECK_MODE_NUMBER(m)                  \
   if ((m)!=0) {                                         \
     cam_iface_error = -1;                               \
     CAM_IFACE_ERROR_FORMAT("only mode 0 exists");       \
     return;                                             \
   }
-
+#endif
 
 void do_qt_error(OSErr err,char* file,int line) {
   char* str=NULL;
@@ -217,17 +246,17 @@ void do_qt_error(OSErr err,char* file,int line) {
   if (h) {
     HLock(h);
     str = (char *)*h;
-    memcpy(cam_iface_error_string, str+1, (unsigned char)str[0]);
-    cam_iface_error_string[(unsigned char)str[0]] = '\0';
+    memcpy(BACKEND_GLOBAL(cam_iface_error_string), str+1, (unsigned char)str[0]);
+    BACKEND_GLOBAL(cam_iface_error_string)[(unsigned char)str[0]] = '\0';
     HUnlock(h);
     ReleaseResource(h);
   }
   else {
-    snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, "Mac OS error code %d (%s,line %d)",
+    snprintf(BACKEND_GLOBAL(cam_iface_error_string),CAM_IFACE_QT_MAX_ERROR_LEN, "Mac OS error code %d (%s,line %d)",
              err,file,line);
   }
 
-  cam_iface_error = -1;
+  BACKEND_GLOBAL(cam_iface_error) = -1;
   return;
 }
 
@@ -238,44 +267,69 @@ void do_qt_error(OSErr err,char* file,int line) {
     }                                                                   \
 }
 
+#ifdef MEGA_BACKEND
+#define CHECK_CC(m)                                                     \
+  if (!(m)) {                                                           \
+    quicktime_cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
+    return;                                                             \
+  }
+#else
 #define CHECK_CC(m)                                                     \
   if (!(m)) {                                                           \
     cam_iface_error = -1;                                               \
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
     return;                                                             \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CHECK_CCV(m)                                                    \
+  if (!(m)) {                                                           \
+    quicktime_cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
+    return NULL;                                                        \
+  }
+#else
 #define CHECK_CCV(m)                                                    \
   if (!(m)) {                                                           \
     cam_iface_error = -1;                                               \
     CAM_IFACE_ERROR_FORMAT("no CamContext specified (NULL argument)");  \
     return NULL;                                                        \
   }
+#endif
 
-
+#ifdef MEGA_BACKEND
+#define NOT_IMPLEMENTED                                 \
+  quicktime_cam_iface_error = -1;                                 \
+  CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
+  return;
+#else
 #define NOT_IMPLEMENTED                                 \
   cam_iface_error = -1;                                 \
   CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
   return;
+#endif
 
+#include "cam_iface_quicktime.h"
 
-const char *cam_iface_get_driver_name() {
+const char *BACKEND_METHOD(cam_iface_get_driver_name)() {
   return "QuickTime SequenceGrabber";
 }
 
-void cam_iface_clear_error() {
-  cam_iface_error = 0;
+void BACKEND_METHOD(cam_iface_clear_error)() {
+  BACKEND_GLOBAL(cam_iface_error) = 0;
 }
 
-int cam_iface_have_error() {
-  return cam_iface_error;
+int BACKEND_METHOD(cam_iface_have_error)() {
+  return BACKEND_GLOBAL(cam_iface_error);
 }
 
-const char * cam_iface_get_error_string() {
-  return cam_iface_error_string;
+const char * BACKEND_METHOD(cam_iface_get_error_string)() {
+  return BACKEND_GLOBAL(cam_iface_error_string);
 }
 
-const char* cam_iface_get_api_version() {
+const char* BACKEND_METHOD(cam_iface_get_api_version)() {
   return CAM_IFACE_API_VERSION;
 }
 
@@ -374,7 +428,7 @@ pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
   return noErr;
 }
 
-void cam_iface_startup() {
+void BACKEND_METHOD(cam_iface_startup)() {
   OSErr err;
   ComponentDescription  theDesc;
   Component             sgCompID;
@@ -396,17 +450,17 @@ void cam_iface_startup() {
   theDesc.componentFlags = 0L;
   theDesc.componentFlagsMask = 0L;
 
-  num_cameras = CountComponents( &theDesc );
-  components_by_device_number = (Component*)malloc( num_cameras*sizeof(Component));
-  if (components_by_device_number==NULL) {
-    cam_iface_error = -1;
+  BACKEND_GLOBAL(num_cameras) = CountComponents( &theDesc );
+  BACKEND_GLOBAL(components_by_device_number) = (Component*)malloc( BACKEND_GLOBAL(num_cameras)*sizeof(Component));
+  if (BACKEND_GLOBAL(components_by_device_number)==NULL) {
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("malloc failed");
     return;
   }
 
-  for (i=0; i<num_cameras; i++) {
+  for (i=0; i<BACKEND_GLOBAL(num_cameras); i++) {
     sgCompID    = FindNextComponent(sgCompID, &theDesc);
-    components_by_device_number[i] = sgCompID;
+    BACKEND_GLOBAL(components_by_device_number)[i] = sgCompID;
 
     // Used http://muonics.net/extras/GRL_ROTTERDAM_KPN_APP/kpnAppSourceCode.zip
     // for componentName and componentInfo example.
@@ -427,27 +481,27 @@ void cam_iface_startup() {
   DisposeHandle(componentInfo);
 }
 
-void cam_iface_shutdown() {
+void BACKEND_METHOD(cam_iface_shutdown)() {
 }
 
-int cam_iface_get_num_cameras() {
-  return num_cameras;
+int BACKEND_METHOD(cam_iface_get_num_cameras)() {
+  return BACKEND_GLOBAL(num_cameras);
 }
 
-void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
+void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
   /// XXX TODO: should implement this
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
-  snprintf(out_camid->vendor,CAMWIRE_ID_MAX_CHARS,"unknown vendor");
+  snprintf(out_camid->vendor,CAMWIRE_ID_MAX_CHARS,"Quicktime API, unknown vendor");
   snprintf(out_camid->model,CAMWIRE_ID_MAX_CHARS,"unknown model");
   snprintf(out_camid->chip,CAMWIRE_ID_MAX_CHARS,"unknown chip");
 }
 
-void cam_iface_get_num_modes(int device_number, int *num_modes) {
+void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   *num_modes = 1;
 }
 
-void cam_iface_get_mode_string(int device_number,
+void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
                                int mode_number,
                                char* mode_string,
                                int mode_string_maxlen) {
@@ -457,7 +511,7 @@ void cam_iface_get_mode_string(int device_number,
 }
 
 
-cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number) {
+cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
   return (CamContext* (*)(int, int, int))CCquicktime_construct;
 }
 
@@ -467,13 +521,13 @@ CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
 
   this = malloc(sizeof(CCquicktime));
   if (this==NULL) {
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
   } else {
     CCquicktime_CCquicktime( this,
                              device_number, NumImageBuffers,
                              mode_number);
-    if (cam_iface_error) {
+    if (BACKEND_GLOBAL(cam_iface_error)) {
       free(this);
       return NULL;
     }
@@ -502,11 +556,11 @@ void CCquicktime_CCquicktime( CCquicktime* in_cr,
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   CAM_IFACE_CHECK_MODE_NUMBER(mode_number);
 
-  sgCompID = components_by_device_number[device_number];
+  sgCompID = BACKEND_GLOBAL(components_by_device_number)[device_number];
 
   cam = OpenComponent(sgCompID);
   if (cam==NULL) {
-    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("Sequence Grabber could not be opened"); return;
+    BACKEND_GLOBAL(cam_iface_error)=-1; CAM_IFACE_ERROR_FORMAT("Sequence Grabber could not be opened"); return;
   }
 
   in_cr->inherited.cam = (void *)cam;
@@ -708,7 +762,7 @@ void CCquicktime_get_trigger_mode_string( CCquicktime *ccntxt,
                                           int exposure_mode_string_maxlen) {
   CHECK_CC(ccntxt);
   if (exposure_mode_number!=0) {
-    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("only trigger mode 0 supported"); return;
+    BACKEND_GLOBAL(cam_iface_error)=-1; CAM_IFACE_ERROR_FORMAT("only trigger mode 0 supported"); return;
   }
   snprintf(exposure_mode_string,exposure_mode_string_maxlen,"internal freerunning");
 }
@@ -723,7 +777,7 @@ void CCquicktime_set_trigger_mode_number( CCquicktime *ccntxt,
                                           int exposure_mode_number ) {
   CHECK_CC(ccntxt);
   if (exposure_mode_number!=0) {
-    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("only trigger mode 0 supported"); return;
+    BACKEND_GLOBAL(cam_iface_error)=-1; CAM_IFACE_ERROR_FORMAT("only trigger mode 0 supported"); return;
   }
 }
 
@@ -740,13 +794,13 @@ void CCquicktime_set_frame_roi( CCquicktime *in_cr,
                                 int left, int top, int width, int height ) {
   CHECK_CC(in_cr);
   if ((left != 0) | (top != 0) ) {
-     cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame offset can only be 0,0"); return;
+     BACKEND_GLOBAL(cam_iface_error)=-1; CAM_IFACE_ERROR_FORMAT("frame offset can only be 0,0"); return;
   }
   if (width!=in_cr->rect.right) {
-    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame width cannot be changed"); return;
+    BACKEND_GLOBAL(cam_iface_error)=-1; CAM_IFACE_ERROR_FORMAT("frame width cannot be changed"); return;
   }
   if (height!=in_cr->rect.bottom) {
-    cam_iface_error=-1; CAM_IFACE_ERROR_FORMAT("frame height cannot be changed"); return;
+    BACKEND_GLOBAL(cam_iface_error)=-1; CAM_IFACE_ERROR_FORMAT("frame height cannot be changed"); return;
   }
 }
 void CCquicktime_get_framerate( CCquicktime *in_cr,

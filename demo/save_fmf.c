@@ -118,6 +118,8 @@ int main(int argc, char** argv) {
   int bpp;
   cam_iface_constructor_func_t new_CamContext;
   Camwire_id cam_info_struct;
+  FILE* fd;
+  char * filename;
 
   cam_iface_startup_with_version_check();
   _check_error();
@@ -277,8 +279,7 @@ int main(int argc, char** argv) {
   hstop.n_frames = 0;
   hstop.bpp = bpp;
 
-  FILE* fd;
-  char * filename = "movie.fmf";
+  filename = "movie.fmf";
   fd = fopen(filename,"w");
 
   /* write the FMF v3 header */

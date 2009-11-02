@@ -32,84 +32,6 @@ set(common_SRCS
 set(CAM_IFACE_VERSION "${V_MAJOR}.${V_MINOR}.${V_PATCH}")
 set(CAM_IFACE_SOVERSION 0)
 
-# unity backend -----------------
-if(NOT WIN32)
-set(unity_SRCS ${common_SRCS}
-    cam_iface_unity.c
-    )
-
-# get list of all (non-unity) backends to wrap into unity backend
-FOREACH(BACKEND ${all_backends})
-  IF(${BACKEND} STREQUAL "unity")
-    # don't include unity backend in list of backends for unity
-  ELSE(${BACKEND} STREQUAL "unity")
-    set(INDIVIDUAL_UNITY_BACKENDS ${INDIVIDUAL_UNITY_BACKENDS} ${BACKEND})
-  ENDIF(${BACKEND} STREQUAL "unity")
-ENDFOREACH(BACKEND)
-
-FOREACH(BACKEND ${INDIVIDUAL_UNITY_BACKENDS})
-  IF(DEFINED UNITY_BACKENDS)
-    set(UNITY_BACKENDS "${UNITY_BACKENDS},\"${BACKEND}\"")
-  ELSE(DEFINED UNITY_BACKENDS)
-    set(UNITY_BACKENDS "\"${BACKEND}\"")
-  ENDIF(DEFINED UNITY_BACKENDS)
-ENDFOREACH(BACKEND)
-
-list(LENGTH INDIVIDUAL_UNITY_BACKENDS NUM_BACKENDS)
-
-MESSAGE("unity backend includes ${NUM_BACKENDS} other backends: (${UNITY_BACKENDS})")
-
-# list of each command-line define
-set(unity_DEFINE
-    -DNUM_BACKENDS=${NUM_BACKENDS}
-    -DUNITY_BACKENDS='{${UNITY_BACKENDS}}'
-    -DUNITY_BACKEND_PREFIX='\"lib\"'
-    -DUNITY_BACKEND_DIR='\"\"')
-
-if(UNIX)
-  IF(APPLE)
-    set(unity_DEFINE
-      -DUNITY_BACKEND_SUFFIX='\".dylib\"'
-      ${unity_DEFINE})
-  ELSE(APPLE)
-    set(unity_DEFINE
-      -DUNITY_BACKEND_SUFFIX='\".so\"'
-      ${unity_DEFINE})
-  ENDIF(APPLE)
-else(UNIX)
-  MESSAGE(FATAL_ERROR "don't know how to build unity backend on non-unix")
-endif(UNIX)
-
-# concatenate (join) strings to make single argument
-FOREACH(element ${unity_DEFINE})
-  set(unity_DEFINES "${unity_DEFINES} ${element}")
-ENDFOREACH(element ${unity_DEFINE})
-
-SET_SOURCE_FILES_PROPERTIES(
-    cam_iface_unity.c
-    PROPERTIES COMPILE_FLAGS ${unity_DEFINES})
-
-ADD_LIBRARY(cam_iface_unity SHARED ${unity_SRCS})
-TARGET_LINK_LIBRARIES(cam_iface_unity dl)
-set_target_properties(cam_iface_unity PROPERTIES VERSION ${CAM_IFACE_VERSION}
-  SOVERSION ${CAM_IFACE_SOVERSION})
-
-ADD_LIBRARY(cam_iface_unity-static STATIC ${unity_SRCS})
-set_target_properties(cam_iface_unity-static PROPERTIES OUTPUT_NAME "cam_iface_unity")
-
-# These next two lines are required but it is unclear exactly what they do.
-# The CMake FAQ mentions they are necessary and it does not work otherwise.
-
-SET_TARGET_PROPERTIES(cam_iface_unity PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-SET_TARGET_PROPERTIES(cam_iface_unity-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-
-INSTALL(TARGETS cam_iface_unity cam_iface_unity-static
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
-endif(NOT WIN32)
-
 # dc1394 backend ------------------
 
 IF(DC1394_FOUND)
@@ -117,6 +39,9 @@ IF(DC1394_FOUND)
   set(dc1394_SRCS ${common_SRCS}
       cam_iface_dc1394.c
       )
+  set(mega_SRCS ${mega_SRCS}
+      cam_iface_dc1394.c
+     )
 
   ADD_LIBRARY(cam_iface_dc1394 SHARED ${dc1394_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_dc1394 ${DC1394_LIBRARIES})
@@ -126,6 +51,11 @@ IF(DC1394_FOUND)
   ADD_LIBRARY(cam_iface_dc1394-static STATIC ${dc1394_SRCS})
   set_target_properties(cam_iface_dc1394-static PROPERTIES OUTPUT_NAME "cam_iface_dc1394")
 
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${DC1394_LIBRARIES})
+  SET(mega_DEFINE
+      ${mega_DEFINE}
+      -DMEGA_BACKEND_DC1394
+      )
   SET_TARGET_PROPERTIES(cam_iface_dc1394 PROPERTIES CLEAN_DIRECT_OUTPUT 1)
   SET_TARGET_PROPERTIES(cam_iface_dc1394-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
@@ -144,6 +74,9 @@ IF(PROSILICA_GIGE_FOUND)
   set(prosilica_gige_SRCS ${common_SRCS}
       cam_iface_prosilica_gige.cpp
       )
+  set(mega_SRCS ${mega_SRCS}
+      cam_iface_prosilica_gige.cpp
+     )
 
   # list of each command-line define
   IF(WIN32)
@@ -209,6 +142,11 @@ IF(PROSILICA_GIGE_FOUND)
   SET(CI_PROSIL_TARGETS ${CI_PROSIL_TARGETS} cam_iface_prosilica_gige-static)
   endif(NOT WIN32)
 
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${PROSILICA_GIGE_LIBRARIES})
+  SET(mega_DEFINE
+      ${mega_DEFINE}
+      -DMEGA_BACKEND_PROSILICA_GIGE
+      )
   INSTALL(TARGETS ${CI_PROSIL_TARGETS}
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
@@ -239,9 +177,17 @@ ENDIF(NOT CARBON_FOUND)
   set(quicktime_SRCS ${common_SRCS}
       cam_iface_quicktime.c
       )
+  set(mega_SRCS ${mega_SRCS}
+      cam_iface_quicktime.c
+     )
 
   ADD_LIBRARY(cam_iface_quicktime SHARED ${quicktime_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_quicktime ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
+  SET(mega_DEFINE
+      ${mega_DEFINE}
+      -DMEGA_BACKEND_QUICKTIME
+      )
   set_target_properties(cam_iface_quicktime PROPERTIES VERSION ${CAM_IFACE_VERSION}
     SOVERSION ${CAM_IFACE_SOVERSION})
 
@@ -258,3 +204,170 @@ ENDIF(NOT CARBON_FOUND)
   )
 
 ENDIF(QUICKTIME_FOUND)
+
+
+
+
+
+if(WIN32)
+  list(REMOVE_ITEM all_backends "unity")
+  SET(has_unity FALSE)
+else(WIN32)
+  SET(has_unity TRUE)
+endif(WIN32)
+
+# unity backend -----------------
+IF(has_unity)
+set(unity_SRCS ${common_SRCS}
+    cam_iface_unity.c
+    )
+
+# get list of all (non-unity) backends to wrap into unity backend
+FOREACH(BACKEND ${all_backends})
+  IF(${BACKEND} STREQUAL "unity")
+    # don't include unity backend in list of backends for unity
+  ELSE(${BACKEND} STREQUAL "unity")
+    IF(${BACKEND} STREQUAL "mega")
+      # don't include mega backend in list of backends for unity
+    ELSE(${BACKEND} STREQUAL "mega")
+        set(INDIVIDUAL_UNITY_BACKENDS ${INDIVIDUAL_UNITY_BACKENDS} ${BACKEND})
+    ENDIF(${BACKEND} STREQUAL "mega")
+  ENDIF(${BACKEND} STREQUAL "unity")
+ENDFOREACH(BACKEND)
+
+FOREACH(BACKEND ${INDIVIDUAL_UNITY_BACKENDS})
+  IF(DEFINED UNITY_BACKENDS)
+    set(UNITY_BACKENDS "${UNITY_BACKENDS},\"${BACKEND}\"")
+  ELSE(DEFINED UNITY_BACKENDS)
+    set(UNITY_BACKENDS "\"${BACKEND}\"")
+  ENDIF(DEFINED UNITY_BACKENDS)
+ENDFOREACH(BACKEND)
+
+
+  list(LENGTH INDIVIDUAL_UNITY_BACKENDS NUM_BACKENDS)
+  MESSAGE("unity backend includes ${NUM_BACKENDS} other backends: (${UNITY_BACKENDS})")
+
+  # list of each command-line define
+  set(unity_DEFINE
+      -DNUM_BACKENDS=${NUM_BACKENDS}
+      -DUNITY_BACKENDS='{${UNITY_BACKENDS}}'
+      -DUNITY_BACKEND_PREFIX='\"lib\"'
+      -DUNITY_BACKEND_DIR='\"\"')
+
+if(UNIX)
+  IF(APPLE)
+    set(unity_DEFINE
+      -DUNITY_BACKEND_SUFFIX='\".dylib\"'
+      ${unity_DEFINE})
+  ELSE(APPLE)
+    set(unity_DEFINE
+      -DUNITY_BACKEND_SUFFIX='\".so\"'
+      ${unity_DEFINE})
+  ENDIF(APPLE)
+else(UNIX)
+  MESSAGE(FATAL_ERROR "don't know how to build unity backend on non-unix")
+endif(UNIX)
+
+# concatenate (join) strings to make single argument
+FOREACH(element ${unity_DEFINE})
+  set(unity_DEFINES "${unity_DEFINES} ${element}")
+ENDFOREACH(element ${unity_DEFINE})
+
+SET_SOURCE_FILES_PROPERTIES(
+    cam_iface_unity.c
+    PROPERTIES COMPILE_FLAGS ${unity_DEFINES})
+
+  ADD_LIBRARY(cam_iface_unity SHARED ${unity_SRCS})
+  TARGET_LINK_LIBRARIES(cam_iface_unity dl)
+  set_target_properties(cam_iface_unity PROPERTIES VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION})
+  SET_TARGET_PROPERTIES(cam_iface_unity PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+
+INSTALL(TARGETS cam_iface_unity
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
+ENDIF(has_unity)
+
+# mega backend -----------------------------
+
+
+# get list of all (non-unity) backends to wrap into mega backend
+FOREACH(BACKEND ${all_backends})
+  IF(${BACKEND} STREQUAL "unity")
+    # don't include unity backend in list of backends for mega
+  ELSE(${BACKEND} STREQUAL "unity")
+    IF(${BACKEND} STREQUAL "mega")
+      # don't include mega backend in list of backends for mega
+    ELSE(${BACKEND} STREQUAL "mega")
+        set(INDIVIDUAL_MEGA_BACKENDS ${INDIVIDUAL_MEGA_BACKENDS} "static${BACKEND}")
+    ENDIF(${BACKEND} STREQUAL "mega")
+  ENDIF(${BACKEND} STREQUAL "unity")
+ENDFOREACH(BACKEND)
+
+FOREACH(BACKEND ${INDIVIDUAL_MEGA_BACKENDS})
+  IF(DEFINED MEGA_BACKENDS)
+    set(MEGA_BACKENDS "${MEGA_BACKENDS},\"${BACKEND}\"")
+  ELSE(DEFINED MEGA_BACKENDS)
+    set(MEGA_BACKENDS "\"${BACKEND}\"")
+  ENDIF(DEFINED MEGA_BACKENDS)
+ENDFOREACH(BACKEND)
+
+
+list(LENGTH INDIVIDUAL_MEGA_BACKENDS NUM_MEGA_BACKENDS)
+MESSAGE("mega backend includes ${NUM_MEGA_BACKENDS} other backends: (${MEGA_BACKENDS})")
+
+
+# list of each command-line define
+set(mega_DEFINE
+    ${mega_DEFINE}
+    -DMEGA_BACKEND
+   )
+
+FILE(WRITE "mega_backend_info.h"
+     "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
+     "char *backend_names[NUM_BACKENDS] = {${MEGA_BACKENDS}};\n")
+
+
+# concatenate (join) strings to make single argument
+FOREACH(element ${mega_DEFINE})
+  set(mega_DEFINES "${mega_DEFINES} ${element}")
+ENDFOREACH(element ${mega_DEFINE})
+
+SET_SOURCE_FILES_PROPERTIES(
+    cam_iface_mega.c
+    PROPERTIES COMPILE_FLAGS ${mega_DEFINES})
+MESSAGE("STATIC DEFINES: " ${mega_DEFINES})
+
+set(mega_SRCS ${mega_SRCS} ${common_SRCS}
+    cam_iface_mega.c
+    )
+
+ADD_LIBRARY(cam_iface_mega SHARED ${mega_SRCS})
+MESSAGE(   "mega_LINK_LIBS " ${mega_LINK_LIBS})
+
+SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+IF(WIN32)
+  SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES
+    VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION}
+    COMPILE_FLAGS "-Dcam_iface_EXPORTS -DMEGA_BACKEND"
+    )
+ELSE(WIN32)
+  SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES
+    VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION}
+    COMPILE_FLAGS "-DMEGA_BACKEND"
+    )
+ENDIF(WIN32)
+
+# add the static libraries into the linker sources for the mega backend
+TARGET_LINK_LIBRARIES(cam_iface_mega ${mega_LINK_LIBS})
+
+
+INSTALL(TARGETS cam_iface_mega
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
