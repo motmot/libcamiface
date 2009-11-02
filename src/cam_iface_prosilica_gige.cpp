@@ -846,6 +846,13 @@ void CCprosil_get_camera_property_info(CCprosil *ccntxt,
 
   info->is_scaled_quantity = 0;
 
+  info->available = 1;
+
+  info->absolute_capable = 0;
+  info->absolute_control_mode = 0;
+  info->absolute_min_value = 0.0;
+  info->absolute_max_value = 0.0;
+
   tPvUint32 mymin,mymax;
 
   switch (property_number) {

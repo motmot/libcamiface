@@ -1218,9 +1218,11 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
                                        int property_number,
                                        CameraPropertyInfo *info) {
   dc1394camera_t *camera;
-  int feature_id;
+  dc1394feature_t feature_id;
+  dc1394switch_t  absolute_mode;
   dc1394feature_info_t feature_info;
   dc1394bool_t mybool;
+  float absmin, absmax;
 
   CHECK_CC(this);
   camera = cameras[this->inherited.device_number];
@@ -1287,8 +1289,22 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
 
   info->is_scaled_quantity = 0;
 
-  // Hacks for each known camera type should go here, or a more
-  // general way.
+  info->available = feature_info.available;
+  info->absolute_capable = feature_info.absolute_capable;
+  if (info->absolute_capable) {
+    CIDC1394CHK(dc1394_feature_get_absolute_control(camera, feature_id, &absolute_mode));
+    CIDC1394CHK(dc1394_feature_get_absolute_boundaries(camera, feature_id, &absmin, &absmax));
+    info->absolute_control_mode = absolute_mode;
+    info->absolute_min_value = absmin;
+    info->absolute_max_value = absmax;
+  } else {
+    info->absolute_control_mode = 0;
+    info->absolute_min_value = 0.0;
+    info->absolute_max_value = 0.0;
+  }
+  /* Hacks for each known camera type should go here, or a more
+     general way.
+  */
 
   if ((camera->vendor!=NULL) &&
       (camera->model!=NULL) &&
