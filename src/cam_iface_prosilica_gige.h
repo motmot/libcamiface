@@ -1,4 +1,4 @@
-/* internal structures for dc1394 implementation */
+/* internal structures for prosilica_gige implementation */
 
 #ifdef MEGA_BACKEND
   #define BACKEND_METHOD(m) prosilica_gige_##m

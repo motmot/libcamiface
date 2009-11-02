@@ -183,6 +183,11 @@ ENDIF(NOT CARBON_FOUND)
 
   ADD_LIBRARY(cam_iface_quicktime SHARED ${quicktime_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_quicktime ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
+  SET(mega_DEFINE
+      ${mega_DEFINE}
+      -DMEGA_BACKEND_QUICKTIME
+      )
   set_target_properties(cam_iface_quicktime PROPERTIES VERSION ${CAM_IFACE_VERSION}
     SOVERSION ${CAM_IFACE_SOVERSION})
 
