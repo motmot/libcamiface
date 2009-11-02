@@ -97,7 +97,7 @@ GLhandleARB glsl_program;
 
 void setShaders();
 
-void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels, int width, int height, 
+void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels, int width, int height,
 					 size_t src_stride, size_t dest_stride) {
   size_t i,j;
   const unsigned char *src_chunk;
@@ -145,7 +145,7 @@ void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels
   }                                                                     \
 }
 
-void yuv422_to_rgb8(const unsigned char *src_pixels, unsigned char *dest_pixels, 
+void yuv422_to_rgb8(const unsigned char *src_pixels, unsigned char *dest_pixels,
 					int width, int height, size_t src_stride,
 					size_t dest_stride) {
   int C1, C2, D, E;
@@ -468,7 +468,7 @@ for (i=0; i<ncams; i++) {
 
   //  printf("i %d\n col_idx %d, row_idx %d, lowx %f, highx %f, lowy %f, highy %f\n",
   // i,col_idx, row_idx, lowx, highx, lowy, highy );
-  
+
   textureId = textureId_all[i];
 
   //glClear(GL_COLOR_BUFFER_BIT);
@@ -972,7 +972,7 @@ void grab_frame(void) {
     CamContext_unpoint_frame(cc);
     _check_error();
 #endif
-    
+
     glutPostRedisplay(); /* trigger display redraw */
 
 }
