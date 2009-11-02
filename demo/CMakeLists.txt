@@ -40,10 +40,17 @@ ELSE(UNIX AND NOT APPLE)
   SET(SHADER_SOURCE_DIR "./")
 ENDIF(UNIX AND NOT APPLE)
 
+set(all_demo_backends ${all_backends})
+
 FOREACH(SRC ${SRCS})
-  FOREACH(BACKEND ${all_backends})
+  FOREACH(BACKEND ${all_demo_backends})
     ADD_EXECUTABLE(${SRC}-${BACKEND} ${SRC}.c)
-    TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_${BACKEND})
+    IF(${BACKEND} STREQUAL "mega")
+      message("adding mega backend to " ${SRC} " : " ${BACKEND})
+      TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_mega)
+    ELSE(${BACKEND} STREQUAL "mega")
+      TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_${BACKEND})
+    ENDIF(${BACKEND} STREQUAL "mega")
 
     INSTALL(TARGETS ${SRC}-${BACKEND}
       RUNTIME DESTINATION ${DEMO_DIR}
@@ -63,14 +70,21 @@ if(OPENCV_FOUND)
 
   set(opencv_SRCS opencv.c)
 
-  FOREACH(BACKEND ${all_backends})
+  FOREACH(BACKEND ${all_demo_backends})
     ADD_EXECUTABLE(opencv-${BACKEND} ${opencv_SRCS})
     include_directories(${OPENCV_INCLUDE_DIRS})
 
-    TARGET_LINK_LIBRARIES(opencv-${BACKEND}
-      cam_iface_${BACKEND}
-      ${OPENCV_LIBRARIES}
-      )
+    IF(${BACKEND} STREQUAL "mega")
+      TARGET_LINK_LIBRARIES(opencv-${BACKEND}
+        cam_iface_mega
+        ${OPENCV_LIBRARIES}
+        )
+    ELSE(${BACKEND} STREQUAL "mega")
+      TARGET_LINK_LIBRARIES(opencv-${BACKEND}
+        cam_iface_${BACKEND}
+        ${OPENCV_LIBRARIES}
+        )
+    ENDIF(${BACKEND} STREQUAL "mega")
 
     INSTALL(TARGETS opencv-${BACKEND}
       RUNTIME DESTINATION ${DEMO_DIR}
@@ -131,18 +145,29 @@ if(GLUT_FOUND)
     ${liveview-glut-SRCS}
     PROPERTIES COMPILE_FLAGS ${liveview_DEFINES})
 
-  FOREACH(BACKEND ${all_backends})
+  FOREACH(BACKEND ${all_demo_backends})
     ADD_EXECUTABLE(liveview-glut-${BACKEND} ${liveview-glut-SRCS})
     include_directories(${GLUT_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
     IF(GLEW_FOUND)
       target_link_libraries(liveview-glut-${BACKEND} imp_glew)
     ENDIF(GLEW_FOUND)
 
-    TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
-      cam_iface_${BACKEND}
-      ${GLUT_LIBRARIES}
-      ${OPENGL_LIBRARIES}
-      )
+
+    IF(${BACKEND} STREQUAL "mega")
+      message("adding mega backend to liveview-glut : " ${BACKEND})
+      TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
+        ${GLUT_LIBRARIES}
+        ${OPENGL_LIBRARIES}
+        cam_iface_mega
+        )
+    ELSE(${BACKEND} STREQUAL "mega")
+      TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
+        cam_iface_${BACKEND}
+        ${GLUT_LIBRARIES}
+        ${OPENGL_LIBRARIES}
+        )
+    ENDIF(${BACKEND} STREQUAL "mega")
+
 
     INSTALL(TARGETS liveview-glut-${BACKEND}
       RUNTIME DESTINATION ${DEMO_DIR}

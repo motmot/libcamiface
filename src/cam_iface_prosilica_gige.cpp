@@ -241,27 +241,33 @@ double ciprosil_floattime() {
 #endif
 }
 
-/* globals -- allocate space */
-  u_int64_t prev_ts_uint64; //tmp
+#ifdef MEGA_BACKEND
+  #define BACKEND_GLOBAL(m) prosilica_gige_##m
+#else
+  #define BACKEND_GLOBAL(m) m
+#endif
 
-cam_iface_thread_local int cam_iface_error=0;
+/* globals -- allocate space */
+  u_int64_t BACKEND_GLOBAL(prev_ts_uint64); //tmp
+
+cam_iface_thread_local int BACKEND_GLOBAL(cam_iface_error)=0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
-cam_iface_thread_local char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN];
-cam_iface_thread_local char cam_iface_backend_string[CAM_IFACE_MAX_ERROR_LEN];
+cam_iface_thread_local char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN];
+cam_iface_thread_local char BACKEND_GLOBAL(cam_iface_backend_string)[CAM_IFACE_MAX_ERROR_LEN];
 
 #define PV_MAX_ENUM_LEN 32
 
 /* global variables */
 #define PV_MAX_NUM_CAMERAS 1
 #define PV_MAX_NUM_BUFFERS 80
-static int num_cameras = 0;
-static tPvCameraInfo camera_list[PV_MAX_NUM_CAMERAS];
+static int BACKEND_GLOBAL(num_cameras) = 0;
+static tPvCameraInfo BACKEND_GLOBAL(camera_list)[PV_MAX_NUM_CAMERAS];
 
 // circular buffer that takes advantage of 8-bit rollover
-tPvFrame* frames_ready_list_cam0[256];
-u_int8_t frames_ready_cam0_write_idx=0;
-u_int8_t frames_ready_cam0_read_idx=0;
-u_int8_t frames_ready_cam0_num=0;
+tPvFrame* BACKEND_GLOBAL(frames_ready_list_cam0)[256];
+u_int8_t BACKEND_GLOBAL(frames_ready_cam0_write_idx)=0;
+u_int8_t BACKEND_GLOBAL(frames_ready_cam0_read_idx)=0;
+u_int8_t BACKEND_GLOBAL(frames_ready_cam0_num)=0;
 
 typedef struct cam_iface_backend_extras cam_iface_backend_extras;
 struct cam_iface_backend_extras {
@@ -287,7 +293,7 @@ struct cam_iface_backend_extras {
 };
 
 #define PV_NUM_ATTR 2
-const char *pv_attr_strings[PV_NUM_ATTR] = {
+const char *BACKEND_GLOBAL(pv_attr_strings)[PV_NUM_ATTR] = {
   "gain",
   "shutter" // exposure
 };
@@ -296,7 +302,7 @@ const char *pv_attr_strings[PV_NUM_ATTR] = {
 
   // from PvApi.h
 #define PV_ERROR_NUM 22
-const char *pv_error_strings[PV_ERROR_NUM] = {
+const char *BACKEND_GLOBAL(pv_error_strings)[PV_ERROR_NUM] = {
   "No error",
   "Unexpected camera fault",
   "Unexpected fault in PvApi or driver",
@@ -321,23 +327,47 @@ const char *pv_error_strings[PV_ERROR_NUM] = {
   "Attribute is not available at this time"
 };
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_ERROR_FORMAT(m)                                       \
+  cam_iface_snprintf(prosilica_gige_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,    \
+                     "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#else
 #define CAM_IFACE_ERROR_FORMAT(m)                                       \
   cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,    \
                      "%s (%d): %s\n",__FILE__,__LINE__,(m));
+#endif
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_THROW_ERROR(m)                        \
+  {                                                     \
+    prosilica_gige_cam_iface_error = -1;                               \
+    CAM_IFACE_ERROR_FORMAT((m));                        \
+    return;                                             \
+  }
+#else
 #define CAM_IFACE_THROW_ERROR(m)                        \
   {                                                     \
     cam_iface_error = -1;                               \
     CAM_IFACE_ERROR_FORMAT((m));                        \
     return;                                             \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_THROW_ERRORV(m)                       \
+  {                                                     \
+    prosilica_gige_cam_iface_error = -1;                               \
+    CAM_IFACE_ERROR_FORMAT((m));                        \
+    return NULL;                                                \
+  }
+#else
 #define CAM_IFACE_THROW_ERRORV(m)                       \
   {                                                     \
     cam_iface_error = -1;                               \
     CAM_IFACE_ERROR_FORMAT((m));                        \
     return NULL;                                                \
   }
+#endif
 
 #define CHECK_CC(m)                                                     \
   if (!(m)) {                                                           \
@@ -346,20 +376,61 @@ const char *pv_error_strings[PV_ERROR_NUM] = {
 
 #define NOT_IMPLEMENTED CAM_IFACE_THROW_ERROR("not yet implemented");
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
+  if ( ((m)<0) | ((m)>=prosilica_gige_num_cameras) ) {                                 \
+    prosilica_gige_cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
+    return;                                                             \
+  }
+#else
 #define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
   if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
     cam_iface_error = -1;                                               \
     CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
     return;                                                             \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CAM_IFACE_CHECK_DEVICE_NUMBERV(m)                               \
+  if ( ((m)<0) | ((m)>=prosilica_gige_num_cameras) ) {                                 \
+    prosilica_gige_cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
+    return NULL;                                                        \
+  }
+#else
 #define CAM_IFACE_CHECK_DEVICE_NUMBERV(m)                               \
   if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
     cam_iface_error = -1;                                               \
     CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
     return NULL;                                                        \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CIPVCHK(err) {                                                  \
+  tPvErr m = err;                                                       \
+  if (m!=ePvErrSuccess) {                                               \
+    prosilica_gige_cam_iface_error = CAM_IFACE_GENERIC_ERROR;                          \
+    if (m==ePvErrTimeout) {                                             \
+      prosilica_gige_cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;                        \
+    }                                                                   \
+    if (m<PV_ERROR_NUM) {                                               \
+      cam_iface_snprintf(prosilica_gige_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
+                         "%s (%d): Prosilica GigE err %d: %s\n",__FILE__,__LINE__, \
+                         m,                                             \
+                         prosilica_gige_pv_error_strings[m]);                          \
+    } else {                                                            \
+      cam_iface_snprintf(prosilica_gige_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
+                         "%s (%d): Prosilica GigE err %d: (unknown error)\n", \
+                         __FILE__,__LINE__,                             \
+                         m);                                            \
+    }                                                                   \
+    return;                                                             \
+  }                                                                     \
+  }
+#else
 #define CIPVCHK(err) {                                                  \
   tPvErr m = err;                                                       \
   if (m!=ePvErrSuccess) {                                               \
@@ -381,7 +452,31 @@ const char *pv_error_strings[PV_ERROR_NUM] = {
     return;                                                             \
   }                                                                     \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define CIPVCHKV(err) {                                                 \
+  tPvErr m = err;                                                       \
+  if (m!=ePvErrSuccess) {                                               \
+    prosilica_gige_cam_iface_error = CAM_IFACE_GENERIC_ERROR;                          \
+    if (m==ePvErrTimeout) {                                             \
+      prosilica_gige_cam_iface_error = CAM_IFACE_FRAME_TIMEOUT;                        \
+    }                                                                   \
+    if (m<PV_ERROR_NUM) {                                               \
+      cam_iface_snprintf(prosilica_gige_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
+                         "%s (%d): Prosilica GigE err %d: %s\n",__FILE__,__LINE__, \
+                         m,                                             \
+                         prosilica_gige_pv_error_strings[m]);                          \
+    } else {                                                            \
+      cam_iface_snprintf(prosilica_gige_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
+                         "%s (%d): Prosilica GigE err %d: (unknown error)\n", \
+                         __FILE__,__LINE__,                             \
+                         m);                                            \
+    }                                                                   \
+    return NULL;                                                        \
+  }                                                                     \
+}
+#else
 #define CIPVCHKV(err) {                                                 \
   tPvErr m = err;                                                       \
   if (m!=ePvErrSuccess) {                                               \
@@ -403,18 +498,35 @@ const char *pv_error_strings[PV_ERROR_NUM] = {
     return NULL;                                                        \
   }                                                                     \
 }
+#endif
 
+#ifdef MEGA_BACKEND
+#define INTERNAL_CHK() {                                                \
+    if (prosilica_gige_cam_iface_error) {                                              \
+      return;                                                           \
+    }                                                                   \
+  }
+#else
 #define INTERNAL_CHK() {                                                \
     if (cam_iface_error) {                                              \
       return;                                                           \
     }                                                                   \
   }
+#endif
 
+#ifdef MEGA_BACKEND
+#define INTERNAL_CHKV() {                                               \
+    if (prosilica_gige_cam_iface_error) {                                              \
+      return void;                                                      \
+    }                                                                   \
+  }
+#else
 #define INTERNAL_CHKV() {                                               \
     if (cam_iface_error) {                                              \
       return void;                                                      \
     }                                                                   \
   }
+#endif
 
 void _internal_start_streaming( CCprosil * ccntxt,
                                 tPvHandle* handle_ptr,
@@ -444,9 +556,9 @@ void _internal_start_streaming( CCprosil * ccntxt,
 
   for (int i=0; i<backend_extras->num_buffers; i++) {
     CIPVCHK(PvCaptureQueueFrame(*handle_ptr,backend_extras->frames[i],NULL));
-    frames_ready_list_cam0[frames_ready_cam0_write_idx] = backend_extras->frames[i];
-    frames_ready_cam0_write_idx++;
-    frames_ready_cam0_num++;
+    BACKEND_GLOBAL(frames_ready_list_cam0)[BACKEND_GLOBAL(frames_ready_cam0_write_idx)] = backend_extras->frames[i];
+    BACKEND_GLOBAL(frames_ready_cam0_write_idx)++;
+    BACKEND_GLOBAL(frames_ready_cam0_num)++;
   }
 
   CIPVCHK(PvCommandRun(*handle_ptr,"AcquisitionStart"));
@@ -483,31 +595,33 @@ void _internal_stop_streaming( CCprosil * ccntxt,
   }
 }
 
-const char *cam_iface_get_driver_name() {
+#include "cam_iface_prosilica_gige.h"
+
+const char *BACKEND_METHOD(cam_iface_get_driver_name)() {
   unsigned long major, minor;
   PvVersion(&major,&minor);
-  cam_iface_snprintf(cam_iface_backend_string,CAM_IFACE_MAX_ERROR_LEN,
+  cam_iface_snprintf(BACKEND_GLOBAL(cam_iface_backend_string),CAM_IFACE_MAX_ERROR_LEN,
                      "prosilica_gige (%lu.%lu)",major,minor);
-  return cam_iface_backend_string;
+  return BACKEND_GLOBAL(cam_iface_backend_string);
 }
 
-void cam_iface_clear_error() {
-  cam_iface_error = 0;
+void BACKEND_METHOD(cam_iface_clear_error)() {
+  BACKEND_GLOBAL(cam_iface_error) = 0;
 }
 
-int cam_iface_have_error() {
-  return cam_iface_error;
+int BACKEND_METHOD(cam_iface_have_error)() {
+  return BACKEND_GLOBAL(cam_iface_error);
 }
 
-const char * cam_iface_get_error_string() {
-  return cam_iface_error_string;
+const char * BACKEND_METHOD(cam_iface_get_error_string)() {
+  return BACKEND_GLOBAL(cam_iface_error_string);
 }
 
-const char* cam_iface_get_api_version() {
+const char* BACKEND_METHOD(cam_iface_get_api_version)() {
   return CAM_IFACE_API_VERSION;
 }
 
-void cam_iface_startup() {
+void BACKEND_METHOD(cam_iface_startup)() {
   unsigned long major, minor;
 
   PvVersion(&major,&minor);
@@ -536,7 +650,7 @@ void cam_iface_startup() {
 
   // get list of reachable cameras
   unsigned long     ul_nc, numCamerasAvail;
-  ul_nc = PvCameraList(camera_list, PV_MAX_NUM_CAMERAS, &numCamerasAvail);
+  ul_nc = PvCameraList(BACKEND_GLOBAL(camera_list), PV_MAX_NUM_CAMERAS, &numCamerasAvail);
 
   if (ul_nc != numCamerasAvail) {
     CAM_IFACE_THROW_ERROR("more cameras available than PV_MAX_NUM_CAMERAS");
@@ -544,38 +658,38 @@ void cam_iface_startup() {
 
   if (ul_nc < PV_MAX_NUM_CAMERAS) {
     DPRINTF("trying unreachable cameras...\n");
-    ul_nc += PvCameraListUnreachable(&camera_list[ul_nc],
+    ul_nc += PvCameraListUnreachable(&BACKEND_GLOBAL(camera_list)[ul_nc],
                                      PV_MAX_NUM_CAMERAS-ul_nc,
                                      NULL);
   }
 
-  num_cameras = (int)ul_nc; // cast to integer
+  BACKEND_GLOBAL(num_cameras) = (int)ul_nc; // cast to integer
 }
 
-void cam_iface_shutdown() {
+void BACKEND_METHOD(cam_iface_shutdown)() {
   PvUnInitialize();
 }
 
-int cam_iface_get_num_cameras() {
-  return num_cameras;
+int BACKEND_METHOD(cam_iface_get_num_cameras)() {
+  return BACKEND_GLOBAL(num_cameras);
 }
 
-void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
+void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   if (out_camid==NULL) { CAM_IFACE_THROW_ERROR("return structure NULL"); }
 
   cam_iface_snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "Prosilica");
-  cam_iface_snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", camera_list[device_number].DisplayName);
-  cam_iface_snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%llXh", (long long unsigned int)camera_list[device_number].UniqueId);
+  cam_iface_snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", BACKEND_GLOBAL(camera_list)[device_number].DisplayName);
+  cam_iface_snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%llXh", (long long unsigned int)BACKEND_GLOBAL(camera_list)[device_number].UniqueId);
 }
 
 
-void cam_iface_get_num_modes(int device_number, int *num_modes) {
+void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   *num_modes = 1; // only one mode
 }
 
-void cam_iface_get_mode_string(int device_number,
+void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
                                int mode_number,
                                char* mode_string,
                                int mode_string_maxlen) {
@@ -583,7 +697,7 @@ void cam_iface_get_mode_string(int device_number,
   cam_iface_snprintf(mode_string, mode_string_maxlen, "(Prosilica GigE default mode)");
 }
 
-cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number) {
+cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
   return (CamContext* (*)(int, int, int))CCprosil_construct;
 }
 
@@ -612,7 +726,7 @@ void CCprosil_CCprosil( CCprosil * ccntxt, int device_number, int NumImageBuffer
   memset(ccntxt->inherited.backend_extras,0,sizeof(cam_iface_backend_extras));
 
   tPvHandle* handle_ptr = new tPvHandle; // C++ equivalent to malloc
-  CIPVCHK(PvCameraOpen(camera_list[device_number].UniqueId,
+  CIPVCHK(PvCameraOpen(BACKEND_GLOBAL(camera_list)[device_number].UniqueId,
                         ePvAccessMaster,
                         handle_ptr ));
   ccntxt->inherited.cam = (void*)handle_ptr; // save pointer
@@ -663,7 +777,7 @@ void CCprosil_CCprosil( CCprosil * ccntxt, int device_number, int NumImageBuffer
   }
 
   // code to adjust packet size, taken from SampleViewer -- JP May 2009.
-  if(!cam_iface_have_error()){
+  if(!BACKEND_METHOD(cam_iface_have_error)()){
         DPRINTF("Setting PacketSize automatically...\n");
     tPvUint32 lMaxSize = 8228;
     // get the last packet size set on the camera
@@ -985,13 +1099,13 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
   else
     pvTimeout = (unsigned long)ceilf(timeout*1000.0f); // convert to msec
 
-  frame = frames_ready_list_cam0[frames_ready_cam0_read_idx];
+  frame = BACKEND_GLOBAL(frames_ready_list_cam0)[BACKEND_GLOBAL(frames_ready_cam0_read_idx)];
   if (frame==NULL) CAM_IFACE_THROW_ERROR("internal cam_iface error: frame not allocated");
 
   CIPVCHK(PvCaptureWaitForFrameDone(*handle_ptr,frame,pvTimeout));
 
-  frames_ready_cam0_read_idx++;
-  frames_ready_cam0_num--;
+  BACKEND_GLOBAL(frames_ready_cam0_read_idx)++;
+  BACKEND_GLOBAL(frames_ready_cam0_num)--;
 
   size_t wb = frame->Width;
   int height = frame->Height;
@@ -1040,8 +1154,8 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
   u_int64_t ts_uint64;
   ts_uint64 = (((u_int64_t)(frame->TimestampHi))<<32) + (frame->TimestampLo);
   int64_t dif64; //tmp
-  dif64=ts_uint64-prev_ts_uint64;
-  prev_ts_uint64 = ts_uint64;
+  dif64=ts_uint64-BACKEND_GLOBAL(prev_ts_uint64);
+  BACKEND_GLOBAL(prev_ts_uint64) = ts_uint64;
 
   DPRINTF("got it                         (ts %llu)    (diff %lld)!\n",ts_uint64,dif64);
   backend_extras->last_timestamp = ts_uint64;
@@ -1055,19 +1169,19 @@ void CCprosil_grab_next_frame_blocking_with_stride( CCprosil *ccntxt,
     // re-queue frame buffer
     CIPVCHK(PvCaptureQueueFrame(*handle_ptr,frame,NULL));
     //    printf("queued frame %d\n",int(frame->Context[0]));
-    frames_ready_list_cam0[frames_ready_cam0_write_idx] = frame;
-    frames_ready_cam0_write_idx++;
-    frames_ready_cam0_num++;
+    BACKEND_GLOBAL(frames_ready_list_cam0)[BACKEND_GLOBAL(frames_ready_cam0_write_idx)] = frame;
+    BACKEND_GLOBAL(frames_ready_cam0_write_idx)++;
+    BACKEND_GLOBAL(frames_ready_cam0_num)++;
     //}
 
   if(oldstatus == ePvErrDataMissing) {
-    cam_iface_error = CAM_IFACE_FRAME_DATA_MISSING_ERROR;
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_DATA_MISSING_ERROR;
     CAM_IFACE_ERROR_FORMAT("frame data missing");
     return;
   }
 
   if(oldstatus == ePvErrDataLost) {
-    cam_iface_error = CAM_IFACE_FRAME_DATA_LOST_ERROR;
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_DATA_LOST_ERROR;
     CAM_IFACE_ERROR_FORMAT("frame data lost");
     return;
   }
@@ -1132,7 +1246,7 @@ void CCprosil_get_trigger_mode_string( CCprosil *ccntxt,
     cam_iface_snprintf(exposure_mode_string,exposure_mode_string_maxlen,"SyncIn4");
     break;
   default:
-    cam_iface_error = -1;
+    BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("exposure_mode_number invalid");
     return;
   }

@@ -258,20 +258,25 @@ void do_qt_error(OSErr err,char* file,int line) {
   CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
   return;
 
+#ifdef MEGA_BACKEND
+  #define BACKEND_METHOD(m) quicktime##m
+#else
+  #define BACKEND_METHOD(m) m
+#endif
 
-const char *cam_iface_get_driver_name() {
+const char *BACKEND_METHOD(cam_iface_get_driver_name)() {
   return "QuickTime SequenceGrabber";
 }
 
-void cam_iface_clear_error() {
+void BACKEND_METHOD(cam_iface_clear_error)() {
   cam_iface_error = 0;
 }
 
-int cam_iface_have_error() {
+int BACKEND_METHOD(cam_iface_have_error)() {
   return cam_iface_error;
 }
 
-const char * cam_iface_get_error_string() {
+const char * BACKEND_METHOD(cam_iface_get_error_string)() {
   return cam_iface_error_string;
 }
 
@@ -374,7 +379,7 @@ pascal OSErr process_data_callback(SGChannel c, Ptr p, long len, long *offset,
   return noErr;
 }
 
-void cam_iface_startup() {
+void BACKEND_METHOD(cam_iface_startup)() {
   OSErr err;
   ComponentDescription  theDesc;
   Component             sgCompID;
@@ -427,14 +432,14 @@ void cam_iface_startup() {
   DisposeHandle(componentInfo);
 }
 
-void cam_iface_shutdown() {
+void BACKEND_METHOD(cam_iface_shutdown)() {
 }
 
-int cam_iface_get_num_cameras() {
+int BACKEND_METHOD(cam_iface_get_num_cameras)() {
   return num_cameras;
 }
 
-void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
+void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
   /// XXX TODO: should implement this
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   snprintf(out_camid->vendor,CAMWIRE_ID_MAX_CHARS,"unknown vendor");
@@ -442,12 +447,12 @@ void cam_iface_get_camera_info(int device_number, Camwire_id *out_camid) {
   snprintf(out_camid->chip,CAMWIRE_ID_MAX_CHARS,"unknown chip");
 }
 
-void cam_iface_get_num_modes(int device_number, int *num_modes) {
+void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   *num_modes = 1;
 }
 
-void cam_iface_get_mode_string(int device_number,
+void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
                                int mode_number,
                                char* mode_string,
                                int mode_string_maxlen) {
@@ -457,7 +462,7 @@ void cam_iface_get_mode_string(int device_number,
 }
 
 
-cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number) {
+cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
   return (CamContext* (*)(int, int, int))CCquicktime_construct;
 }
 
