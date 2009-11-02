@@ -937,6 +937,7 @@ void grab_frame(void) {
   int errnum;
   CamContext *cc;
   static int next_device_number=0;
+  int data_ok = 0;
 
 #ifdef USE_COPY
     cc = cc_all[next_device_number];
@@ -955,13 +956,20 @@ void grab_frame(void) {
       cam_iface_clear_error();
       fprintf(stdout,"I");
       fflush(stdout);
+    } else if (errnum == CAM_IFACE_FRAME_DATA_CORRUPT_ERROR) {
+      cam_iface_clear_error();
+      fprintf(stdout,"C");
+      fflush(stdout);
     } else {
       _check_error();
+      data_ok = 1;
     }
 
     next_device_number++;
     next_device_number = next_device_number % ncams;
-    upload_image_data_to_opengl(raw_pixels,cc->coding,next_device_number);
+    if (data_ok) {
+      upload_image_data_to_opengl(raw_pixels,cc->coding,next_device_number);
+    }
 
 #else
     CamContext_point_next_frame_blocking(cc,&raw_pixels,-1.0f);
