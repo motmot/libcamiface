@@ -9,8 +9,11 @@ Standards-Version: 3.7.3
 
 Package: libcamiface
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, libprosilica-gige0
 Suggests: coriander
+Provides: libcamiface-prosilica
+Conflicts: libcamiface-prosilica
+Replaces: libcamiface-prosilica
 Description: cross-platform cross-backend camera driver (library)
  cam_iface is the core package of several in the motmot
  repository that are involved with digital camera acquisition
@@ -27,18 +30,9 @@ Description: cross-platform cross-backend camera driver (development files)
 
 Package: camiface
 Architecture: any
-Depends: ${shlibs:Depends}, libcamiface, libcamiface-prosilica
+Depends: ${shlibs:Depends}, libcamiface
 Suggests: coriander
 Description: cross-platform cross-backend camera utilities
- cam_iface is the core package of several in the motmot
- repository that are involved with digital camera acquisition
- and analysis
-
-Package: libcamiface-prosilica
-Architecture: any
-Depends: ${shlibs:Depends}, libprosilica-gige0
-Suggests: coriander
-Description: cross-platform cross-backend camera driver (library)
  cam_iface is the core package of several in the motmot
  repository that are involved with digital camera acquisition
  and analysis
