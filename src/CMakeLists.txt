@@ -346,7 +346,7 @@ set(mega_SRCS ${mega_SRCS} ${common_SRCS}
 
 ADD_LIBRARY(cam_iface_mega SHARED ${mega_SRCS})
 ADD_LIBRARY(cam_iface_mega-static STATIC ${mega_SRCS})
-set_target_properties(cam_iface_mega-static PROPERTIES OUTPUT_NAME "cam_iface_mega")
+set_target_properties(cam_iface_mega-static PROPERTIES OUTPUT_NAME "cam_iface_megastatic")
 
 SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 SET_TARGET_PROPERTIES(cam_iface_mega-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
