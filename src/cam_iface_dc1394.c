@@ -1365,7 +1365,12 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
 
   info->is_scaled_quantity = 0;
 
+  info->original_value = feature_info.value;
+
   info->available = feature_info.available;
+  info->readout_capable = feature_info.readout_capable;
+  info->on_off_capable = feature_info.on_off_capable;
+
   info->absolute_capable = feature_info.absolute_capable;
   if (info->absolute_capable) {
     CIDC1394CHK(dc1394_feature_get_absolute_control(camera, feature_id, &absolute_mode));

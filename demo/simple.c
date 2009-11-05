@@ -237,10 +237,18 @@ int main(int argc, char** argv) {
 	  }
 	  fflush(stdout);
 	}
-
-	CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
-	_check_error();
-	printf("%ld\n",prop_value);
+	if (cam_props.readout_capable) {
+	  if (cam_props.has_manual_mode) {
+	    CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
+	    _check_error();
+	    printf("%ld\n",prop_value);
+	  } else {
+	    /* Firefly2 temperature won't be read out. */
+	    printf("no manual mode, won't read out. Original value: %d\n",cam_props.original_value);
+	  }
+	} else {
+	  printf("not readout capable");
+	}
       } else {
 	printf("present, but not available\n");
       }
