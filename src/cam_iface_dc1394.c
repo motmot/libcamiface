@@ -1498,6 +1498,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   struct timeval tv;
   int retval;
   int errsv;
+  int is_frame_corrupt=0;
   size_t malloc_size;
 
   CHECK_CC(this);
@@ -1548,9 +1549,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   }
 
   if (dc1394_capture_is_frame_corrupt(camera,frame)==DC1394_TRUE) {
-    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_DATA_CORRUPT_ERROR;
-    CAM_IFACE_ERROR_FORMAT("frame data is corrupt");
-    return;
+    is_frame_corrupt = 1;
   }
 
   (this->nframe_hack)+=1;
@@ -1639,6 +1638,13 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
     free(converted_frame);
   }
   CIDC1394CHK(dc1394_capture_enqueue (camera, orig_frame));
+
+  if (is_frame_corrupt) {
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_DATA_CORRUPT_ERROR;
+    CAM_IFACE_ERROR_FORMAT("frame data is corrupt");
+    return;
+  }
+
 }
 
 void CCdc1394_grab_next_frame_blocking( CCdc1394 *this, unsigned char *out_bytes, float timeout) {
