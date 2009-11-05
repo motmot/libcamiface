@@ -213,6 +213,8 @@ int main(int argc, char** argv) {
   CamContext_get_num_camera_properties(cc,&num_props);
   _check_error();
 
+  printf("%d camera properties: \n",num_props);
+
   for (i=0; i<num_props; i++) {
     CamContext_get_camera_property_info(cc,i,&cam_props);
     _check_error();
@@ -223,11 +225,25 @@ int main(int argc, char** argv) {
     }
 
     printf("  %s: ",cam_props.name);
+    fflush(stdout);
 
     if (cam_props.is_present) {
-      CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
-      _check_error();
-      printf("%ld\n",prop_value);
+      if (cam_props.available) {
+	if (cam_props.absolute_capable) {
+	  if (cam_props.absolute_control_mode) {
+	    printf("(absolute capable, on) " );
+	  } else {
+	    printf("(absolute capable, off) " );
+	  }
+	  fflush(stdout);
+	}
+
+	CamContext_get_camera_property(cc,i,&prop_value,&prop_auto);
+	_check_error();
+	printf("%ld\n",prop_value);
+      } else {
+	printf("present, but not available\n");
+      }
     } else {
       printf("not present\n");
     }
