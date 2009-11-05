@@ -46,7 +46,7 @@ FOREACH(SRC ${SRCS})
   FOREACH(BACKEND ${all_demo_backends})
     ADD_EXECUTABLE(${SRC}-${BACKEND} ${SRC}.c)
     IF(${BACKEND} STREQUAL "mega")
-      message("adding mega backend to " ${SRC} " : " ${BACKEND})
+      message(STATUS "adding mega backend to " ${SRC} " : " ${BACKEND})
       TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_mega)
     ELSE(${BACKEND} STREQUAL "mega")
       TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_${BACKEND})
@@ -154,7 +154,7 @@ if(GLUT_FOUND)
 
 
     IF(${BACKEND} STREQUAL "mega")
-      message("adding mega backend to liveview-glut : " ${BACKEND})
+      message(STATUS "adding mega backend to liveview-glut : " ${BACKEND})
       TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
         ${GLUT_LIBRARIES}
         ${OPENGL_LIBRARIES}

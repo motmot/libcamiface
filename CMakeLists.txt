@@ -33,7 +33,7 @@ project(libcamiface)
 # version
 set(V_MAJOR 0)
 set(V_MINOR 5)
-set(V_PATCH 7)
+set(V_PATCH 8)
 
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 
@@ -132,6 +132,8 @@ SET(CPACK_PACKAGE_VERSION_MAJOR "${V_MAJOR}")
 SET(CPACK_PACKAGE_VERSION_MINOR "${V_MINOR}")
 SET(CPACK_PACKAGE_VERSION_PATCH "${V_PATCH}")
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "libcamiface ${V_MAJOR}.${V_MINOR}.${V_PATCH}")
+
+SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/installer_readme.html")
 
 # For source releases (except we use git archive to make these)
 

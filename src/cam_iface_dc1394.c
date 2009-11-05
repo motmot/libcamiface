@@ -1365,7 +1365,12 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
 
   info->is_scaled_quantity = 0;
 
+  info->original_value = feature_info.value;
+
   info->available = feature_info.available;
+  info->readout_capable = feature_info.readout_capable;
+  info->on_off_capable = feature_info.on_off_capable;
+
   info->absolute_capable = feature_info.absolute_capable;
   if (info->absolute_capable) {
     CIDC1394CHK(dc1394_feature_get_absolute_control(camera, feature_id, &absolute_mode));
@@ -1498,6 +1503,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   struct timeval tv;
   int retval;
   int errsv;
+  int is_frame_corrupt=0;
   size_t malloc_size;
 
   CHECK_CC(this);
@@ -1548,9 +1554,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
   }
 
   if (dc1394_capture_is_frame_corrupt(camera,frame)==DC1394_TRUE) {
-    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_DATA_CORRUPT_ERROR;
-    CAM_IFACE_ERROR_FORMAT("frame data is corrupt");
-    return;
+    is_frame_corrupt = 1;
   }
 
   (this->nframe_hack)+=1;
@@ -1639,6 +1643,13 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
     free(converted_frame);
   }
   CIDC1394CHK(dc1394_capture_enqueue (camera, orig_frame));
+
+  if (is_frame_corrupt) {
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_FRAME_DATA_CORRUPT_ERROR;
+    CAM_IFACE_ERROR_FORMAT("frame data is corrupt");
+    return;
+  }
+
 }
 
 void CCdc1394_grab_next_frame_blocking( CCdc1394 *this, unsigned char *out_bytes, float timeout) {

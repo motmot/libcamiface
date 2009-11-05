@@ -960,7 +960,11 @@ void CCprosil_get_camera_property_info(CCprosil *ccntxt,
 
   info->is_scaled_quantity = 0;
 
+  info->original_value = 0;
+
   info->available = 1;
+  info->readout_capable = 1;
+  info->on_off_capable = 0;
 
   info->absolute_capable = 0;
   info->absolute_control_mode = 0;

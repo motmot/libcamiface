@@ -245,7 +245,7 @@ ENDFOREACH(BACKEND)
 
 
   list(LENGTH INDIVIDUAL_UNITY_BACKENDS NUM_BACKENDS)
-  MESSAGE("unity backend includes ${NUM_BACKENDS} other backends: (${UNITY_BACKENDS})")
+  MESSAGE(STATUS "unity backend includes ${NUM_BACKENDS} other backends: (${UNITY_BACKENDS})")
 
   # list of each command-line define
   set(unity_DEFINE
@@ -316,7 +316,7 @@ ENDFOREACH(BACKEND)
 
 
 list(LENGTH INDIVIDUAL_MEGA_BACKENDS NUM_MEGA_BACKENDS)
-MESSAGE("mega backend includes ${NUM_MEGA_BACKENDS} other backends: (${MEGA_BACKENDS})")
+MESSAGE(STATUS "mega backend includes ${NUM_MEGA_BACKENDS} other backends: (${MEGA_BACKENDS})")
 
 
 # list of each command-line define
@@ -338,35 +338,42 @@ ENDFOREACH(element ${mega_DEFINE})
 SET_SOURCE_FILES_PROPERTIES(
     cam_iface_mega.c
     PROPERTIES COMPILE_FLAGS ${mega_DEFINES})
-MESSAGE("STATIC DEFINES: " ${mega_DEFINES})
+MESSAGE(STATUS "mega DEFINES: " ${mega_DEFINES})
 
 set(mega_SRCS ${mega_SRCS} ${common_SRCS}
     cam_iface_mega.c
     )
 
 ADD_LIBRARY(cam_iface_mega SHARED ${mega_SRCS})
-MESSAGE(   "mega_LINK_LIBS " ${mega_LINK_LIBS})
+ADD_LIBRARY(cam_iface_mega-static STATIC ${mega_SRCS})
+set_target_properties(cam_iface_mega-static PROPERTIES OUTPUT_NAME "cam_iface_megastatic")
 
 SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+SET_TARGET_PROPERTIES(cam_iface_mega-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+
 IF(WIN32)
-  SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES
-    VERSION ${CAM_IFACE_VERSION}
-    SOVERSION ${CAM_IFACE_SOVERSION}
-    COMPILE_FLAGS "-Dcam_iface_EXPORTS -DMEGA_BACKEND"
-    )
+  SET(MEGA_COMPILE_FLAGS "-Dcam_iface_EXPORTS -DMEGA_BACKEND")
 ELSE(WIN32)
-  SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES
-    VERSION ${CAM_IFACE_VERSION}
-    SOVERSION ${CAM_IFACE_SOVERSION}
-    COMPILE_FLAGS "-DMEGA_BACKEND"
-    )
+  SET(MEGA_COMPILE_FLAGS "-DMEGA_BACKEND")
 ENDIF(WIN32)
+
+SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES
+  VERSION ${CAM_IFACE_VERSION}
+  SOVERSION ${CAM_IFACE_SOVERSION}
+  COMPILE_FLAGS ${MEGA_COMPILE_FLAGS}
+  )
+SET_TARGET_PROPERTIES(cam_iface_mega-static PROPERTIES
+  VERSION ${CAM_IFACE_VERSION}
+  SOVERSION ${CAM_IFACE_SOVERSION}
+  COMPILE_FLAGS ${MEGA_COMPILE_FLAGS}
+  )
 
 # add the static libraries into the linker sources for the mega backend
 TARGET_LINK_LIBRARIES(cam_iface_mega ${mega_LINK_LIBS})
+TARGET_LINK_LIBRARIES(cam_iface_mega-static ${mega_LINK_LIBS})
 
 
-INSTALL(TARGETS cam_iface_mega
+INSTALL(TARGETS cam_iface_mega cam_iface_mega-static
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
