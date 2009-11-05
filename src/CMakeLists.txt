@@ -245,7 +245,7 @@ ENDFOREACH(BACKEND)
 
 
   list(LENGTH INDIVIDUAL_UNITY_BACKENDS NUM_BACKENDS)
-  MESSAGE("unity backend includes ${NUM_BACKENDS} other backends: (${UNITY_BACKENDS})")
+  MESSAGE(STATUS "unity backend includes ${NUM_BACKENDS} other backends: (${UNITY_BACKENDS})")
 
   # list of each command-line define
   set(unity_DEFINE
@@ -316,7 +316,7 @@ ENDFOREACH(BACKEND)
 
 
 list(LENGTH INDIVIDUAL_MEGA_BACKENDS NUM_MEGA_BACKENDS)
-MESSAGE("mega backend includes ${NUM_MEGA_BACKENDS} other backends: (${MEGA_BACKENDS})")
+MESSAGE(STATUS "mega backend includes ${NUM_MEGA_BACKENDS} other backends: (${MEGA_BACKENDS})")
 
 
 # list of each command-line define
@@ -338,7 +338,7 @@ ENDFOREACH(element ${mega_DEFINE})
 SET_SOURCE_FILES_PROPERTIES(
     cam_iface_mega.c
     PROPERTIES COMPILE_FLAGS ${mega_DEFINES})
-MESSAGE("STATIC DEFINES: " ${mega_DEFINES})
+MESSAGE(STATUS "mega DEFINES: " ${mega_DEFINES})
 
 set(mega_SRCS ${mega_SRCS} ${common_SRCS}
     cam_iface_mega.c
