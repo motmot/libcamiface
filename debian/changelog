@@ -1,3 +1,9 @@
+libcamiface (0.5.8-0ads1) hardy; urgency=low
+
+  * New upstream release
+
+ -- Andrew Straw <strawman@astraw.com>  Thu, 05 Nov 2009 09:29:31 -0800
+
 libcamiface (0.5.7-0ads1) hardy; urgency=low
 
   * New upstream release
