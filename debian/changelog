@@ -1,3 +1,9 @@
+libcamiface (0.5.8-0ads2) hardy; urgency=low
+
+  * Move Prosilica drivers to their own package
+
+ -- Andrew Straw <strawman@astraw.com>  Sat, 07 Nov 2009 16:29:19 -0800
+
 libcamiface (0.5.8-0ads1) hardy; urgency=low
 
   * New upstream release
