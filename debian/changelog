@@ -1,3 +1,9 @@
+libcamiface-prosilica (0.5.8-0ads3) hardy; urgency=low
+
+  * Fix packaging bugs
+
+ -- Andrew Straw <strawman@astraw.com>  Wed, 11 Nov 2009 12:17:43 -0800
+
 libcamiface-prosilica (0.5.8-0ads2) hardy; urgency=low
 
   * Separate source package for Prosilica package
