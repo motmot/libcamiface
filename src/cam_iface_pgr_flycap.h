@@ -1,7 +1,7 @@
-/* internal structures for prosilica_gige implementation */
+/* internal structures for pgr_flycapture implementation */
 
 #ifdef MEGA_BACKEND
-  #define BACKEND_METHOD(m) prosilica_gige_##m
+  #define BACKEND_METHOD(m) pgr_flycapture_##m
 #else
   #define BACKEND_METHOD(m) m
 #endif
