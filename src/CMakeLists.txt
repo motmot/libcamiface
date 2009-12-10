@@ -166,6 +166,70 @@ IF(PROSILICA_GIGE_FOUND)
 
 ENDIF(PROSILICA_GIGE_FOUND)
 
+# flycapture backend ------------------
+
+IF(FLYCAPTURE_FOUND)
+
+  set(flycapture_SRCS ${common_SRCS}
+      cam_iface_pgr_flycap.cpp
+      )
+  set(mega_SRCS ${mega_SRCS}
+      cam_iface_pgr_flycap.cpp
+     )
+
+  include_directories(${FLYCAPTURE_INCLUDE_DIRS})
+  ADD_LIBRARY(cam_iface_pgr_flycap SHARED ${flycapture_SRCS})
+
+  TARGET_LINK_LIBRARIES(cam_iface_pgr_flycap ${FLYCAPTURE_LIBRARIES})
+  set_target_properties(cam_iface_pgr_flycap PROPERTIES
+    VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION}
+    DEFINE_SYMBOL cam_iface_EXPORTS
+    )
+
+  SET_TARGET_PROPERTIES(cam_iface_pgr_flycap PROPERTIES
+    CLEAN_DIRECT_OUTPUT 1
+  )
+
+  SET(CI_FLYCAP_TARGETS cam_iface_pgr_flycap)
+
+  ## if(NOT WIN32)
+  ## # Trouble building static lib on Windows, so disabled for now...
+  ## ADD_LIBRARY(cam_iface_pgr_flycap-static STATIC ${flycapture_SRCS})
+  ## set_target_properties(cam_iface_pgr_flycap-static PROPERTIES
+  ##   OUTPUT_NAME "cam_iface_pgr_flycap"
+  ##   )
+
+  ## SET_TARGET_PROPERTIES(cam_iface_pgr_flycap-static PROPERTIES
+  ##   CLEAN_DIRECT_OUTPUT 1
+  ## )
+  ## SET(CI_FLYCAP_TARGETS ${CI_FLYCAP_TARGETS} cam_iface_pgr_flycap-static)
+  ## endif(NOT WIN32)
+
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${FLYCAPTURE_LIBRARIES})
+  SET(mega_DEFINE
+      ${mega_DEFINE}
+      -DMEGA_BACKEND_FLYCAPTURE
+      )
+  INSTALL(TARGETS ${CI_FLYCAP_TARGETS}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
+  ## IF(WIN32)
+  ##   # install PvAPI.dll on Windows
+  ##   GET_FILENAME_COMPONENT(PROSIL_LIB_DIR ${FLYCAPTURE_LIBRARIES} PATH)
+  ##   SET(PROSIL_DLL_DIR ${PROSIL_LIB_DIR}/../bin-pc)
+  ##   get_filename_component(PROSIL_DLL_DIR ${PROSIL_DLL_DIR} ABSOLUTE)
+  ##   FILE(GLOB PROSIL_DLLS ${PROSIL_DLL_DIR}/*.dll)
+  ##   INSTALL(FILES ${PROSIL_DLLS}
+  ##     DESTINATION bin
+  ##     )
+  ## ENDIF(WIN32)
+
+ENDIF(FLYCAPTURE_FOUND)
+
 # quicktime backend ------------------
 
 IF(QUICKTIME_FOUND)
