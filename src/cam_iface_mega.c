@@ -284,12 +284,34 @@ void cam_iface_shutdown(void) {
   }
 }
 
+#define CHECK_DEVICE_NUMBER(device_number)                              \
+  if (((device_number) < 0) || ((device_number) >= mega_num_cameras))   \
+    {                                                                   \
+      cam_iface_error = -1;                                             \
+      CAM_IFACE_ERROR_FORMAT("device number out of range");             \
+      return;                                                           \
+    }
+
+#define CHECK_DEVICE_NUMBERV(device_number)                              \
+  if (((device_number) < 0) || ((device_number) >= mega_num_cameras))   \
+    {                                                                   \
+      cam_iface_error = -1;                                             \
+      CAM_IFACE_ERROR_FORMAT("device number out of range");             \
+      return NULL;                                                      \
+    }
+
 CamContext* CCmega_construct( int device_number, int NumImageBuffers,
                                int mode_number) {
   int i;
   struct backend_info_t* this_backend_info;
   CamContext* result;
   cam_iface_constructor_func_t construct;
+  int did_attempt_constructor;
+
+  CHECK_DEVICE_NUMBERV(device_number)
+
+  result = NULL;
+  did_attempt_constructor = 0;
 
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
@@ -297,10 +319,22 @@ CamContext* CCmega_construct( int device_number, int NumImageBuffers,
          (device_number < this_backend_info->cam_stop_idx) ) {
 
       construct = this_backend_info->get_constructor_func( device_number-this_backend_info->cam_start_idx );
+      did_attempt_constructor = 1;
       result = construct( device_number-this_backend_info->cam_start_idx,
                           NumImageBuffers, mode_number );
       CHECK_CI_ERRV();
     }
+  }
+  if (did_attempt_constructor == 0) {
+    cam_iface_error = -1;
+    CAM_IFACE_ERROR_FORMAT("internal error: no attempt to construct camera");
+    return NULL;
+  }
+
+  if (result==NULL) {
+    cam_iface_error = -1;
+    CAM_IFACE_ERROR_FORMAT("failed to construct camera instance");
+    return NULL;
   }
   return result;
 }
@@ -315,6 +349,8 @@ void cam_iface_get_mode_string(int device_number,
                                int mode_string_maxlen) {
   int i;
   struct backend_info_t* this_backend_info;
+
+  CHECK_DEVICE_NUMBER(device_number)
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
@@ -330,6 +366,8 @@ void cam_iface_get_mode_string(int device_number,
 void cam_iface_get_num_modes(int device_number,int* num_modes) {
   int i;
   struct backend_info_t* this_backend_info;
+
+  CHECK_DEVICE_NUMBER(device_number)
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
@@ -344,6 +382,8 @@ void cam_iface_get_camera_info(int device_number,
                                Camwire_id *out_camid) { //output parameter
   int i;
   struct backend_info_t* this_backend_info;
+
+  CHECK_DEVICE_NUMBER(device_number)
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
