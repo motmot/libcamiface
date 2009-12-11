@@ -180,7 +180,6 @@ void cam_iface_startup(void) {
     if (!strcmp(backend_names[i],"staticdc1394")) {
 #ifdef MEGA_BACKEND_DC1394
 #include "cam_iface_dc1394.h"
-      printf("this is dc1394\n");
       this_backend_info->have_error = dc1394_cam_iface_have_error;
       this_backend_info->clear_error = dc1394_cam_iface_clear_error;
       this_backend_info->get_error_string = dc1394_cam_iface_get_error_string;
@@ -198,7 +197,6 @@ void cam_iface_startup(void) {
     } else if (!strcmp(backend_names[i],"staticprosilica_gige")) {
 #ifdef MEGA_BACKEND_PROSILICA_GIGE
 #include "cam_iface_prosilica_gige.h"
-      printf("this is prosilica\n");
       this_backend_info->have_error = prosilica_gige_cam_iface_have_error;
       this_backend_info->clear_error = prosilica_gige_cam_iface_clear_error;
       this_backend_info->get_error_string = prosilica_gige_cam_iface_get_error_string;
@@ -216,7 +214,6 @@ void cam_iface_startup(void) {
     } else if (!strcmp(backend_names[i],"staticquicktime")) {
 #ifdef MEGA_BACKEND_QUICKTIME
 #include "cam_iface_quicktime.h"
-      printf("this is quicktime\n");
       this_backend_info->have_error = quicktime_cam_iface_have_error;
       this_backend_info->clear_error = quicktime_cam_iface_clear_error;
       this_backend_info->get_error_string = quicktime_cam_iface_get_error_string;
