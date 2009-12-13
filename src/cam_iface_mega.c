@@ -214,7 +214,6 @@ void cam_iface_startup(void) {
     } else if (!strcmp(backend_names[i],"staticflycap")) {
 #ifdef MEGA_BACKEND_FLYCAPTURE
 #include "cam_iface_pgr_flycap.h"
-      printf("this is PGR FlyCapture2\n");
       this_backend_info->have_error = pgr_flycapture_cam_iface_have_error;
       this_backend_info->clear_error = pgr_flycapture_cam_iface_clear_error;
       this_backend_info->get_error_string = pgr_flycapture_cam_iface_get_error_string;
