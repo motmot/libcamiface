@@ -187,6 +187,12 @@ IF(FLYCAPTURE_FOUND)
     DEFINE_SYMBOL cam_iface_EXPORTS
     )
 
+  if(WIN32)
+    set_target_properties(cam_iface_pgr_flycap PROPERTIES
+      COMPILE_FLAGS -D_CRT_SECURE_NO_WARNINGS=1
+    )
+  endif(WIN32)
+
   SET_TARGET_PROPERTIES(cam_iface_pgr_flycap PROPERTIES
     CLEAN_DIRECT_OUTPUT 1
   )

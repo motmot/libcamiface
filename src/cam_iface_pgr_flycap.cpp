@@ -38,8 +38,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _WIN32_WINNT 0x0501	// Change this to the appropriate value to target other versions of Windows.
 #endif
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <Windows.h>
 #define u_int8_t unsigned char
 
