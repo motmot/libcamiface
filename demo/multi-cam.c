@@ -262,7 +262,7 @@ int main(int argc, char** argv) {
 
     have_frame = 0;
     for (camno=0; camno<num_cameras; camno++) {
-      CamContext_grab_next_frame_blocking(cc[camno],pixels[camno],0.001); // timeout after 1 msec
+      CamContext_grab_next_frame_blocking(cc[camno],pixels[camno],0.001f); // timeout after 1 msec
       errnum = cam_iface_have_error();
 
       if (errnum == CAM_IFACE_FRAME_TIMEOUT) {
