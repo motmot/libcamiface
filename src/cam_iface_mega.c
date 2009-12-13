@@ -180,7 +180,6 @@ void cam_iface_startup(void) {
     if (!strcmp(backend_names[i],"staticdc1394")) {
 #ifdef MEGA_BACKEND_DC1394
 #include "cam_iface_dc1394.h"
-      printf("this is dc1394\n");
       this_backend_info->have_error = dc1394_cam_iface_have_error;
       this_backend_info->clear_error = dc1394_cam_iface_clear_error;
       this_backend_info->get_error_string = dc1394_cam_iface_get_error_string;
@@ -198,7 +197,6 @@ void cam_iface_startup(void) {
     } else if (!strcmp(backend_names[i],"staticprosilica_gige")) {
 #ifdef MEGA_BACKEND_PROSILICA_GIGE
 #include "cam_iface_prosilica_gige.h"
-      printf("this is prosilica\n");
       this_backend_info->have_error = prosilica_gige_cam_iface_have_error;
       this_backend_info->clear_error = prosilica_gige_cam_iface_clear_error;
       this_backend_info->get_error_string = prosilica_gige_cam_iface_get_error_string;
@@ -234,7 +232,6 @@ void cam_iface_startup(void) {
     } else if (!strcmp(backend_names[i],"staticquicktime")) {
 #ifdef MEGA_BACKEND_QUICKTIME
 #include "cam_iface_quicktime.h"
-      printf("this is quicktime\n");
       this_backend_info->have_error = quicktime_cam_iface_have_error;
       this_backend_info->clear_error = quicktime_cam_iface_clear_error;
       this_backend_info->get_error_string = quicktime_cam_iface_get_error_string;
@@ -305,12 +302,34 @@ void cam_iface_shutdown(void) {
   }
 }
 
+#define CHECK_DEVICE_NUMBER(device_number)                              \
+  if (((device_number) < 0) || ((device_number) >= mega_num_cameras))   \
+    {                                                                   \
+      cam_iface_error = -1;                                             \
+      CAM_IFACE_ERROR_FORMAT("device number out of range");             \
+      return;                                                           \
+    }
+
+#define CHECK_DEVICE_NUMBERV(device_number)                              \
+  if (((device_number) < 0) || ((device_number) >= mega_num_cameras))   \
+    {                                                                   \
+      cam_iface_error = -1;                                             \
+      CAM_IFACE_ERROR_FORMAT("device number out of range");             \
+      return NULL;                                                      \
+    }
+
 CamContext* CCmega_construct( int device_number, int NumImageBuffers,
                                int mode_number) {
   int i;
   struct backend_info_t* this_backend_info;
   CamContext* result;
   cam_iface_constructor_func_t construct;
+  int did_attempt_constructor;
+
+  CHECK_DEVICE_NUMBERV(device_number)
+
+  result = NULL;
+  did_attempt_constructor = 0;
 
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
@@ -318,10 +337,22 @@ CamContext* CCmega_construct( int device_number, int NumImageBuffers,
          (device_number < this_backend_info->cam_stop_idx) ) {
 
       construct = this_backend_info->get_constructor_func( device_number-this_backend_info->cam_start_idx );
+      did_attempt_constructor = 1;
       result = construct( device_number-this_backend_info->cam_start_idx,
                           NumImageBuffers, mode_number );
       CHECK_CI_ERRV();
     }
+  }
+  if (did_attempt_constructor == 0) {
+    cam_iface_error = -1;
+    CAM_IFACE_ERROR_FORMAT("internal error: no attempt to construct camera");
+    return NULL;
+  }
+
+  if (result==NULL) {
+    cam_iface_error = -1;
+    CAM_IFACE_ERROR_FORMAT("failed to construct camera instance");
+    return NULL;
   }
   return result;
 }
@@ -336,6 +367,8 @@ void cam_iface_get_mode_string(int device_number,
                                int mode_string_maxlen) {
   int i;
   struct backend_info_t* this_backend_info;
+
+  CHECK_DEVICE_NUMBER(device_number)
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
@@ -351,6 +384,8 @@ void cam_iface_get_mode_string(int device_number,
 void cam_iface_get_num_modes(int device_number,int* num_modes) {
   int i;
   struct backend_info_t* this_backend_info;
+
+  CHECK_DEVICE_NUMBER(device_number)
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
@@ -365,6 +400,8 @@ void cam_iface_get_camera_info(int device_number,
                                Camwire_id *out_camid) { //output parameter
   int i;
   struct backend_info_t* this_backend_info;
+
+  CHECK_DEVICE_NUMBER(device_number)
   for (i=0; i<NUM_BACKENDS; i++) {
     this_backend_info = &(backend_info[i]);
     if ( (this_backend_info->cam_start_idx <= device_number) &&
