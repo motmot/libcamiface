@@ -156,10 +156,7 @@ int cam_iface_get_num_cameras(void) {
 
 void cam_iface_startup(void) {
   struct backend_info_t* this_backend_info;
-  char *full_backend_name;
-  int i, j, next_num_cameras;
-  char *envvar;
-  int try_this_name;
+  int i, next_num_cameras;
 
   mega_num_cameras = 0;
 
