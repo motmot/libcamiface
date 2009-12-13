@@ -237,7 +237,7 @@ cam_iface_thread_local char BACKEND_GLOBAL(cam_iface_backend_string)[CAM_IFACE_M
 
 /* global variables */
 static int BACKEND_GLOBAL(num_cameras) = 0;
-static FlyCapture2::BusManager BACKEND_GLOBAL(busMgr);
+static FlyCapture2::BusManager* BACKEND_GLOBAL(busMgr_ptr);
 
 #define tPvHandle int*
 
@@ -398,11 +398,14 @@ const char* BACKEND_METHOD(cam_iface_get_api_version)() {
 void BACKEND_METHOD(cam_iface_startup)() {
   FlyCapture2::Error error;
   unsigned int numCameras;
-  error = BACKEND_GLOBAL(busMgr).GetNumOfCameras(&numCameras);
+
+  BACKEND_GLOBAL(busMgr_ptr)  = new FlyCapture2::BusManager;
+  error = BACKEND_GLOBAL(busMgr_ptr)->GetNumOfCameras(&numCameras);
   BACKEND_GLOBAL(num_cameras) = (int)numCameras;
 }
 
 void BACKEND_METHOD(cam_iface_shutdown)() {
+  delete BACKEND_GLOBAL(busMgr_ptr);
 }
 
 int BACKEND_METHOD(cam_iface_get_num_cameras)() {
