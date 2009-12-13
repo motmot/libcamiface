@@ -226,6 +226,9 @@ To build an Xcode project, run cmake with the argument
 Windows
 -------
 
+Windows XP 32bit with CMake 2.6
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Install Microsoft's Visual Studio 2008. (Tested with Express Edition.)
 Install CMake.
 
@@ -245,6 +248,28 @@ libcamiface source directory.
 
   rem Now change into your build directory.
   cd build
+  nmake
+
+  rem Now, to build an NSIS .exe Windows installer.
+  cpack
+
+This will build a Windows installer, called
+``libcamiface-x.y.z-win32.exe``.
+
+Windows 7 64bit with CMake 2.8 to make 32 bit libcamiface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Install Microsoft's Visual Studio 2008. Install CMake.
+
+Open a Visual Studio Command Prompt from Start Menu->All
+Programs->Microsoft Visual Studio 2008->Visual Studio
+Tools->Visual Studio 2008 Command Prompt. Change directories into the
+libcamiface source directory.
+
+::
+
+  cd build
+  "C:\Program Files (x86)\CMake 2.8\bin\cmake.exe" .. -G "NMake Makefiles"
   nmake
 
   rem Now, to build an NSIS .exe Windows installer.
