@@ -329,6 +329,12 @@ FILE(WRITE "mega_backend_info.h"
      "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
      "char *backend_names[NUM_BACKENDS] = {${MEGA_BACKENDS}};\n")
 
+  if(WIN32)
+    set(mega_DEFINE
+      ${mega_DEFINE}
+      -D_CRT_SECURE_NO_WARNINGS=1
+    )
+  endif(WIN32)
 
 # concatenate (join) strings to make single argument
 FOREACH(element ${mega_DEFINE})
