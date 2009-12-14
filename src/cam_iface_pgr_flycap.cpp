@@ -501,9 +501,11 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   FlyCapture2::PGRGuid guid;
   CIPGRCHK( BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid));
   CIPGRCHK(cam->Connect(&guid));
+
+  CIPGRCHK(cam->StartCapture());
+
   ccntxt->inherited.cam = (void*)cam;
 
-  NOT_IMPLEMENTED;
 }
 
 void delete_CCflycap(CCflycap *ccntxt) {
@@ -514,7 +516,9 @@ void delete_CCflycap(CCflycap *ccntxt) {
 
 void CCflycap_close(CCflycap *ccntxt) {
   if (!ccntxt) {CAM_IFACE_THROW_ERROR("no CCflycap specified (NULL argument)");}
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
+  CIPGRCHK(cam->StopCapture());
+  CIPGRCHK(cam->Disconnect());
 
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
 
@@ -527,7 +531,7 @@ void CCflycap_close(CCflycap *ccntxt) {
     ccntxt->inherited.backend_extras = (void*)NULL;
   }
 
-  delete handle_ptr;
+  delete cam;
   ccntxt->inherited.cam = (void*)NULL;
 }
 
@@ -642,9 +646,12 @@ void CCflycap_grab_next_frame_blocking_with_stride( CCflycap *ccntxt,
 						    intptr_t stride0,
 						    float timeout ) {
   CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
   // The main frame grabbing code goes here.
+
+  FlyCapture2::Image rawImage;
+  CIPGRCHK(cam->RetrieveBuffer( &rawImage ));
   NOT_IMPLEMENTED;
 }
 
