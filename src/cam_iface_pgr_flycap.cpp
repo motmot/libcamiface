@@ -272,14 +272,14 @@ struct cam_iface_backend_extras {
 #ifdef MEGA_BACKEND
 #define CAM_IFACE_THROW_ERROR(m)                        \
   {                                                     \
-    pgr_flycapture_cam_iface_error = -1;                               \
+    pgr_flycapture_cam_iface_error = CAM_IFACE_GENERIC_ERROR;	\
     CAM_IFACE_ERROR_FORMAT((m));                        \
     return;                                             \
   }
 #else
 #define CAM_IFACE_THROW_ERROR(m)                        \
   {                                                     \
-    cam_iface_error = -1;                               \
+    cam_iface_error = CAM_IFACE_GENERIC_ERROR;		\
     CAM_IFACE_ERROR_FORMAT((m));                        \
     return;                                             \
   }
@@ -288,16 +288,16 @@ struct cam_iface_backend_extras {
 #ifdef MEGA_BACKEND
 #define CAM_IFACE_THROW_ERRORV(m)                       \
   {                                                     \
-    pgr_flycapture_cam_iface_error = -1;                               \
+    pgr_flycapture_cam_iface_error = CAM_IFACE_GENERIC_ERROR; \
     CAM_IFACE_ERROR_FORMAT((m));                        \
-    return NULL;                                                \
+    return NULL;					\
   }
 #else
 #define CAM_IFACE_THROW_ERRORV(m)                       \
   {                                                     \
-    cam_iface_error = -1;                               \
+    cam_iface_error = CAM_IFACE_GENERIC_ERROR;		\
     CAM_IFACE_ERROR_FORMAT((m));                        \
-    return NULL;                                                \
+    return NULL;					\
   }
 #endif
 
@@ -310,15 +310,15 @@ struct cam_iface_backend_extras {
 
 #ifdef MEGA_BACKEND
 #define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
-  if ( ((m)<0) | ((m)>=pgr_flycapture_num_cameras) ) {                                 \
-    pgr_flycapture_cam_iface_error = -1;                                               \
+  if ( ((m)<0) | ((m)>=pgr_flycapture_num_cameras) ) {			\
+    pgr_flycapture_cam_iface_error = CAM_IFACE_GENERIC_ERROR;		\
     CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
     return;                                                             \
   }
 #else
 #define CAM_IFACE_CHECK_DEVICE_NUMBER(m)                                \
   if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
-    cam_iface_error = -1;                                               \
+    cam_iface_error = CAM_IFACE_GENERIC_ERROR;				\
     CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
     return;                                                             \
   }
@@ -326,18 +326,46 @@ struct cam_iface_backend_extras {
 
 #ifdef MEGA_BACKEND
 #define CAM_IFACE_CHECK_DEVICE_NUMBERV(m)                               \
-  if ( ((m)<0) | ((m)>=pgr_flycapture_num_cameras) ) {                                 \
-    pgr_flycapture_cam_iface_error = -1;                                               \
+  if ( ((m)<0) | ((m)>=pgr_flycapture_num_cameras) ) {			\
+    pgr_flycapture_cam_iface_error = CAM_IFACE_GENERIC_ERROR;		\
     CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
     return NULL;                                                        \
   }
 #else
 #define CAM_IFACE_CHECK_DEVICE_NUMBERV(m)                               \
   if ( ((m)<0) | ((m)>=num_cameras) ) {                                 \
-    cam_iface_error = -1;                                               \
+    cam_iface_error = CAM_IFACE_GENERIC_ERROR;				\
     CAM_IFACE_ERROR_FORMAT("invalid device_number");                    \
     return NULL;                                                        \
   }
+#endif
+
+#ifdef MEGA_BACKEND
+#define CIPGRCHK(err) {							\
+    FlyCapture2::Error error = err;					\
+    if (error!=FlyCapture2::PGRERROR_OK) {				\
+      pgr_flycapture_cam_iface_error = CAM_IFACE_GENERIC_ERROR;		\
+      CAM_IFACE_ERROR_FORMAT("generic error");				\
+      cam_iface_snprintf(pgr_flycapture_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
+                         "%s (%d): PGR FlyCapture2 err %d: (unknown error)\n", \
+                         __FILE__,__LINE__,                             \
+                         error);					\
+      return;								\
+    }                                                                   \
+}
+#else
+#define CIPGRCHK(err) {							\
+    FlyCapture2::Error error = err;					\
+    if (error!=FlyCapture2::PGRERROR_OK) {				\
+      cam_iface_error = CAM_IFACE_GENERIC_ERROR;			\
+      CAM_IFACE_ERROR_FORMAT("generic error");				\
+      cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
+                         "%s (%d): PGR FlyCapture2 err %d: (unknown error)\n", \
+                         __FILE__,__LINE__,                             \
+                         error);					\
+      return;								\
+    }                                                                   \
+}
 #endif
 
 #ifdef MEGA_BACKEND
@@ -416,9 +444,16 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   if (out_camid==NULL) { CAM_IFACE_THROW_ERROR("return structure NULL"); }
 
+  FlyCapture2::PGRGuid guid;
+  CIPGRCHK( BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid));
+
   cam_iface_snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "Pt. Grey FlyCapture2");
   cam_iface_snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "Unknown model");
-  cam_iface_snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "Unknown chip");
+  cam_iface_snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "GUID %x %x %x %x",
+		     guid.value[0],
+		     guid.value[1],
+		     guid.value[2],
+		     guid.value[3]);
 }
 
 void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
@@ -461,6 +496,12 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   ccntxt->inherited.device_number = device_number;
   ccntxt->inherited.backend_extras = new cam_iface_backend_extras;
   memset(ccntxt->inherited.backend_extras,0,sizeof(cam_iface_backend_extras));
+
+  FlyCapture2::Camera *cam = new FlyCapture2::Camera;
+  FlyCapture2::PGRGuid guid;
+  CIPGRCHK( BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid));
+  CIPGRCHK(cam->Connect(&guid));
+  ccntxt->inherited.cam = (void*)cam;
 
   NOT_IMPLEMENTED;
 }
@@ -645,7 +686,7 @@ void CCflycap_get_trigger_mode_string( CCflycap *ccntxt,
     cam_iface_snprintf(exposure_mode_string,exposure_mode_string_maxlen,"default trigger mode");
     break;
   default:
-    BACKEND_GLOBAL(cam_iface_error) = -1;
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
     CAM_IFACE_ERROR_FORMAT("exposure_mode_number invalid");
     return;
   }
