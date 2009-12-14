@@ -208,7 +208,7 @@ void cam_iface_startup(void) {
       fprintf(stderr,"ERROR: don't know backend %s\n",backend_names[i]);
       exit(1);
 #endif
-    } else if (!strcmp(backend_names[i],"staticflycap")) {
+    } else if (!strcmp(backend_names[i],"staticpgr_flycap")) {
 #ifdef MEGA_BACKEND_FLYCAPTURE
 #include "cam_iface_pgr_flycap.h"
       this_backend_info->have_error = pgr_flycapture_cam_iface_have_error;
