@@ -226,7 +226,7 @@ void cam_iface_startup(void) {
       exit(1);
 #endif
     } else {
-      fprintf(stderr,"ERROR: don't know backend %s\n",backend_names[i]);
+      fprintf(stderr,"ERROR: don't know unidentified backend %s\n",backend_names[i]);
       exit(1);
     }
 
