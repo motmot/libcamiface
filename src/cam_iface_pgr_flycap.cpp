@@ -243,20 +243,13 @@ static FlyCapture2::BusManager* BACKEND_GLOBAL(busMgr_ptr);
 
 typedef struct cam_iface_backend_extras cam_iface_backend_extras;
 struct cam_iface_backend_extras {
-  int num_buffers;
-  int buf_size; // current buffer size (number of bytes)
-  unsigned long malloced_buf_size; // maximum buffer size (number of bytes)
-  int current_height;
-  intptr_t current_width;
-  int max_height;
-  int max_width;
-  int* frames;
-  int frame_number_currently_waiting_for;
-  long last_framecount;
-  long frame_epoch;
-  double frame_epoch_start;
+  unsigned int buf_size; // current buffer size (number of bytes)
+  unsigned int current_height;
+  unsigned int current_width;
+  unsigned int max_height;
+  unsigned int max_width;
   double last_timestamp;
-  int exposure_mode_number;
+  unsigned long last_framecount;
 };
 
 #ifdef MEGA_BACKEND
@@ -502,9 +495,53 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   CIPGRCHK( BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid));
   CIPGRCHK(cam->Connect(&guid));
 
+  // XXX move this to start camera and query camera for settings
+
   CIPGRCHK(cam->StartCapture());
 
   ccntxt->inherited.cam = (void*)cam;
+
+  // Retrieve an image to get width, height. XXX change to query later.
+  FlyCapture2::Image rawImage;
+  CIPGRCHK( cam->RetrieveBuffer( &rawImage ));
+
+  cam_iface_backend_extras *extras = (cam_iface_backend_extras *)ccntxt->inherited.backend_extras;
+
+  ccntxt->inherited.depth = rawImage.GetBitsPerPixel();
+  extras->buf_size = rawImage.GetDataSize();
+  extras->current_height = rawImage.GetRows();
+  extras->current_width = rawImage.GetCols();
+  extras->max_height = rawImage.GetRows();
+  extras->max_width = rawImage.GetCols();
+
+  switch (rawImage.GetPixelFormat()) {
+  case FlyCapture2::PIXEL_FORMAT_MONO8:
+    ccntxt->inherited.coding = CAM_IFACE_MONO8;
+    if (rawImage.GetBayerTileFormat()!=FlyCapture2::NONE) {
+      NOT_IMPLEMENTED;
+    }
+    break;
+  case FlyCapture2::PIXEL_FORMAT_RAW8:
+    switch (rawImage.GetBayerTileFormat()) {
+    case FlyCapture2::NONE:
+      ccntxt->inherited.coding = CAM_IFACE_RAW8;
+      break;
+    case FlyCapture2::RGGB:
+      ccntxt->inherited.coding = CAM_IFACE_MONO8_BAYER_RGGB;
+      break;
+    case FlyCapture2::GRBG:
+      ccntxt->inherited.coding = CAM_IFACE_MONO8_BAYER_GRBG;
+      break;
+    case FlyCapture2::GBRG:
+      ccntxt->inherited.coding = CAM_IFACE_MONO8_BAYER_GBRG;
+      break;
+    case FlyCapture2::BGGR:
+      ccntxt->inherited.coding = CAM_IFACE_MONO8_BAYER_BGGR;
+      break;
+    default:
+      NOT_IMPLEMENTED;
+    }
+  }
 
 }
 
@@ -524,9 +561,6 @@ void CCflycap_close(CCflycap *ccntxt) {
 
 
   if (backend_extras!=NULL) {
-    if (backend_extras->frames!=NULL) {
-      free(backend_extras->frames);
-    }
     delete backend_extras;
     ccntxt->inherited.backend_extras = (void*)NULL;
   }
@@ -652,7 +686,25 @@ void CCflycap_grab_next_frame_blocking_with_stride( CCflycap *ccntxt,
 
   FlyCapture2::Image rawImage;
   CIPGRCHK(cam->RetrieveBuffer( &rawImage ));
-  NOT_IMPLEMENTED;
+
+  if (stride0 < (intptr_t)rawImage.GetStride()) {
+    CAM_IFACE_THROW_ERROR("stride too small for image");
+  }
+
+  if (stride0==(intptr_t)rawImage.GetStride()) {
+    // same stride
+    memcpy((void*)out_bytes, /*dest*/
+	   (const void*)rawImage.GetData(),/*src*/
+	   rawImage.GetDataSize());/*src*/
+
+  } else {
+    // different strides
+    for (int row=0; row<(int)rawImage.GetRows(); row++) {
+      memcpy((void*)(out_bytes+row*stride0), /*dest*/
+	     (const void*)(rawImage.GetData() + row*rawImage.GetStride()),/*src*/
+	     rawImage.GetStride());/*size*/
+    }
+  }
 }
 
 void CCflycap_point_next_frame_blocking( CCflycap *ccntxt, unsigned char **buf_ptr,
@@ -674,7 +726,7 @@ void CCflycap_get_last_timestamp( CCflycap *ccntxt, double* timestamp ) {
 void CCflycap_get_last_framenumber( CCflycap *ccntxt, unsigned long* framenumber ){
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  *framenumber = (unsigned long)(backend_extras->last_framecount);
+  *framenumber = backend_extras->last_framecount;
 }
 
 void CCflycap_get_num_trigger_modes( CCflycap *ccntxt,
@@ -703,7 +755,6 @@ void CCflycap_get_trigger_mode_number( CCflycap *ccntxt,
 				       int *exposure_mode_number ) {
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  *exposure_mode_number = (backend_extras->exposure_mode_number);
 }
 
 void CCflycap_set_trigger_mode_number( CCflycap *ccntxt,
@@ -718,13 +769,18 @@ void CCflycap_set_trigger_mode_number( CCflycap *ccntxt,
     CAM_IFACE_THROW_ERROR("exposure_mode_number invalid");
     break;
   }
-  backend_extras->exposure_mode_number = exposure_mode_number;
 }
 
 void CCflycap_get_frame_roi( CCflycap *ccntxt,
                              int *left, int *top, int* width, int* height ) {
   CHECK_CC(ccntxt);
-  NOT_IMPLEMENTED;
+  cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
+
+  *left = 0;
+  *top = 0;
+  *width = (int)backend_extras->current_width;
+  *height = (int)backend_extras->current_height;
+
 }
 
 void CCflycap_set_frame_roi( CCflycap *ccntxt,
@@ -766,7 +822,7 @@ void CCflycap_get_num_framebuffers( CCflycap *ccntxt,
 				    int *num_framebuffers ) {
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  *num_framebuffers = backend_extras->num_buffers;
+  *num_framebuffers = 1;
 }
 
 void CCflycap_set_num_framebuffers( CCflycap *ccntxt,
