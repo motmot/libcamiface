@@ -800,7 +800,7 @@ void CCflycap_get_framerate( CCflycap *ccntxt,
 			     float *framerate ) {
   CHECK_CC(ccntxt);
   tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
-  NOT_IMPLEMENTED;
+  *framerate = 0.0f;
 }
 
 void CCflycap_set_framerate( CCflycap *ccntxt,
