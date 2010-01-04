@@ -37,7 +37,9 @@ IF(UNIX AND NOT APPLE)
   set(USR_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/libcamiface/")
   SET(SHADER_SOURCE_DIR ${USR_SHARE_DIR})
 ELSE(UNIX AND NOT APPLE)
-  SET(SHADER_SOURCE_DIR "./")
+  # current directory
+  message("unknown shader source directory: setting to current directory")
+  SET(SHADER_SOURCE_DIR "")
 ENDIF(UNIX AND NOT APPLE)
 
 set(all_demo_backends ${all_backends})
@@ -125,8 +127,14 @@ FIND_PACKAGE(OpenGL)
 if(GLUT_FOUND)
 
   set(liveview-glut-SRCS liveview-glut.c)
-  set(liveview_DEFINE "-DSHADER_DIR='\"${SHADER_SOURCE_DIR}\"'"
+  set(liveview_DEFINE "-DSHADER_DIR=\"${SHADER_SOURCE_DIR}\""
     ${liveview_DEFINE})
+  message("echo: "  ${liveview_DEFINE})
+
+  if(WIN32)
+    set(liveview_DEFINE "-D_CRT_SECURE_NO_WARNINGS=1"
+      ${liveview_DEFINE})
+  endif(WIN32)
 
   IF(GLEW_FOUND)
     set(liveview_DEFINE "-DUSE_GLEW"
