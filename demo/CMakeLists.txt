@@ -131,6 +131,11 @@ if(GLUT_FOUND)
     ${liveview_DEFINE})
   message("echo: "  ${liveview_DEFINE})
 
+  if(WIN32)
+    set(liveview_DEFINE "-D_CRT_SECURE_NO_WARNINGS=1"
+      ${liveview_DEFINE})
+  endif(WIN32)
+
   IF(GLEW_FOUND)
     set(liveview_DEFINE "-DUSE_GLEW"
       ${liveview_DEFINE})
