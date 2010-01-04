@@ -502,15 +502,18 @@ char *textFileRead(char *fn) {
         FILE *fp;
         char *content = NULL;
 
-        int f,count;
-        f = open(fn, O_RDONLY);
+        int count;
+        fp = fopen(fn, "rt");
+	if (fp == NULL) {
+	  return NULL;
+	}
 
-        count = lseek(f, 0, SEEK_END);
+	fseek(fp, 0, SEEK_END);
+        count = ftell(fp);
 
-        close(f);
+        fseek(fp, 0, SEEK_SET);
 
         if (fn != NULL) {
-                fp = fopen(fn,"rt");
 
                 if (fp != NULL) {
 
