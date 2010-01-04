@@ -127,8 +127,9 @@ FIND_PACKAGE(OpenGL)
 if(GLUT_FOUND)
 
   set(liveview-glut-SRCS liveview-glut.c)
-  set(liveview_DEFINE "-DSHADER_DIR='\"${SHADER_SOURCE_DIR}\"'"
+  set(liveview_DEFINE "-DSHADER_DIR=\"${SHADER_SOURCE_DIR}\""
     ${liveview_DEFINE})
+  message("echo: "  ${liveview_DEFINE})
 
   IF(GLEW_FOUND)
     set(liveview_DEFINE "-DUSE_GLEW"
