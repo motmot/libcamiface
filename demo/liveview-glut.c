@@ -563,6 +563,8 @@ char *textFileRead(char *fn) {
 
 void setShaders() {
 
+  const char * vv;
+  const char * ff;
                 char *vs,*fs;
                 GLint status;
                 GLhandleARB vertex_program,fragment_program;
@@ -586,8 +588,8 @@ void setShaders() {
                   return;
                 }
 
-                const char * vv = vs;
-                const char * ff = fs;
+                vv = vs;
+                ff = fs;
 
                 glShaderSource(vertex_program, 1, &vv,NULL);
                 glShaderSource(fragment_program, 1, &ff,NULL);
@@ -884,6 +886,7 @@ void upload_image_data_to_opengl(unsigned char* raw_image_data,
   unsigned char * gl_image_data;
   static unsigned char* show_pixels=NULL;
   GLuint textureId;
+  GLubyte* ptr;
 
   textureId = textureId_all[device_number];
 
@@ -895,7 +898,7 @@ void upload_image_data_to_opengl(unsigned char* raw_image_data,
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height, gl_data_format, GL_UNSIGNED_BYTE, 0);
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
     glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, PBO_stride*tex_height, 0, GL_STREAM_DRAW_ARB);
-    GLubyte* ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
+    ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
     if(ptr) {
       convert_pixels(raw_image_data, coding, PBO_stride, ptr, 1);
       glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer

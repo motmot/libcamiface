@@ -37,7 +37,9 @@ IF(UNIX AND NOT APPLE)
   set(USR_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/libcamiface/")
   SET(SHADER_SOURCE_DIR ${USR_SHARE_DIR})
 ELSE(UNIX AND NOT APPLE)
-  SET(SHADER_SOURCE_DIR "./")
+  # current directory
+  message("unknown shader source directory: setting to current directory")
+  SET(SHADER_SOURCE_DIR "")
 ENDIF(UNIX AND NOT APPLE)
 
 set(all_demo_backends ${all_backends})
