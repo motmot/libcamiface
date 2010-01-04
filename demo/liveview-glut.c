@@ -102,10 +102,10 @@ void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels
   size_t i,j;
   const unsigned char *src_chunk;
   unsigned char *dest_chunk;
-  for (i=0; i<height; i++) {
+  for (i=0; i<(unsigned int)height; i++) {
     src_chunk = src_pixels + i*src_stride;
     dest_chunk = dest_pixels + i*dest_stride;
-    for (j=0; j<(width/2); j++) {
+    for (j=0; j<((unsigned int)width/2); j++) {
       dest_chunk[0] = src_chunk[1];
       dest_chunk[1] = src_chunk[3];
       dest_chunk+=2;
@@ -368,8 +368,8 @@ void initialize_gl_texture() {
 
   if (use_pbo) {
     // align
-    PBO_stride = (width/32)*32;
-    if (PBO_stride<width) PBO_stride+=32;
+    PBO_stride = ((unsigned int)width/32)*32;
+    if (PBO_stride<(unsigned int)width) PBO_stride+=32;
     tex_width = PBO_stride;
     tex_height = height;
 
@@ -438,7 +438,7 @@ for (i=0; i<ncams; i++) {
 
 void grab_frame(void); /* forward declaration */
 
-void display_pixels() {
+void display_pixels(void) {
   GLuint textureId;
   int i;
   int ncols,nrows,col_idx,row_idx;
