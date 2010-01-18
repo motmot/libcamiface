@@ -319,6 +319,10 @@ int main(int argc, char** argv) {
       cam_iface_clear_error();
       fprintf(stdout,"I");
       fflush(stdout);
+    } else if (errnum == CAM_IFACE_FRAME_DATA_CORRUPT_ERROR) {
+      cam_iface_clear_error();
+      fprintf(stdout,"C");
+      fflush(stdout);
     } else {
       _check_error();
       fprintf(stdout,".");
