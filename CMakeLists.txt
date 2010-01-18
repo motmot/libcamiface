@@ -43,7 +43,7 @@ FIND_PACKAGE(PkgConfig)
 if(WIN32)
   set(all_backends mega)
 else(WIN32)
-  set(all_backends unity mega)
+  set(all_backends mega)
 endif(WIN32)
 
 # Backend: libdc1394 ---------------------------------
