@@ -583,53 +583,107 @@ void CCflycap_stop_camera( CCflycap *ccntxt ) {
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
 }
 
+FlyCapture2::PropertyType propno2prop(int n) {
+  FlyCapture2::PropertyType result;
+  switch(n) {
+  case 0: result  = FlyCapture2::BRIGHTNESS; break;
+  case 1: result  = FlyCapture2::AUTO_EXPOSURE; break;
+  case 2: result  = FlyCapture2::SHARPNESS; break;
+  case 3: result  = FlyCapture2::WHITE_BALANCE; break;
+  case 4: result  = FlyCapture2::HUE; break;
+  case 5: result  = FlyCapture2::SATURATION; break;
+  case 6: result  = FlyCapture2::GAMMA; break;
+  case 7: result  = FlyCapture2::IRIS; break;
+  case 8: result  = FlyCapture2::FOCUS; break;
+  case 9: result  = FlyCapture2::ZOOM; break;
+  case 10: result = FlyCapture2::PAN; break;
+  case 11: result = FlyCapture2::TILT; break;
+  case 12: result = FlyCapture2::SHUTTER; break;
+  case 13: result = FlyCapture2::GAIN; break;
+  case 14: result = FlyCapture2::TRIGGER_MODE; break;
+  case 15: result = FlyCapture2::TRIGGER_DELAY; break;
+  case 16: result = FlyCapture2::FRAME_RATE; break;
+  case 17: result = FlyCapture2::TEMPERATURE; break;
+  default:
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
+    CAM_IFACE_ERROR_FORMAT("property invalid");
+    break;
+  }
+  return result;
+}
+
+#define NUM_CAM_PROPS 18
+
 void CCflycap_get_num_camera_properties(CCflycap *ccntxt,
 					int* num_properties) {
   CHECK_CC(ccntxt);
-  *num_properties = 0;
+  *num_properties = NUM_CAM_PROPS;
 }
 
 void CCflycap_get_camera_property_info(CCflycap *ccntxt,
 				       int property_number,
 				       CameraPropertyInfo *info) {
   CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
 
   if (info==NULL) {
     CAM_IFACE_THROW_ERROR("no info argument specified (NULL argument)");
   }
 
-  CAM_IFACE_THROW_ERROR("invalid property number");
+  if ((property_number<0) || (property_number>=NUM_CAM_PROPS)) {
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
+    CAM_IFACE_ERROR_FORMAT("property invalid");
+  }
 
-  info->is_present = 1;
+  FlyCapture2::Property prop;
+  FlyCapture2::PropertyInfo propinfo;
+  prop.type = propno2prop(property_number);
+  propinfo.type = propno2prop(property_number);
 
-  info->min_value = 0;
-  //info->max_value = min(MAX_LONG,MAX_UINT32);
-  info->max_value = 0x7FFFFFFF;
+  cam->GetProperty( &prop );
+  cam->GetPropertyInfo( &propinfo );
 
-  info->has_auto_mode = 1;
-  info->has_manual_mode = 1;
+  switch(prop.type) {
+  case FlyCapture2::BRIGHTNESS: info->name = "brightness"; break;
+  case FlyCapture2::AUTO_EXPOSURE: info->name = "auto exposure"; break;
+  case FlyCapture2::SHARPNESS: info->name = "sharpness"; break;
+  case FlyCapture2::WHITE_BALANCE: info->name = "white balance"; break;
+  case FlyCapture2::HUE: info->name = "hue"; break;
+  case FlyCapture2::SATURATION: info->name = "saturation"; break;
+  case FlyCapture2::GAMMA: info->name = "gamma"; break;
+  case FlyCapture2::IRIS: info->name = "iris"; break;
+  case FlyCapture2::FOCUS: info->name = "focus"; break;
+  case FlyCapture2::ZOOM: info->name = "zoom"; break;
+  case FlyCapture2::PAN: info->name = "pan"; break;
+  case FlyCapture2::TILT: info->name = "tilt"; break;
+  case FlyCapture2::SHUTTER: info->name = "shutter"; break;
+  case FlyCapture2::GAIN: info->name = "gain"; break;
+  case FlyCapture2::TRIGGER_MODE: info->name = "trigger mode"; break;
+  case FlyCapture2::TRIGGER_DELAY: info->name = "trigger delay"; break;
+  case FlyCapture2::FRAME_RATE: info->name = "frame rate"; break;
+  case FlyCapture2::TEMPERATURE: info->name = "temperature"; break;
+  }
+  info->is_present = prop.present;
+
+  info->min_value = propinfo.min;
+  info->max_value = propinfo.max;
+
+  info->has_auto_mode = propinfo.autoSupported;
+  info->has_manual_mode = propinfo.manualSupported;
 
   info->is_scaled_quantity = 0;
 
-  info->original_value = 0;
+  info->original_value = 0; // XXX FIXME
 
-  info->available = 1;
-  info->readout_capable = 1;
-  info->on_off_capable = 0;
+  info->available = prop.present;
+  info->readout_capable = propinfo.readOutSupported;
+  info->on_off_capable = propinfo.onOffSupported;
 
-  info->absolute_capable = 0;
+  info->absolute_capable = propinfo.absValSupported;
   info->absolute_control_mode = 0;
-  info->absolute_min_value = 0.0;
-  info->absolute_max_value = 0.0;
+  info->absolute_min_value = propinfo.absMin;
+  info->absolute_max_value = propinfo.absMax;
 
-  /*
-  switch (property_number) {
-  default:
-    CAM_IFACE_THROW_ERROR("invalid property number");
-    break;
-  }
-  */
   return;
 }
 
@@ -638,17 +692,20 @@ void CCflycap_get_camera_property(CCflycap *ccntxt,
 				  long* Value,
 				  int* Auto ) {
   CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
 
-  CAM_IFACE_THROW_ERROR("invalid property number");
-  /*
-  switch (property_number) {
-  default:
-    CAM_IFACE_THROW_ERROR("invalid property number");
-    break;
+  if ((property_number<0) || (property_number>=NUM_CAM_PROPS)) {
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
+    CAM_IFACE_ERROR_FORMAT("property invalid");
   }
-  */
-  return;
+
+  FlyCapture2::Property prop;
+  FlyCapture2::PropertyInfo propinfo;
+  prop.type = propno2prop(property_number);
+  cam->GetProperty( &prop );
+
+  *Value = prop.valueA;
+  *Auto = prop.autoManualMode;
 }
 
 void CCflycap_set_camera_property(CCflycap *ccntxt,
@@ -656,16 +713,21 @@ void CCflycap_set_camera_property(CCflycap *ccntxt,
 				  long Value,
 				  int Auto ) {
   CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
 
-  CAM_IFACE_THROW_ERROR("invalid property number");
-  /*
-  switch (property_number) {
-  default:
-    CAM_IFACE_THROW_ERROR("invalid property number");
-    break;
+  if ((property_number<0) || (property_number>=NUM_CAM_PROPS)) {
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
+    CAM_IFACE_ERROR_FORMAT("property invalid");
   }
-  */
+
+  FlyCapture2::Property prop;
+  FlyCapture2::PropertyInfo propinfo;
+  prop.type = propno2prop(property_number);
+  cam->GetProperty( &prop );
+
+  prop.valueA = Value;
+  prop.autoManualMode = Auto;
+  cam->SetProperty( &prop );
   return;
 }
 
