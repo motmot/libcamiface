@@ -336,27 +336,29 @@ struct cam_iface_backend_extras {
 
 #ifdef MEGA_BACKEND
 #define CIPGRCHK(err) {							\
-    FlyCapture2::Error error = err;					\
-    if (error!=FlyCapture2::PGRERROR_OK) {				\
+    FlyCapture2::Error _error_def = (err);				\
+    if (_error_def.GetType()!=FlyCapture2::PGRERROR_OK) {		\
       pgr_flycapture_cam_iface_error = CAM_IFACE_GENERIC_ERROR;		\
       CAM_IFACE_ERROR_FORMAT("generic error");				\
       cam_iface_snprintf(pgr_flycapture_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
-                         "%s (%d): PGR FlyCapture2 err %d: (unknown error)\n", \
+                         "%s (%d): PGR FlyCapture2 err %d: (%s)\n",	\
                          __FILE__,__LINE__,                             \
-                         error);					\
+                         (int)_error_def.GetType(),			\
+                         _error_def.GetDescription());			\
       return;								\
     }                                                                   \
 }
 #else
 #define CIPGRCHK(err) {							\
-    FlyCapture2::Error error = err;					\
-    if (error!=FlyCapture2::PGRERROR_OK) {				\
+    FlyCapture2::Error _error_def = (err);				\
+    if (_error_def.GetType()!=FlyCapture2::PGRERROR_OK) {		\
       cam_iface_error = CAM_IFACE_GENERIC_ERROR;			\
       CAM_IFACE_ERROR_FORMAT("generic error");				\
       cam_iface_snprintf(cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN, \
-                         "%s (%d): PGR FlyCapture2 err %d: (unknown error)\n", \
+                         "%s (%d): PGR FlyCapture2 err %d: (%s)\n",	\
                          __FILE__,__LINE__,                             \
-                         error);					\
+                         (int)_error_def.GetType(),			\
+                         _error_def.GetDescription());			\
       return;								\
     }                                                                   \
 }
@@ -642,11 +644,9 @@ void CCflycap_get_camera_property_info(CCflycap *ccntxt,
 
   FlyCapture2::Property prop;
   FlyCapture2::PropertyInfo propinfo;
-  prop.type = propno2prop(property_number);
-  propinfo.type = propno2prop(property_number);
 
-  cam->GetProperty( &prop );
-  cam->GetPropertyInfo( &propinfo );
+  prop.type = propno2prop(property_number);
+  propinfo.type = prop.type;
 
   switch(prop.type) {
   case FlyCapture2::BRIGHTNESS: info->name = "brightness"; break;
@@ -668,6 +668,16 @@ void CCflycap_get_camera_property_info(CCflycap *ccntxt,
   case FlyCapture2::FRAME_RATE: info->name = "frame rate"; break;
   case FlyCapture2::TEMPERATURE: info->name = "temperature"; break;
   }
+
+  FlyCapture2::Error error = cam->GetProperty( &prop );
+  if (error.GetType()==FlyCapture2::PGRERROR_PROPERTY_FAILED) {
+    info->is_present = 0;
+    return;
+  }
+  CIPGRCHK(error);
+
+  CIPGRCHK(cam->GetPropertyInfo( &propinfo ));
+
   info->is_present = prop.present;
 
   info->min_value = propinfo.min;
@@ -707,7 +717,7 @@ void CCflycap_get_camera_property(CCflycap *ccntxt,
   FlyCapture2::Property prop;
   FlyCapture2::PropertyInfo propinfo;
   prop.type = propno2prop(property_number);
-  cam->GetProperty( &prop );
+  CIPGRCHK(cam->GetProperty( &prop ));
 
   *Value = prop.valueA;
   *Auto = prop.autoManualMode;
@@ -728,11 +738,11 @@ void CCflycap_set_camera_property(CCflycap *ccntxt,
   FlyCapture2::Property prop;
   FlyCapture2::PropertyInfo propinfo;
   prop.type = propno2prop(property_number);
-  cam->GetProperty( &prop );
+  CIPGRCHK(cam->GetProperty( &prop ));
 
   prop.valueA = Value;
   prop.autoManualMode = Auto;
-  cam->SetProperty( &prop );
+  CIPGRCHK(cam->SetProperty( &prop ));
   return;
 }
 
