@@ -250,6 +250,7 @@ struct cam_iface_backend_extras {
   unsigned int max_width;
   double last_timestamp;
   unsigned long last_framecount;
+  FlyCapture2::TriggerModeInfo trigger_mode_info;
 };
 
 #ifdef MEGA_BACKEND
@@ -513,6 +514,7 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   extras->current_width = rawImage.GetCols();
   extras->max_height = rawImage.GetRows();
   extras->max_width = rawImage.GetCols();
+  CIPGRCHK( cam->GetTriggerModeInfo( &extras->trigger_mode_info ));
 
   switch (rawImage.GetPixelFormat()) {
   case FlyCapture2::PIXEL_FORMAT_MONO8:
@@ -732,7 +734,18 @@ void CCflycap_get_last_framenumber( CCflycap *ccntxt, unsigned long* framenumber
 void CCflycap_get_num_trigger_modes( CCflycap *ccntxt,
 				     int *num_exposure_modes ) {
   CHECK_CC(ccntxt);
+  cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
   *num_exposure_modes = 1;
+
+  if (backend_extras->trigger_mode_info.present) {
+    if (backend_extras->trigger_mode_info.onOffSupported) {
+      if (backend_extras->trigger_mode_info.polaritySupported) {
+	*num_exposure_modes = 3;
+      } else {
+	*num_exposure_modes = 2;
+      }
+    }
+  }
 }
 
 void CCflycap_get_trigger_mode_string( CCflycap *ccntxt,
@@ -740,9 +753,35 @@ void CCflycap_get_trigger_mode_string( CCflycap *ccntxt,
 				       char* exposure_mode_string, //output parameter
 				       int exposure_mode_string_maxlen) {
   CHECK_CC(ccntxt);
+  cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
+
   switch (exposure_mode_number) {
   case 0:
-    cam_iface_snprintf(exposure_mode_string,exposure_mode_string_maxlen,"default trigger mode");
+    cam_iface_snprintf(exposure_mode_string,exposure_mode_string_maxlen,"free running");
+    break;
+  case 1:
+    if (!((backend_extras->trigger_mode_info.present) &&
+	  (backend_extras->trigger_mode_info.onOffSupported))) {
+      BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
+      CAM_IFACE_ERROR_FORMAT("exposure_mode_number invalid");
+      return;
+    }
+
+    if (backend_extras->trigger_mode_info.polaritySupported) {
+      cam_iface_snprintf(exposure_mode_string,exposure_mode_string_maxlen,"externally triggered (positive polarity)");
+    } else {
+      cam_iface_snprintf(exposure_mode_string,exposure_mode_string_maxlen,"externally triggered");
+    }
+    break;
+  case 2:
+    if (!((backend_extras->trigger_mode_info.present) &&
+	  (backend_extras->trigger_mode_info.onOffSupported) &&
+	  (backend_extras->trigger_mode_info.polaritySupported))) {
+      BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
+      CAM_IFACE_ERROR_FORMAT("exposure_mode_number invalid");
+      return;
+    }
+    cam_iface_snprintf(exposure_mode_string,exposure_mode_string_maxlen,"externally triggered (negative polarity)");
     break;
   default:
     BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
@@ -755,20 +794,64 @@ void CCflycap_get_trigger_mode_number( CCflycap *ccntxt,
 				       int *exposure_mode_number ) {
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
+  FlyCapture2::TriggerMode trigger_mode;
+
+  if (!(backend_extras->trigger_mode_info.present)) {
+    *exposure_mode_number = 0;
+    return;
+  }
+
+  CIPGRCHK(((FlyCapture2::Camera *)(ccntxt->inherited.cam))->GetTriggerMode( &trigger_mode ));
+
+  if (!(trigger_mode.onOff)) {
+    *exposure_mode_number = 0;
+    return;
+  }
+
+  if (backend_extras->trigger_mode_info.polaritySupported) {
+    if (trigger_mode.polarity) {
+      *exposure_mode_number = 1;
+      return;
+    } else {
+      *exposure_mode_number = 2;
+      return;
+    }
+  } else {
+    *exposure_mode_number = 1;
+    return;
+  }
+
 }
 
 void CCflycap_set_trigger_mode_number( CCflycap *ccntxt,
 				       int exposure_mode_number ) {
   CHECK_CC(ccntxt);
   cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
+  FlyCapture2::TriggerMode trigger_mode;
+
   switch (exposure_mode_number) {
   case 0:
+    trigger_mode.onOff=0;
+    break;
+  case 1:
+    trigger_mode.onOff=1;
+    trigger_mode.polarity=1;
+    break;
+  case 2:
+    trigger_mode.onOff=1;
+    trigger_mode.polarity=0;
     break;
   default:
-    CAM_IFACE_THROW_ERROR("exposure_mode_number invalid");
-    break;
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_GENERIC_ERROR;
+    CAM_IFACE_ERROR_FORMAT("exposure_mode_number invalid");
+    return;
   }
+
+  if (((backend_extras->trigger_mode_info.present) &&
+       (backend_extras->trigger_mode_info.onOffSupported))) {
+    CIPGRCHK(((FlyCapture2::Camera *)(ccntxt->inherited.cam))->SetTriggerMode( &trigger_mode ));
+  }
+
 }
 
 void CCflycap_get_frame_roi( CCflycap *ccntxt,
