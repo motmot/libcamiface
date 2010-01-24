@@ -653,8 +653,14 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
   FlyCapture2::PGRGuid guid;
   CIPGRCHK( BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid));
 
-  cam_iface_snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "Pt. Grey FlyCapture2");
-  cam_iface_snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "Unknown model");
+  FlyCapture2::CameraInfo camInfo;
+  FlyCapture2::Camera *cam = new FlyCapture2::Camera;
+  CIPGRCHK(cam->Connect(&guid));
+  CIPGRCHK(cam->GetCameraInfo(&camInfo));
+  CIPGRCHK(cam->Disconnect());
+
+  cam_iface_snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, camInfo.vendorName);
+  cam_iface_snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, camInfo.modelName);
   cam_iface_snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "GUID %x %x %x %x",
 		     guid.value[0],
 		     guid.value[1],
@@ -735,9 +741,6 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   }
 
   ccntxt->inherited.cam = (void*)cam;
-
-  FlyCapture2::CameraInfo camInfo;
-  CIPGRCHK(cam->GetCameraInfo(&camInfo));
 
   // XXX move this to start camera and query camera for settings
 
