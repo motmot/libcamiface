@@ -61,6 +61,58 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "FlyCapture2.h"
 
+#include <string>
+#include <vector>
+
+#ifdef MEGA_BACKEND
+  #define BACKEND_GLOBAL(m) pgr_flycapture_##m
+#else
+  #define BACKEND_GLOBAL(m) m
+#endif
+
+/* global variables */
+static int BACKEND_GLOBAL(num_cameras) = 0;
+static FlyCapture2::BusManager* BACKEND_GLOBAL(busMgr_ptr);
+
+class CamMode {
+public:
+  std::string descr;
+};
+
+int get_mode_list(int device_number, std::vector<CamMode> &result ) {
+
+  FlyCapture2::Camera *cam = new FlyCapture2::Camera;
+  FlyCapture2::PGRGuid guid;
+  FlyCapture2::Error err;
+  CamMode mode;
+
+  err = BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid);
+  if (err!=FlyCapture2::PGRERROR_OK) {
+    goto errlabel2;
+  }
+  err = cam->Connect(&guid);
+  if (err!=FlyCapture2::PGRERROR_OK) {
+    goto errlabel2;
+  }
+
+  // Do work
+  mode.descr = std::string("default camera mode");
+  result.push_back(mode);
+
+  if (0) {
+    if (err!=FlyCapture2::PGRERROR_OK) {
+      goto errlabel1;
+    }
+  }
+
+  return 0;
+
+ errlabel1:
+  err = cam->Disconnect();
+ errlabel2:
+  return 1;
+}
+
 extern "C" {
 #include "cam_iface.h"
 #include "cam_iface_internal.h"
@@ -218,15 +270,6 @@ CCflycap_functable CCflycap_vmt = {
   CCflycap_set_num_framebuffers
 };
 
-
-// If the following is defined, we get time from the host computer clock.
-
-#ifdef MEGA_BACKEND
-  #define BACKEND_GLOBAL(m) pgr_flycapture_##m
-#else
-  #define BACKEND_GLOBAL(m) m
-#endif
-
 /* globals -- allocate space */
   u_int64_t BACKEND_GLOBAL(prev_ts_uint64); //tmp
 
@@ -234,12 +277,6 @@ cam_iface_thread_local int BACKEND_GLOBAL(cam_iface_error)=0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 cam_iface_thread_local char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN];
 cam_iface_thread_local char BACKEND_GLOBAL(cam_iface_backend_string)[CAM_IFACE_MAX_ERROR_LEN];
-
-/* global variables */
-static int BACKEND_GLOBAL(num_cameras) = 0;
-static FlyCapture2::BusManager* BACKEND_GLOBAL(busMgr_ptr);
-
-#define tPvHandle int*
 
 typedef struct cam_iface_backend_extras cam_iface_backend_extras;
 struct cam_iface_backend_extras {
@@ -454,7 +491,12 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
 
 void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
-  *num_modes = 1; // only one mode
+  std::vector<CamMode> result;
+  int myerr = get_mode_list(device_number, result );
+  if (myerr) {
+    {CAM_IFACE_THROW_ERROR("problem getting mode list for camera"); }
+  }
+  *num_modes = result.size();
 }
 
 void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
@@ -462,7 +504,12 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 					       char* mode_string,
 					       int mode_string_maxlen) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
-  cam_iface_snprintf(mode_string, mode_string_maxlen, "(Pt. Grey Research FlyCapture2 default mode)");
+  std::vector<CamMode> result;
+  int myerr = get_mode_list(device_number, result );
+  if (myerr) {
+    {CAM_IFACE_THROW_ERROR("problem getting mode list for camera"); }
+  }
+  cam_iface_snprintf(mode_string, mode_string_maxlen, result[mode_number].descr.c_str());
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
@@ -959,7 +1006,6 @@ void CCflycap_get_buffer_size( CCflycap *ccntxt,
 void CCflycap_get_framerate( CCflycap *ccntxt,
 			     float *framerate ) {
   CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
   *framerate = 0.0f;
 }
 
