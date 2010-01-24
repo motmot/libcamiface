@@ -61,6 +61,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "FlyCapture2.h"
 
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -77,7 +79,33 @@ static FlyCapture2::BusManager* BACKEND_GLOBAL(busMgr_ptr);
 class CamMode {
 public:
   std::string descr;
+  FlyCapture2::Format7ImageSettings fmt7ImageSettings;
+  FlyCapture2::Format7PacketInfo fmt7PacketInfo;
+  int format;
 };
+
+std::string pixfmt2string(FlyCapture2::PixelFormat pixfmt) {
+  switch (pixfmt) {
+  case FlyCapture2::PIXEL_FORMAT_MONO8: return std::string("MONO8");
+  case FlyCapture2::PIXEL_FORMAT_411YUV8: return std::string("411YUV8");
+  case FlyCapture2::PIXEL_FORMAT_422YUV8: return std::string("422YUV8");
+  case FlyCapture2::PIXEL_FORMAT_444YUV8: return std::string("444YUV8");
+  case FlyCapture2::PIXEL_FORMAT_RGB8: return std::string("RGB8");
+  case FlyCapture2::PIXEL_FORMAT_MONO16: return std::string("MONO16");
+  case FlyCapture2::PIXEL_FORMAT_RGB16: return std::string("RGB16");
+  case FlyCapture2::PIXEL_FORMAT_S_MONO16: return std::string("MONO16");
+  case FlyCapture2::PIXEL_FORMAT_S_RGB16: return std::string("RGB16");
+  case FlyCapture2::PIXEL_FORMAT_RAW8: return std::string("RAW8");
+  case FlyCapture2::PIXEL_FORMAT_RAW16: return std::string("RAW16");
+  case FlyCapture2::PIXEL_FORMAT_MONO12: return std::string("MONO12");
+  case FlyCapture2::PIXEL_FORMAT_RAW12: return std::string("RAW12");
+  case FlyCapture2::PIXEL_FORMAT_BGR: return std::string("BGR");
+  case FlyCapture2::PIXEL_FORMAT_BGRU: return std::string("BGRU");
+    //case FlyCapture2::PIXEL_FORMAT_RGB: return std::string("RGB");
+  case FlyCapture2::PIXEL_FORMAT_RGBU: return std::string("RGBU");
+  default: return std::string("UNKNOWN");
+  }
+}
 
 int get_mode_list(int device_number, std::vector<CamMode> &result ) {
 
@@ -85,32 +113,126 @@ int get_mode_list(int device_number, std::vector<CamMode> &result ) {
   FlyCapture2::PGRGuid guid;
   FlyCapture2::Error err;
   CamMode mode;
+  FlyCapture2::Format7Info fmt7Info;
+  bool supported;
+
+  //FlyCapture2::Mode k_fmt7Mode;
+  //FlyCapture2::PixelFormat k_fmt7PixFmt;
+  std::ostringstream oss;
+  std::vector<FlyCapture2::Mode> fmt7modes;
+  fmt7modes.push_back(FlyCapture2::MODE_0);
+  fmt7modes.push_back(FlyCapture2::MODE_1);
+  fmt7modes.push_back(FlyCapture2::MODE_2);
+  fmt7modes.push_back(FlyCapture2::MODE_3);
+  fmt7modes.push_back(FlyCapture2::MODE_4);
+  fmt7modes.push_back(FlyCapture2::MODE_5);
+  fmt7modes.push_back(FlyCapture2::MODE_6);
+  fmt7modes.push_back(FlyCapture2::MODE_7);
+  fmt7modes.push_back(FlyCapture2::MODE_8);
+  fmt7modes.push_back(FlyCapture2::MODE_9);
+  fmt7modes.push_back(FlyCapture2::MODE_10);
+  fmt7modes.push_back(FlyCapture2::MODE_11);
+  fmt7modes.push_back(FlyCapture2::MODE_12);
+  fmt7modes.push_back(FlyCapture2::MODE_13);
+  fmt7modes.push_back(FlyCapture2::MODE_14);
+  fmt7modes.push_back(FlyCapture2::MODE_15);
+  fmt7modes.push_back(FlyCapture2::MODE_16);
+  fmt7modes.push_back(FlyCapture2::MODE_17);
+  fmt7modes.push_back(FlyCapture2::MODE_18);
+  fmt7modes.push_back(FlyCapture2::MODE_19);
+  fmt7modes.push_back(FlyCapture2::MODE_20);
+  fmt7modes.push_back(FlyCapture2::MODE_21);
+  fmt7modes.push_back(FlyCapture2::MODE_22);
+  fmt7modes.push_back(FlyCapture2::MODE_23);
+  fmt7modes.push_back(FlyCapture2::MODE_24);
+  fmt7modes.push_back(FlyCapture2::MODE_25);
+  fmt7modes.push_back(FlyCapture2::MODE_26);
+  fmt7modes.push_back(FlyCapture2::MODE_27);
+  fmt7modes.push_back(FlyCapture2::MODE_28);
+  fmt7modes.push_back(FlyCapture2::MODE_29);
+  fmt7modes.push_back(FlyCapture2::MODE_30);
+  fmt7modes.push_back(FlyCapture2::MODE_31);
+
+  std::vector<FlyCapture2::PixelFormat> pixfmts;
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_MONO8);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_411YUV8);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_422YUV8);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_444YUV8);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_RGB8);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_MONO16);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_RGB16);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_S_MONO16);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_S_RGB16);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_RAW8);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_RAW16);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_MONO12);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_RAW12);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_BGR);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_BGRU);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_RGB);
+  pixfmts.push_back(FlyCapture2::PIXEL_FORMAT_RGBU);
 
   err = BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid);
-  if (err!=FlyCapture2::PGRERROR_OK) {
-    goto errlabel2;
-  }
+  // if (err!=FlyCapture2::PGRERROR_OK) {
+  //   goto errlabel2;
+  // }
   err = cam->Connect(&guid);
-  if (err!=FlyCapture2::PGRERROR_OK) {
-    goto errlabel2;
-  }
+  // if (err!=FlyCapture2::PGRERROR_OK) {
+  //   goto errlabel2;
+  // }
 
-  // Do work
-  mode.descr = std::string("default camera mode");
-  result.push_back(mode);
+  // FORMAT 7 -- test all modes
+  std::vector<FlyCapture2::Mode>::const_iterator fmt7mode;
+  for(fmt7mode=fmt7modes.begin(); fmt7mode!=fmt7modes.end(); fmt7mode++) {
+    fmt7Info.mode = *fmt7mode;
+    err = cam->GetFormat7Info( &fmt7Info, &supported );
+    // if (err != FlyCapture2::PGRERROR_OK) goto errlabel1;
 
-  if (0) {
-    if (err!=FlyCapture2::PGRERROR_OK) {
-      goto errlabel1;
+    // Do work
+    if (supported) {
+
+      std::vector<FlyCapture2::PixelFormat>::const_iterator pixfmt;
+      for(pixfmt=pixfmts.begin(); pixfmt!=pixfmts.end(); pixfmt++) {
+	if (*pixfmt & fmt7Info.pixelFormatBitField) {
+
+	  std::ostringstream oss = std::ostringstream();
+	  oss << "format 7, mode " << *fmt7mode << " (" << pixfmt2string(*pixfmt) << ", " << fmt7Info.maxWidth << "x" << fmt7Info.maxHeight <<")";
+
+	  mode.descr = oss.str();
+	  mode.format = 7;
+	  mode.fmt7ImageSettings.mode = *fmt7mode;
+	  mode.fmt7ImageSettings.offsetX = 0;
+	  mode.fmt7ImageSettings.offsetY = 0;
+	  mode.fmt7ImageSettings.width = fmt7Info.maxWidth;
+	  mode.fmt7ImageSettings.height = fmt7Info.maxHeight;
+	  mode.fmt7ImageSettings.pixelFormat = *pixfmt;
+
+	  bool valid;
+	  err = cam->ValidateFormat7Settings( &mode.fmt7ImageSettings,
+					      &valid,
+					      &mode.fmt7PacketInfo );
+	  if (err == FlyCapture2::PGRERROR_OK) {
+	    result.push_back(mode);
+	  }
+	}
+      }
     }
   }
+  // if (0) {
+  //   // if (err!=FlyCapture2::PGRERROR_OK) {
+  //   //   goto errlabel1;
+  //   // }
+  // }
 
+  // err = cam->Disconnect();
+  cam->Disconnect();
   return 0;
 
- errlabel1:
-  err = cam->Disconnect();
- errlabel2:
-  return 1;
+
+ // errlabel1:
+  // err = cam->Disconnect();
+ // errlabel2:
+ //  return 1;
 }
 
 extern "C" {
@@ -492,7 +614,7 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
 void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   std::vector<CamMode> result;
-  int myerr = get_mode_list(device_number, result );
+  int myerr = get_mode_list(device_number, result);
   if (myerr) {
     {CAM_IFACE_THROW_ERROR("problem getting mode list for camera"); }
   }
@@ -505,7 +627,7 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 					       int mode_string_maxlen) {
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
   std::vector<CamMode> result;
-  int myerr = get_mode_list(device_number, result );
+  int myerr = get_mode_list(device_number, result);
   if (myerr) {
     {CAM_IFACE_THROW_ERROR("problem getting mode list for camera"); }
   }
@@ -534,7 +656,8 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   ccntxt->inherited.vmt = (CamContext_functable*)&CCflycap_vmt;
 
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);
-  if (mode_number!=0) { CAM_IFACE_THROW_ERROR("mode number not 0"); }
+  std::vector<CamMode> result;
+  int myerr = get_mode_list(device_number, result);
 
   ccntxt->inherited.device_number = device_number;
   ccntxt->inherited.backend_extras = new cam_iface_backend_extras;
@@ -544,6 +667,21 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   FlyCapture2::PGRGuid guid;
   CIPGRCHK( BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid));
   CIPGRCHK(cam->Connect(&guid));
+
+  FlyCapture2::FC2Config cfg;
+  CIPGRCHK(cam->GetConfiguration(&cfg));
+  cfg.numBuffers = NumImageBuffers;
+  CIPGRCHK(cam->SetConfiguration(&cfg));
+
+  // Set the settings to the camera
+  CamMode target_mode = result[mode_number];
+
+  if (target_mode.format == 7) {
+    CIPGRCHK(cam->SetFormat7Configuration(&target_mode.fmt7ImageSettings,
+					  target_mode.fmt7PacketInfo.recommendedBytesPerPacket ));
+  } else {
+    NOT_IMPLEMENTED;
+  }
 
   ccntxt->inherited.cam = (void*)cam;
 
@@ -1027,14 +1165,22 @@ void CCflycap_get_max_frame_size( CCflycap *ccntxt,
 void CCflycap_get_num_framebuffers( CCflycap *ccntxt,
 				    int *num_framebuffers ) {
   CHECK_CC(ccntxt);
-  cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
-  *num_framebuffers = 1;
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
+  FlyCapture2::FC2Config cfg;
+  CIPGRCHK(cam->GetConfiguration(&cfg));
+  *num_framebuffers = cfg.numBuffers;
 }
 
 void CCflycap_set_num_framebuffers( CCflycap *ccntxt,
 				    int num_framebuffers ) {
   CHECK_CC(ccntxt);
-  NOT_IMPLEMENTED;
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
+  FlyCapture2::FC2Config cfg;
+  CIPGRCHK(cam->StopCapture());
+  CIPGRCHK(cam->GetConfiguration(&cfg));
+  cfg.numBuffers = num_framebuffers;
+  CIPGRCHK(cam->SetConfiguration(&cfg));
+  CIPGRCHK(cam->StartCapture());
 }
 
 } // closes: extern "C"
