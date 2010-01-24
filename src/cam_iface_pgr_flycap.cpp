@@ -79,6 +79,8 @@ static FlyCapture2::BusManager* BACKEND_GLOBAL(busMgr_ptr);
 class CamMode {
 public:
   std::string descr;
+  FlyCapture2::VideoMode videomode; // VIDEOMODE_FORMAT7 IFF format 7
+  FlyCapture2::FrameRate framerate; // not used IFF format 7
   FlyCapture2::Format7ImageSettings fmt7ImageSettings;
   FlyCapture2::Format7PacketInfo fmt7PacketInfo;
   int format;
@@ -199,7 +201,7 @@ int get_mode_list(int device_number, std::vector<CamMode> &result ) {
 	  oss << "format 7, mode " << *fmt7mode << " (" << pixfmt2string(*pixfmt) << ", " << fmt7Info.maxWidth << "x" << fmt7Info.maxHeight <<")";
 
 	  mode.descr = oss.str();
-	  mode.format = 7;
+	  mode.videomode = FlyCapture2::VIDEOMODE_FORMAT7;
 	  mode.fmt7ImageSettings.mode = *fmt7mode;
 	  mode.fmt7ImageSettings.offsetX = 0;
 	  mode.fmt7ImageSettings.offsetY = 0;
@@ -218,11 +220,60 @@ int get_mode_list(int device_number, std::vector<CamMode> &result ) {
       }
     }
   }
-  // if (0) {
-  //   // if (err!=FlyCapture2::PGRERROR_OK) {
-  //   //   goto errlabel1;
-  //   // }
-  // }
+
+  // not format 7 -- test each videomode and framerate combination
+
+  std::vector<FlyCapture2::VideoMode> videomodes;
+  videomodes.push_back(FlyCapture2::VIDEOMODE_160x120YUV444);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_320x240YUV422);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_640x480YUV411);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_640x480YUV422);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_640x480RGB);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_640x480Y8);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_640x480Y16);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_800x600YUV422);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_800x600RGB);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_800x600Y8);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_800x600Y16);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1024x768YUV422);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1024x768RGB);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1024x768Y8);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1024x768Y16);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1280x960YUV422);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1280x960RGB);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1280x960Y8);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1280x960Y16);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1600x1200YUV422);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1600x1200RGB);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1600x1200Y8);
+  videomodes.push_back(FlyCapture2::VIDEOMODE_1600x1200Y16);
+
+  std::vector<FlyCapture2::FrameRate> framerates;
+  framerates.push_back(FlyCapture2::FRAMERATE_1_875);
+  framerates.push_back(FlyCapture2::FRAMERATE_3_75);
+  framerates.push_back(FlyCapture2::FRAMERATE_7_5);
+  framerates.push_back(FlyCapture2::FRAMERATE_15);
+  framerates.push_back(FlyCapture2::FRAMERATE_30);
+  framerates.push_back(FlyCapture2::FRAMERATE_60);
+  framerates.push_back(FlyCapture2::FRAMERATE_120);
+  framerates.push_back(FlyCapture2::FRAMERATE_240);
+
+  std::vector<FlyCapture2::VideoMode>::const_iterator videomode;
+  for(videomode=videomodes.begin(); videomode!=videomodes.end(); videomode++) {
+    std::vector<FlyCapture2::FrameRate>::const_iterator framerate;
+    for(framerate=framerates.begin(); framerate!=framerates.end(); framerate++) {
+      err = cam->GetVideoModeAndFrameRateInfo(*videomode, *framerate, &supported);
+      if (err == FlyCapture2::PGRERROR_OK) {
+	if (supported) {
+	  std::ostringstream oss = std::ostringstream();
+	  oss << "videomode " << *videomode << " framerate " << *framerate;
+	  mode.descr = oss.str();
+	  mode.videomode = *videomode;
+	  mode.framerate = *framerate;
+	}
+      }
+    }
+  }
 
   // err = cam->Disconnect();
   cam->Disconnect();
@@ -676,11 +727,11 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   // Set the settings to the camera
   CamMode target_mode = result[mode_number];
 
-  if (target_mode.format == 7) {
+  if (target_mode.videomode == FlyCapture2::VIDEOMODE_FORMAT7) {
     CIPGRCHK(cam->SetFormat7Configuration(&target_mode.fmt7ImageSettings,
 					  target_mode.fmt7PacketInfo.recommendedBytesPerPacket ));
   } else {
-    NOT_IMPLEMENTED;
+    CIPGRCHK(cam->SetVideoModeAndFrameRate(target_mode.videomode, target_mode.framerate));
   }
 
   ccntxt->inherited.cam = (void*)cam;
