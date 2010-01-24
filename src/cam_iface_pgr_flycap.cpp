@@ -496,11 +496,15 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
   CIPGRCHK( BACKEND_GLOBAL(busMgr_ptr)->GetCameraFromIndex(device_number, &guid));
   CIPGRCHK(cam->Connect(&guid));
 
+  ccntxt->inherited.cam = (void*)cam;
+
+  FlyCapture2::CameraInfo camInfo;
+  CIPGRCHK(cam->GetCameraInfo(&camInfo));
+
   // XXX move this to start camera and query camera for settings
 
   CIPGRCHK(cam->StartCapture());
 
-  ccntxt->inherited.cam = (void*)cam;
 
   // Retrieve an image to get width, height. XXX change to query later.
   FlyCapture2::Image rawImage;
@@ -544,6 +548,7 @@ void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffer
       NOT_IMPLEMENTED;
     }
   }
+  CIPGRCHK(cam->StopCapture());
 
 }
 
@@ -573,14 +578,14 @@ void CCflycap_close(CCflycap *ccntxt) {
 
 void CCflycap_start_camera( CCflycap *ccntxt ) {
   CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
-  cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
+  CIPGRCHK(cam->StartCapture());
 }
 
 void CCflycap_stop_camera( CCflycap *ccntxt ) {
   CHECK_CC(ccntxt);
-  tPvHandle* handle_ptr = (tPvHandle*)ccntxt->inherited.cam;
-  cam_iface_backend_extras* backend_extras = (cam_iface_backend_extras*)(ccntxt->inherited.backend_extras);
+  FlyCapture2::Camera *cam = (FlyCapture2::Camera *)ccntxt->inherited.cam;
+  CIPGRCHK(cam->StopCapture());
 }
 
 FlyCapture2::PropertyType propno2prop(int n) {
