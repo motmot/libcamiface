@@ -39,13 +39,8 @@ include_directories( ${CMAKE_SOURCE_DIR}/include )
 
 FIND_PACKAGE(PkgConfig)
 
-# Backend: mega will always be built, unity on non-Windows -----
-if(WIN32)
-  set(all_backends mega)
-else(WIN32)
-  set(all_backends mega)
-endif(WIN32)
-
+# Backend: mega will always be built -----
+set(all_backends mega)
 # Backend: libdc1394 ---------------------------------
 
 # Method A: Check for libdc1394 using pkg-config (preferred)
