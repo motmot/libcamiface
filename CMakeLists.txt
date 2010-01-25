@@ -116,7 +116,7 @@ configure_file(libcamiface.pc.in libcamiface.pc)
 IF(UNIX)
   IF(NOT APPLE)
     set(PC_DIR "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
-    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc" 
+    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc"
 	    DESTINATION ${PC_DIR})
   ENDIF(NOT APPLE)
 ENDIF(UNIX)
@@ -143,7 +143,7 @@ SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/installer_readme.htm
 
 # For source releases (except we use git archive to make these)
 
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME 
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME
     "libcamiface-${V_MAJOR}.${V_MINOR}.${V_PATCH}")
 SET(CPACK_SOURCE_GENERATOR "TGZ")
 
