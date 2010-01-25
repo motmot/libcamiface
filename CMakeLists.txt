@@ -68,6 +68,14 @@ IF(PROSILICA_GIGE_FOUND)
   set(all_backends ${all_backends} prosilica_gige)
 ENDIF(PROSILICA_GIGE_FOUND)
 
+# Backend: PGR FlyCapture----------------------------
+
+FIND_PACKAGE(FlyCapture)
+
+IF(FLYCAPTURE_FOUND)
+  set(all_backends ${all_backends} pgr_flycap)
+ENDIF(FLYCAPTURE_FOUND)
+
 # Backend: QuickTime --------------------------------
 
 FIND_PACKAGE(QuickTime)

@@ -208,6 +208,23 @@ void cam_iface_startup(void) {
       fprintf(stderr,"ERROR: don't know backend %s\n",backend_names[i]);
       exit(1);
 #endif
+    } else if (!strcmp(backend_names[i],"staticpgr_flycap")) {
+#ifdef MEGA_BACKEND_FLYCAPTURE
+#include "cam_iface_pgr_flycap.h"
+      this_backend_info->have_error = pgr_flycapture_cam_iface_have_error;
+      this_backend_info->clear_error = pgr_flycapture_cam_iface_clear_error;
+      this_backend_info->get_error_string = pgr_flycapture_cam_iface_get_error_string;
+      this_backend_info->startup = pgr_flycapture_cam_iface_startup;
+      this_backend_info->shutdown = pgr_flycapture_cam_iface_shutdown;
+      this_backend_info->get_num_cameras = pgr_flycapture_cam_iface_get_num_cameras;
+      this_backend_info->get_num_modes = pgr_flycapture_cam_iface_get_num_modes;
+      this_backend_info->get_camera_info = pgr_flycapture_cam_iface_get_camera_info;
+      this_backend_info->get_mode_string = pgr_flycapture_cam_iface_get_mode_string;
+      this_backend_info->get_constructor_func = pgr_flycapture_cam_iface_get_constructor_func;
+#else
+      fprintf(stderr,"ERROR: don't know backend %s\n",backend_names[i]);
+      exit(1);
+#endif
     } else if (!strcmp(backend_names[i],"staticquicktime")) {
 #ifdef MEGA_BACKEND_QUICKTIME
 #include "cam_iface_quicktime.h"
