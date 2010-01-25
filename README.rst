@@ -23,13 +23,14 @@ is a piece of code that creates the libcamiface interface for each
 particular camera driver.
 
 As seen below, the supported camera drivers are currently libdc1394,
-the Prosilia Gigabit Ethernet SDK, and the QuickTime
-SequenceGrabber. For a list of cameras supporting the libdc1394
-software, see http://damien.douxchamps.net/ieee1394/cameras/. For the
-Prosilica Gigabit cameras, see http://www.prosilica.com/. The
-QuickTime SequenceGrabber supports any camera available through
-QuickTime. This includes the built-in cameras on Mac laptops and
-desktops.
+the Prosilia Gigabit Ethernet SDK, Point Grey Research FlyCapture2,
+and the QuickTime SequenceGrabber. For a list of cameras supporting
+the libdc1394 software, see
+http://damien.douxchamps.net/ieee1394/cameras/. For the Prosilica
+Gigabit cameras, see http://www.prosilica.com/. For the Point Grey
+cameras, see http://www.ptgrey.com. The QuickTime SequenceGrabber
+supports any camera available through QuickTime. This includes the
+built-in cameras on Mac laptops and desktops.
 
 .. _libcamiface-supported-rates:
 
@@ -68,6 +69,11 @@ A number of backends are supported.
     - |works|
     - |works|
     - |works|
+  * - `Point Grey Research FlyCapture2 <http://www.ptgrey.com/products/pgrflycapture/index.asp>`_
+    - |orange| untested
+    - |orange| untested
+    - |works|
+    - |NA|
   * - `ImperX`_
     - |NA|
     - |NA|
@@ -103,11 +109,11 @@ Key to the above symbols:
   :width: 22
   :height: 22
 .. |mostly works| image:: _static/yellowgreenlight.png
-  :alt: works
+  :alt: mostly works
   :width: 22
   :height: 22
 .. |orange| image:: _static/redlight.png
-  :alt: works
+  :alt: caution
   :width: 22
   :height: 22
 .. |NA| replace:: NA
@@ -137,7 +143,7 @@ This will install the files::
   /usr/bin/ ( other demos )
   /usr/lib/libcam_iface_*
 
-To run a demo program, open ``/usr/bin/liveview-glut-unity``.
+To run a demo program, open ``/usr/bin/liveview-glut-mega``.
 
 Windows
 -------
@@ -310,16 +316,6 @@ Environment variables:
 
  * *DC1394_BACKEND_AUTO_DEBAYER* use dc1394 to de-Bayer the images,
     resulting in RGB8 images (rather than MONO8 Bayer images).
-
-unity
------
-
-Environment variables:
-
- * *UNITY_BACKEND_DEBUG* print debugging messages.
-
- * *UNITY_BACKEND_DIR* set to directory in which to look for
-    libcamiface shared libraries.
 
 Git source code repository
 ==========================
