@@ -127,9 +127,13 @@ FIND_PACKAGE(OpenGL)
 if(GLUT_FOUND)
 
   set(liveview-glut-SRCS liveview-glut.c)
-  set(liveview_DEFINE "-DSHADER_DIR=\"${SHADER_SOURCE_DIR}\""
-    ${liveview_DEFINE})
-  message("echo: "  ${liveview_DEFINE})
+  if(WIN32)
+    set(liveview_DEFINE "-DSHADER_DIR=\"${SHADER_SOURCE_DIR}\""
+      ${liveview_DEFINE})
+  else(WIN32)
+    set(liveview_DEFINE "-DSHADER_DIR='\"${SHADER_SOURCE_DIR}\"'"
+      ${liveview_DEFINE})
+  endif(WIN32)
 
   if(WIN32)
     set(liveview_DEFINE "-D_CRT_SECURE_NO_WARNINGS=1"
