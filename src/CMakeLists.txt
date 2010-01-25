@@ -166,6 +166,76 @@ IF(PROSILICA_GIGE_FOUND)
 
 ENDIF(PROSILICA_GIGE_FOUND)
 
+# flycapture backend ------------------
+
+IF(FLYCAPTURE_FOUND)
+
+  set(flycapture_SRCS ${common_SRCS}
+      cam_iface_pgr_flycap.cpp
+      )
+  set(mega_SRCS ${mega_SRCS}
+      cam_iface_pgr_flycap.cpp
+     )
+
+  include_directories(${FLYCAPTURE_INCLUDE_DIRS})
+  ADD_LIBRARY(cam_iface_pgr_flycap SHARED ${flycapture_SRCS})
+
+  TARGET_LINK_LIBRARIES(cam_iface_pgr_flycap ${FLYCAPTURE_LIBRARIES})
+  set_target_properties(cam_iface_pgr_flycap PROPERTIES
+    VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION}
+    DEFINE_SYMBOL cam_iface_EXPORTS
+    )
+
+  if(WIN32)
+    set_target_properties(cam_iface_pgr_flycap PROPERTIES
+      COMPILE_FLAGS -D_CRT_SECURE_NO_WARNINGS=1
+    )
+  endif(WIN32)
+
+  SET_TARGET_PROPERTIES(cam_iface_pgr_flycap PROPERTIES
+    CLEAN_DIRECT_OUTPUT 1
+  )
+
+  SET(CI_FLYCAP_TARGETS cam_iface_pgr_flycap)
+
+  ## if(NOT WIN32)
+  ## # Trouble building static lib on Windows, so disabled for now...
+  ## ADD_LIBRARY(cam_iface_pgr_flycap-static STATIC ${flycapture_SRCS})
+  ## set_target_properties(cam_iface_pgr_flycap-static PROPERTIES
+  ##   OUTPUT_NAME "cam_iface_pgr_flycap"
+  ##   )
+
+  ## SET_TARGET_PROPERTIES(cam_iface_pgr_flycap-static PROPERTIES
+  ##   CLEAN_DIRECT_OUTPUT 1
+  ## )
+  ## SET(CI_FLYCAP_TARGETS ${CI_FLYCAP_TARGETS} cam_iface_pgr_flycap-static)
+  ## endif(NOT WIN32)
+
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${FLYCAPTURE_LIBRARIES})
+  SET(mega_DEFINE
+      ${mega_DEFINE}
+      -DMEGA_BACKEND_FLYCAPTURE
+      )
+  INSTALL(TARGETS ${CI_FLYCAP_TARGETS}
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
+  ## IF(WIN32)
+  ##   # install PvAPI.dll on Windows
+  ##   GET_FILENAME_COMPONENT(PROSIL_LIB_DIR ${FLYCAPTURE_LIBRARIES} PATH)
+  ##   SET(PROSIL_DLL_DIR ${PROSIL_LIB_DIR}/../bin-pc)
+  ##   get_filename_component(PROSIL_DLL_DIR ${PROSIL_DLL_DIR} ABSOLUTE)
+  ##   FILE(GLOB PROSIL_DLLS ${PROSIL_DLL_DIR}/*.dll)
+  ##   INSTALL(FILES ${PROSIL_DLLS}
+  ##     DESTINATION bin
+  ##     )
+  ## ENDIF(WIN32)
+
+ENDIF(FLYCAPTURE_FOUND)
+
 # quicktime backend ------------------
 
 IF(QUICKTIME_FOUND)
@@ -208,102 +278,16 @@ ENDIF(QUICKTIME_FOUND)
 
 
 
-
-if(WIN32)
-  list(REMOVE_ITEM all_backends "unity")
-  SET(has_unity FALSE)
-else(WIN32)
-  SET(has_unity TRUE)
-endif(WIN32)
-
-# unity backend -----------------
-IF(has_unity)
-set(unity_SRCS ${common_SRCS}
-    cam_iface_unity.c
-    )
-
-# get list of all (non-unity) backends to wrap into unity backend
-FOREACH(BACKEND ${all_backends})
-  IF(${BACKEND} STREQUAL "unity")
-    # don't include unity backend in list of backends for unity
-  ELSE(${BACKEND} STREQUAL "unity")
-    IF(${BACKEND} STREQUAL "mega")
-      # don't include mega backend in list of backends for unity
-    ELSE(${BACKEND} STREQUAL "mega")
-        set(INDIVIDUAL_UNITY_BACKENDS ${INDIVIDUAL_UNITY_BACKENDS} ${BACKEND})
-    ENDIF(${BACKEND} STREQUAL "mega")
-  ENDIF(${BACKEND} STREQUAL "unity")
-ENDFOREACH(BACKEND)
-
-FOREACH(BACKEND ${INDIVIDUAL_UNITY_BACKENDS})
-  IF(DEFINED UNITY_BACKENDS)
-    set(UNITY_BACKENDS "${UNITY_BACKENDS},\"${BACKEND}\"")
-  ELSE(DEFINED UNITY_BACKENDS)
-    set(UNITY_BACKENDS "\"${BACKEND}\"")
-  ENDIF(DEFINED UNITY_BACKENDS)
-ENDFOREACH(BACKEND)
-
-
-  list(LENGTH INDIVIDUAL_UNITY_BACKENDS NUM_BACKENDS)
-  MESSAGE(STATUS "unity backend includes ${NUM_BACKENDS} other backends: (${UNITY_BACKENDS})")
-
-  # list of each command-line define
-  set(unity_DEFINE
-      -DNUM_BACKENDS=${NUM_BACKENDS}
-      -DUNITY_BACKENDS='{${UNITY_BACKENDS}}'
-      -DUNITY_BACKEND_PREFIX='\"lib\"'
-      -DUNITY_BACKEND_DIR='\"\"')
-
-if(UNIX)
-  IF(APPLE)
-    set(unity_DEFINE
-      -DUNITY_BACKEND_SUFFIX='\".dylib\"'
-      ${unity_DEFINE})
-  ELSE(APPLE)
-    set(unity_DEFINE
-      -DUNITY_BACKEND_SUFFIX='\".so\"'
-      ${unity_DEFINE})
-  ENDIF(APPLE)
-else(UNIX)
-  MESSAGE(FATAL_ERROR "don't know how to build unity backend on non-unix")
-endif(UNIX)
-
-# concatenate (join) strings to make single argument
-FOREACH(element ${unity_DEFINE})
-  set(unity_DEFINES "${unity_DEFINES} ${element}")
-ENDFOREACH(element ${unity_DEFINE})
-
-SET_SOURCE_FILES_PROPERTIES(
-    cam_iface_unity.c
-    PROPERTIES COMPILE_FLAGS ${unity_DEFINES})
-
-  ADD_LIBRARY(cam_iface_unity SHARED ${unity_SRCS})
-  TARGET_LINK_LIBRARIES(cam_iface_unity dl)
-  set_target_properties(cam_iface_unity PROPERTIES VERSION ${CAM_IFACE_VERSION}
-    SOVERSION ${CAM_IFACE_SOVERSION})
-  SET_TARGET_PROPERTIES(cam_iface_unity PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-
-INSTALL(TARGETS cam_iface_unity
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-)
-ENDIF(has_unity)
-
 # mega backend -----------------------------
 
 
-# get list of all (non-unity) backends to wrap into mega backend
+# get list of all backends to wrap into mega backend
 FOREACH(BACKEND ${all_backends})
-  IF(${BACKEND} STREQUAL "unity")
-    # don't include unity backend in list of backends for mega
-  ELSE(${BACKEND} STREQUAL "unity")
     IF(${BACKEND} STREQUAL "mega")
       # don't include mega backend in list of backends for mega
     ELSE(${BACKEND} STREQUAL "mega")
         set(INDIVIDUAL_MEGA_BACKENDS ${INDIVIDUAL_MEGA_BACKENDS} "static${BACKEND}")
     ENDIF(${BACKEND} STREQUAL "mega")
-  ENDIF(${BACKEND} STREQUAL "unity")
 ENDFOREACH(BACKEND)
 
 FOREACH(BACKEND ${INDIVIDUAL_MEGA_BACKENDS})
@@ -329,6 +313,12 @@ FILE(WRITE "mega_backend_info.h"
      "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
      "char *backend_names[NUM_BACKENDS] = {${MEGA_BACKENDS}};\n")
 
+  if(WIN32)
+    set(mega_DEFINE
+      ${mega_DEFINE}
+      -D_CRT_SECURE_NO_WARNINGS=1
+    )
+  endif(WIN32)
 
 # concatenate (join) strings to make single argument
 FOREACH(element ${mega_DEFINE})

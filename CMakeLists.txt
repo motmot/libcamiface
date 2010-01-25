@@ -33,19 +33,14 @@ project(libcamiface)
 # version
 set(V_MAJOR 0)
 set(V_MINOR 5)
-set(V_PATCH 8)
+set(V_PATCH 9)
 
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 
 FIND_PACKAGE(PkgConfig)
 
-# Backend: mega will always be built, unity on non-Windows -----
-if(WIN32)
-  set(all_backends mega)
-else(WIN32)
-  set(all_backends unity mega)
-endif(WIN32)
-
+# Backend: mega will always be built -----
+set(all_backends mega)
 # Backend: libdc1394 ---------------------------------
 
 # Method A: Check for libdc1394 using pkg-config (preferred)
@@ -67,6 +62,14 @@ FIND_PACKAGE(ProsilicaGigE)
 IF(PROSILICA_GIGE_FOUND)
   set(all_backends ${all_backends} prosilica_gige)
 ENDIF(PROSILICA_GIGE_FOUND)
+
+# Backend: PGR FlyCapture----------------------------
+
+FIND_PACKAGE(FlyCapture)
+
+IF(FLYCAPTURE_FOUND)
+  set(all_backends ${all_backends} pgr_flycap)
+ENDIF(FLYCAPTURE_FOUND)
 
 # Backend: QuickTime --------------------------------
 
@@ -113,7 +116,7 @@ configure_file(libcamiface.pc.in libcamiface.pc)
 IF(UNIX)
   IF(NOT APPLE)
     set(PC_DIR "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/")
-    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc" 
+    INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/libcamiface.pc"
 	    DESTINATION ${PC_DIR})
   ENDIF(NOT APPLE)
 ENDIF(UNIX)
@@ -132,12 +135,15 @@ SET(CPACK_PACKAGE_VERSION_MAJOR "${V_MAJOR}")
 SET(CPACK_PACKAGE_VERSION_MINOR "${V_MINOR}")
 SET(CPACK_PACKAGE_VERSION_PATCH "${V_PATCH}")
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY "libcamiface ${V_MAJOR}.${V_MINOR}.${V_PATCH}")
+SET(CPACK_PACKAGE_EXECUTABLES
+    "liveview-glut-mega" "liveview"
+    "simple-mega" "simple")
 
 SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/installer_readme.html")
 
 # For source releases (except we use git archive to make these)
 
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME 
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME
     "libcamiface-${V_MAJOR}.${V_MINOR}.${V_PATCH}")
 SET(CPACK_SOURCE_GENERATOR "TGZ")
 
