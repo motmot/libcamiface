@@ -125,6 +125,7 @@ ENDIF(UNIX)
 
 # For binary releases
 
+INCLUDE(InstallRequiredSystemLibraries)
 SET(CPACK_PACKAGE_NAME "libcamiface")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libcamiface - camera interface library")
 SET(CPACK_PACKAGE_VENDOR "Motmot authors")
