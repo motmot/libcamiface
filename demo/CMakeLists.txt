@@ -60,6 +60,23 @@ FOREACH(SRC ${SRCS})
   ENDFOREACH(BACKEND)
 ENDFOREACH(SRC ${SRCS})
 
+##################
+
+ADD_EXECUTABLE(hello hello.c)
+if(WIN32)
+  set_target_properties(hello PROPERTIES
+                        COMPILE_FLAGS -D_CRT_SECURE_NO_WARNINGS=1
+                        )
+endif(WIN32)
+
+INSTALL(TARGETS hello
+        RUNTIME DESTINATION ${DEMO_DIR}
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        )
+
+##################
+
 # demo programs with more complex compile/link needs
 
 #  opencv.c
