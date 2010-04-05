@@ -133,6 +133,8 @@ ENDIF(GLEW_ROOT STREQUAL "")
 FIND_PACKAGE(GLUT)
 FIND_PACKAGE(OpenGL)
 
+set(GLUT_FOUND False)
+
 if(GLUT_FOUND)
 
   set(liveview-glut-SRCS liveview-glut.c)
