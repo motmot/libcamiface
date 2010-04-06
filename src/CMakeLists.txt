@@ -327,9 +327,15 @@ set(mega_DEFINE
     -DMEGA_BACKEND
    )
 
-FILE(WRITE "mega_backend_info.h"
-     "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
-     "char *backend_names[NUM_BACKENDS] = {${MEGA_BACKENDS}};\n")
+IF(NUM_BACKENDS)
+  FILE(WRITE "mega_backend_info.h"
+       "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
+       "char *backend_names[NUM_BACKENDS] = {${MEGA_BACKENDS}};\n")
+ELSE(NUM_BACKENDS)
+  FILE(WRITE "mega_backend_info.h"
+       "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
+       "char *backend_names;\n")
+ENDIF(NUM_BACKENDS)
 
 
 # concatenate (join) strings to make single argument
