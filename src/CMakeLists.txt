@@ -69,6 +69,8 @@ ENDIF(DC1394_FOUND)
 
 # prosilica_gige backend ------------------
 
+SET(PROSILICA_GIGE_FOUND False)
+
 IF(PROSILICA_GIGE_FOUND)
 
   set(prosilica_gige_SRCS ${common_SRCS}

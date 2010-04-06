@@ -57,14 +57,6 @@ IF(DC1394_FOUND)
   set(all_backends ${all_backends} dc1394)
 ENDIF(DC1394_FOUND)
 
-# Backend: Prosilica --------------------------------
-
-FIND_PACKAGE(ProsilicaGigE)
-
-IF(PROSILICA_GIGE_FOUND)
-  set(all_backends ${all_backends} prosilica_gige)
-ENDIF(PROSILICA_GIGE_FOUND)
-
 # Backend: PGR FlyCapture----------------------------
 
 FIND_PACKAGE(FlyCapture)
