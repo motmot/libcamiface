@@ -58,7 +58,11 @@ cam_iface_thread_local int cam_iface_error = 0;
 cam_iface_thread_local char cam_iface_error_string[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 #include "mega_backend_info.h"
-struct backend_info_t backend_info[NUM_BACKENDS];
+#if(NUM_BACKENDS>0)
+  struct backend_info_t backend_info[NUM_BACKENDS];
+#else
+  struct backend_info_t backend_info[1]; /* hack to compile without backends */
+#endif
 static int backends_started = 0;
 
 #define CAM_IFACE_ERROR_FORMAT(m)                                       \

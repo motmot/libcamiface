@@ -309,9 +309,15 @@ set(mega_DEFINE
     -DMEGA_BACKEND
    )
 
-FILE(WRITE "mega_backend_info.h"
-     "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
-     "char *backend_names[NUM_BACKENDS] = {${MEGA_BACKENDS}};\n")
+IF(NUM_BACKENDS STREQUAL "0")
+  FILE(WRITE "mega_backend_info.h"
+       "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
+       "char *backend_names;\n")
+ELSE(NUM_BACKENDS STREQUAL "0")
+  FILE(WRITE "mega_backend_info.h"
+       "#define NUM_BACKENDS ${NUM_MEGA_BACKENDS}\n"
+       "char *backend_names[NUM_BACKENDS] = {${MEGA_BACKENDS}};\n")
+ENDIF(NUM_BACKENDS STREQUAL "0")
 
   if(WIN32)
     set(mega_DEFINE
