@@ -1,3 +1,9 @@
+libcamiface-avt (0.6.0-0ads1) lucid; urgency=low
+
+  * Package for AVT GigE SDK
+
+ -- Andrew Straw <strawman@astraw.com>  Tue, 15 Jun 2010 20:01:38 -0700
+
 libcamiface-prosilica (0.5.8-0ads3) hardy; urgency=low
 
   * Fix packaging bugs

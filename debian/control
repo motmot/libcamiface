@@ -1,43 +1,43 @@
-Source: libcamiface-prosilica
+Source: libcamiface-avt
 Maintainer: Andrew Straw <strawman@astraw.com>
 Section: utils
 Priority: extra
 Build-Depends: debhelper (>= 7), cmake (>= 2.6),
-  libdc1394-22-dev (>= 2.0.2~svn547), libprosilica-gige-dev,
+  libdc1394-22-dev (>= 2.0.2~svn547), libavt-gige-dev,
   freeglut3-dev, libxmu-dev, libxi-dev, libglew1.5-dev
 Standards-Version: 3.7.3
 
-Package: libcamiface-prosilica
+Package: libcamiface-avt
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libprosilica-gige0
+Depends: ${shlibs:Depends}, ${misc:Depends}, libavt-gige0
 Suggests: coriander
-Provides: libcamiface
-Conflicts: libcamiface
-Replaces: libcamiface
+Provides: libcamiface, libcamiface-prosilica
+Conflicts: libcamiface, libcamiface-prosilica
+Replaces: libcamiface, libcamiface-prosilica
 Description: cross-platform cross-backend camera driver (library)
  cam_iface is the core package of several in the motmot
  repository that are involved with digital camera acquisition
  and analysis
 
-Package: libcamiface-prosilica-dev
+Package: libcamiface-avt-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libprosilica-gige0, libcamiface-prosilica, camiface-prosilica, libcamiface-prosilica
+Depends: ${shlibs:Depends}, ${misc:Depends}, libavt-gige0, libcamiface-avt, camiface-avt, libcamiface-avt
 Suggests: coriander
-Provides: libcamiface-dev
-Conflicts: libcamiface-dev
-Replaces: libcamiface-dev
+Provides: libcamiface-dev, libcamiface-prosilica-dev
+Conflicts: libcamiface-dev, libcamiface-prosilica-dev
+Replaces: libcamiface-dev, libcamiface-prosilica-dev
 Description: cross-platform cross-backend camera driver (development files)
  cam_iface is the core package of several in the motmot
  repository that are involved with digital camera acquisition
  and analysis
 
-Package: camiface-prosilica
+Package: camiface-avt
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libcamiface-prosilica
+Depends: ${shlibs:Depends}, ${misc:Depends}, libcamiface-avt
 Suggests: coriander
-Provides: camiface
-Conflicts: camiface
-Replaces: camiface
+Provides: camiface, camiface-prosilica
+Conflicts: camiface, camiface-prosilica
+Replaces: camiface, camiface-prosilica
 Description: cross-platform cross-backend camera utilities
  cam_iface is the core package of several in the motmot
  repository that are involved with digital camera acquisition
