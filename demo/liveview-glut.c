@@ -102,10 +102,10 @@ void yuv422_to_mono8(const unsigned char *src_pixels, unsigned char *dest_pixels
   size_t i,j;
   const unsigned char *src_chunk;
   unsigned char *dest_chunk;
-  for (i=0; i<height; i++) {
+  for (i=0; i<(unsigned int)height; i++) {
     src_chunk = src_pixels + i*src_stride;
     dest_chunk = dest_pixels + i*dest_stride;
-    for (j=0; j<(width/2); j++) {
+    for (j=0; j<((unsigned int)width/2); j++) {
       dest_chunk[0] = src_chunk[1];
       dest_chunk[1] = src_chunk[3];
       dest_chunk+=2;
@@ -368,8 +368,8 @@ void initialize_gl_texture() {
 
   if (use_pbo) {
     // align
-    PBO_stride = (width/32)*32;
-    if (PBO_stride<width) PBO_stride+=32;
+    PBO_stride = ((unsigned int)width/32)*32;
+    if (PBO_stride<(unsigned int)width) PBO_stride+=32;
     tex_width = PBO_stride;
     tex_height = height;
 
@@ -438,7 +438,7 @@ for (i=0; i<ncams; i++) {
 
 void grab_frame(void); /* forward declaration */
 
-void display_pixels() {
+void display_pixels(void) {
   GLuint textureId;
   int i;
   int ncols,nrows,col_idx,row_idx;
@@ -502,15 +502,18 @@ char *textFileRead(char *fn) {
         FILE *fp;
         char *content = NULL;
 
-        int f,count;
-        f = open(fn, O_RDONLY);
+        int count;
+        fp = fopen(fn, "rt");
+	if (fp == NULL) {
+	  return NULL;
+	}
 
-        count = lseek(f, 0, SEEK_END);
+	fseek(fp, 0, SEEK_END);
+        count = ftell(fp);
 
-        close(f);
+        fseek(fp, 0, SEEK_SET);
 
         if (fn != NULL) {
-                fp = fopen(fn,"rt");
 
                 if (fp != NULL) {
 
@@ -563,6 +566,8 @@ char *textFileRead(char *fn) {
 
 void setShaders() {
 
+  const char * vv;
+  const char * ff;
                 char *vs,*fs;
                 GLint status;
                 GLhandleARB vertex_program,fragment_program;
@@ -586,8 +591,8 @@ void setShaders() {
                   return;
                 }
 
-                const char * vv = vs;
-                const char * ff = fs;
+                vv = vs;
+                ff = fs;
 
                 glShaderSource(vertex_program, 1, &vv,NULL);
                 glShaderSource(fragment_program, 1, &ff,NULL);
@@ -884,6 +889,7 @@ void upload_image_data_to_opengl(unsigned char* raw_image_data,
   unsigned char * gl_image_data;
   static unsigned char* show_pixels=NULL;
   GLuint textureId;
+  GLubyte* ptr;
 
   textureId = textureId_all[device_number];
 
@@ -895,7 +901,7 @@ void upload_image_data_to_opengl(unsigned char* raw_image_data,
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height, gl_data_format, GL_UNSIGNED_BYTE, 0);
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
     glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, PBO_stride*tex_height, 0, GL_STREAM_DRAW_ARB);
-    GLubyte* ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
+    ptr = (GLubyte*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
     if(ptr) {
       convert_pixels(raw_image_data, coding, PBO_stride, ptr, 1);
       glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB); // release pointer to mapping buffer

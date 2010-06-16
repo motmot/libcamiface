@@ -23,13 +23,14 @@ is a piece of code that creates the libcamiface interface for each
 particular camera driver.
 
 As seen below, the supported camera drivers are currently libdc1394,
-the Prosilia Gigabit Ethernet SDK, and the QuickTime
-SequenceGrabber. For a list of cameras supporting the libdc1394
-software, see http://damien.douxchamps.net/ieee1394/cameras/. For the
-Prosilica Gigabit cameras, see http://www.prosilica.com/. The
-QuickTime SequenceGrabber supports any camera available through
-QuickTime. This includes the built-in cameras on Mac laptops and
-desktops.
+the Prosilia Gigabit Ethernet SDK, Point Grey Research FlyCapture2,
+and the QuickTime SequenceGrabber. For a list of cameras supporting
+the libdc1394 software, see
+http://damien.douxchamps.net/ieee1394/cameras/. For the Prosilica
+Gigabit cameras, see http://www.prosilica.com/. For the Point Grey
+cameras, see http://www.ptgrey.com. The QuickTime SequenceGrabber
+supports any camera available through QuickTime. This includes the
+built-in cameras on Mac laptops and desktops.
 
 .. _libcamiface-supported-rates:
 
@@ -68,6 +69,11 @@ A number of backends are supported.
     - |works|
     - |works|
     - |works|
+  * - `Point Grey Research FlyCapture2 <http://www.ptgrey.com/products/pgrflycapture/index.asp>`_
+    - |orange| untested
+    - |orange| untested
+    - |works|
+    - |NA|
   * - `ImperX`_
     - |NA|
     - |NA|
@@ -103,11 +109,11 @@ Key to the above symbols:
   :width: 22
   :height: 22
 .. |mostly works| image:: _static/yellowgreenlight.png
-  :alt: works
+  :alt: mostly works
   :width: 22
   :height: 22
 .. |orange| image:: _static/redlight.png
-  :alt: works
+  :alt: caution
   :width: 22
   :height: 22
 .. |NA| replace:: NA
@@ -137,7 +143,7 @@ This will install the files::
   /usr/bin/ ( other demos )
   /usr/lib/libcam_iface_*
 
-To run a demo program, open ``/usr/bin/liveview-glut-unity``.
+To run a demo program, open ``/usr/bin/liveview-glut-mega``.
 
 Windows
 -------
@@ -182,13 +188,13 @@ makefiles, include ``-DCMAKE_VERBOSE_MAKEFILE=1``.
 
 To cut a source release::
 
-  VERSION="0.5.4"
+  VERSION="0.6.0"
   git archive --prefix=libcamiface-$VERSION/ release/$VERSION | gzip -9 > ../libcamiface-$VERSION.tar.gz
   git archive --prefix=libcamiface-$VERSION/ --format=zip release/$VERSION > ../libcamiface-$VERSION.zip
 
 To make a Debian source package::
 
-  VERSION="0.5.4"
+  VERSION="0.6.0"
   ln ../libcamiface-$VERSION.tar.gz ../libcamiface_$VERSION.orig.tar.gz
   rm -rf ../libcamiface_*.orig.tar.gz.tmp-nest
   git-buildpackage --git-debian-branch=debian --git-upstream-branch=master --git-no-create-orig --git-tarball-dir=.. --git-ignore-new --git-verbose -rfakeroot -S
@@ -226,6 +232,9 @@ To build an Xcode project, run cmake with the argument
 Windows
 -------
 
+Windows XP 32bit with CMake 2.6
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Install Microsoft's Visual Studio 2008. (Tested with Express Edition.)
 Install CMake.
 
@@ -245,6 +254,28 @@ libcamiface source directory.
 
   rem Now change into your build directory.
   cd build
+  nmake
+
+  rem Now, to build an NSIS .exe Windows installer.
+  cpack
+
+This will build a Windows installer, called
+``libcamiface-x.y.z-win32.exe``.
+
+Windows 7 64bit with CMake 2.8 to make 32 bit libcamiface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Install Microsoft's Visual Studio 2008. Install CMake.
+
+Open a Visual Studio Command Prompt from Start Menu->All
+Programs->Microsoft Visual Studio 2008->Visual Studio
+Tools->Visual Studio 2008 Command Prompt. Change directories into the
+libcamiface source directory.
+
+::
+
+  cd build
+  "C:\Program Files (x86)\CMake 2.8\bin\cmake.exe" .. -G "NMake Makefiles"
   nmake
 
   rem Now, to build an NSIS .exe Windows installer.
@@ -285,16 +316,6 @@ Environment variables:
 
  * *DC1394_BACKEND_AUTO_DEBAYER* use dc1394 to de-Bayer the images,
     resulting in RGB8 images (rather than MONO8 Bayer images).
-
-unity
------
-
-Environment variables:
-
- * *UNITY_BACKEND_DEBUG* print debugging messages.
-
- * *UNITY_BACKEND_DIR* set to directory in which to look for
-    libcamiface shared libraries.
 
 Git source code repository
 ==========================

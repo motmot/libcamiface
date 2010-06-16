@@ -37,7 +37,9 @@ IF(UNIX AND NOT APPLE)
   set(USR_SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/libcamiface/")
   SET(SHADER_SOURCE_DIR ${USR_SHARE_DIR})
 ELSE(UNIX AND NOT APPLE)
-  SET(SHADER_SOURCE_DIR "./")
+  # current directory
+  message("unknown shader source directory: setting to current directory")
+  SET(SHADER_SOURCE_DIR "")
 ENDIF(UNIX AND NOT APPLE)
 
 set(all_demo_backends ${all_backends})
@@ -51,6 +53,12 @@ FOREACH(SRC ${SRCS})
     ELSE(${BACKEND} STREQUAL "mega")
       TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_${BACKEND})
     ENDIF(${BACKEND} STREQUAL "mega")
+
+    if(WIN32)
+      set_target_properties(${SRC}-${BACKEND} PROPERTIES
+        COMPILE_FLAGS -D_CRT_SECURE_NO_WARNINGS=1
+      )
+    endif(WIN32)
 
     INSTALL(TARGETS ${SRC}-${BACKEND}
       RUNTIME DESTINATION ${DEMO_DIR}
@@ -109,9 +117,14 @@ IF(GLEW_ROOT STREQUAL "")
   FIND_PACKAGE(GLEW)
 ELSE(GLEW_ROOT STREQUAL "")
   # Set values based on GLEW_ROOT
-  SET(GLEW_FOUND TRUE)
-  SET(GLEW_INCLUDE_DIR "${GLEW_ROOT}/include")
-  SET(GLEW_LIBRARY "${GLEW_ROOT}/lib/libGLEW.a")
+  IF(WIN32)
+    # no GLEW
+    SET(GLEW_FOUND FALSE)
+  ELSE(WIN32)
+    SET(GLEW_FOUND TRUE)
+    SET(GLEW_INCLUDE_DIR "${GLEW_ROOT}/include")
+    SET(GLEW_LIBRARY "${GLEW_ROOT}/lib/libGLEW.a")
+  ENDIF(WIN32)
 ENDIF(GLEW_ROOT STREQUAL "")
 FIND_PACKAGE(GLUT)
 FIND_PACKAGE(OpenGL)
@@ -119,8 +132,18 @@ FIND_PACKAGE(OpenGL)
 if(GLUT_FOUND)
 
   set(liveview-glut-SRCS liveview-glut.c)
-  set(liveview_DEFINE "-DSHADER_DIR='\"${SHADER_SOURCE_DIR}\"'"
-    ${liveview_DEFINE})
+  if(WIN32)
+    set(liveview_DEFINE "-DSHADER_DIR=\"${SHADER_SOURCE_DIR}\""
+      ${liveview_DEFINE})
+  else(WIN32)
+    set(liveview_DEFINE "-DSHADER_DIR='\"${SHADER_SOURCE_DIR}\"'"
+      ${liveview_DEFINE})
+  endif(WIN32)
+
+  if(WIN32)
+    set(liveview_DEFINE "-D_CRT_SECURE_NO_WARNINGS=1"
+      ${liveview_DEFINE})
+  endif(WIN32)
 
   IF(GLEW_FOUND)
     set(liveview_DEFINE "-DUSE_GLEW"
@@ -179,7 +202,12 @@ if(GLUT_FOUND)
       GET_FILENAME_COMPONENT(GLUT_LIB_DIR ${GLUT_LIBRARIES} PATH)
       FILE(GLOB GLUT_DLLS ${GLUT_LIB_DIR}/*.dll)
       IF(GLEW_FOUND)
-        FILE(GLOB GLEW_DLLS ${GLEW_LIB_DIR}/*.dll)
+        GET_FILENAME_COMPONENT(GLEW_LIB_DIR ${GLEW_LIBRARY} PATH)
+	IF(WIN32)
+          FILE(GLOB GLEW_DLLS ${GLEW_LIB_DIR}/../bin/*.dll)
+	ELSE(WIN32)
+          FILE(GLOB GLEW_DLLS ${GLEW_LIB_DIR}/*.dll)
+	ENDIF(WIN32)
       ENDIF(GLEW_FOUND)
       INSTALL(FILES ${GLUT_DLLS} ${GLEW_DLLS} DESTINATION ${DEMO_DIR})
     ENDIF(WIN32)
