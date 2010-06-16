@@ -300,7 +300,7 @@ Prosilica's command line tools::
 
 Environment variables:
 
-  * *PROSILICA_BACKEND_DEBUG* print various debuggin information.
+  * *PROSILICA_BACKEND_DEBUG* print various debuging information.
 
 libdc1394
 ---------
