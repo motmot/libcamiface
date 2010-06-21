@@ -1066,22 +1066,24 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
 
   switch (coding) {
   case DC1394_COLOR_CODING_MONO8:
+  case DC1394_COLOR_CODING_RAW8:
+    this->inherited.depth = 8;
     if (strcmp(this->bayer,"BGGR")==0) {
       this->inherited.coding=CAM_IFACE_MONO8_BAYER_BGGR;
-      this->inherited.depth = 8;
     } else if (strcmp(this->bayer,"RGGB")==0) {
       this->inherited.coding=CAM_IFACE_MONO8_BAYER_RGGB;
-      this->inherited.depth = 8;
     } else if (strcmp(this->bayer,"GRBG")==0) {
       this->inherited.coding=CAM_IFACE_MONO8_BAYER_GRBG;
-      this->inherited.depth = 8;
     } else if (strcmp(this->bayer,"GBRG")==0) {
       this->inherited.coding=CAM_IFACE_MONO8_BAYER_GBRG;
-      this->inherited.depth = 8;
     } else {
-      this->inherited.coding=CAM_IFACE_MONO8;
-      this->inherited.depth = 8;
+      if (coding==DC1394_COLOR_CODING_RAW8) {
+	this->inherited.coding=CAM_IFACE_RAW8;
+      } else {
+	this->inherited.coding=CAM_IFACE_MONO8;
+      }
     }
+
     if (this->inherited.coding!=CAM_IFACE_MONO8) {
       if (getenv("DC1394_BACKEND_AUTO_DEBAYER")!=NULL) {
         if (strcmp(getenv("DC1394_BACKEND_AUTO_DEBAYER"),"0")) {
@@ -1091,10 +1093,6 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
         }
       }
     }
-    break;
-  case DC1394_COLOR_CODING_RAW8:
-    this->inherited.coding=CAM_IFACE_RAW8;
-    this->inherited.depth = 8;
     break;
   case DC1394_COLOR_CODING_YUV411:
     this->inherited.coding = CAM_IFACE_YUV411;
