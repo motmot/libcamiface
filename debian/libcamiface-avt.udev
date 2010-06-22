@@ -3,3 +3,6 @@ ATTRS{idVendor}=="1e10", ATTRS{idProduct}=="2000", MODE="0664", GROUP="plugdev"
 ATTRS{idVendor}=="1e10", ATTRS{idProduct}=="2001", MODE="0664", GROUP="plugdev"
 ATTRS{idVendor}=="1e10", ATTRS{idProduct}=="2005", MODE="0664", GROUP="plugdev"
 ATTRS{idVendor}=="1e10", ATTRS{idProduct}=="2004", MODE="0664", GROUP="plugdev"
+
+# linux udev rules to make /dev/raw1394 in video group, so that dc1394 cameras can be used.
+KERNEL=="raw1394", GROUP="video"
