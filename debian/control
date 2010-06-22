@@ -21,6 +21,7 @@ Description: cross-platform cross-backend camera driver (library)
 
 Package: libcamiface-avt-dev
 Architecture: any
+Section: libdevel
 Depends: ${shlibs:Depends}, ${misc:Depends}, libavt-gige0, libcamiface-avt, camiface-avt, libcamiface-avt
 Suggests: coriander
 Provides: libcamiface-dev, libcamiface-prosilica-dev
