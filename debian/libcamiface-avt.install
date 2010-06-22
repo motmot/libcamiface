@@ -1,6 +1,3 @@
-builddir/src/libcam_iface_dc1394.so*  usr/lib
-builddir/src/libcam_iface_mega.so*  usr/lib
-builddir/src/libcam_iface_prosilica_gige.so*  usr/lib
-builddir/src/libcam_iface_unity.so*  usr/lib
+builddir/src/libcam_iface_*.so*  usr/lib
 demo/*.vrt usr/share/libcamiface
 demo/*.frg usr/share/libcamiface
