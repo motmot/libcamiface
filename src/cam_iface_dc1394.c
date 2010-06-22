@@ -575,11 +575,13 @@ void BACKEND_METHOD(cam_iface_startup)() {
   // initialize cameras
   for (device_number=0;device_number<num_cameras;device_number++) {
     cameras[device_number] = dc1394_camera_new( libdc1394_instance, list->ids[device_number].guid );
+    /*
     if (!cameras[device_number]) {
       BACKEND_GLOBAL(cam_iface_error) = -1;
       CAM_IFACE_ERROR_FORMAT("Failed to initialize camera.");
       return;
     }
+    */
   }
 
   // initialize new structures
@@ -590,8 +592,15 @@ void BACKEND_METHOD(cam_iface_startup)() {
     features_by_device_number[device_number].dc1394_feature_ids = NULL;
   }
 
+  dc1394_camera_free_list (list);
+
   // fill new structures
   for (device_number=0;device_number<num_cameras;device_number++) {
+    if (!cameras[device_number]) {
+      // camera not available -- skip
+      continue;
+    }
+
     // features: pass 1 count num available
     CIDC1394CHK(dc1394_feature_get_all(cameras[device_number], &features));
     for (i=0; i<DC1394_FEATURE_NUM; i++) {
@@ -728,7 +737,6 @@ void BACKEND_METHOD(cam_iface_startup)() {
     }
 
   }
-  dc1394_camera_free_list (list);
 }
 
 void BACKEND_METHOD(cam_iface_shutdown)() {
@@ -774,7 +782,10 @@ void BACKEND_METHOD(cam_iface_shutdown)() {
   }
 
   for (device_number=0;device_number<num_cameras;device_number++) {
-    dc1394_camera_free(cameras[device_number]);
+    if (cameras[device_number]) {
+      dc1394_camera_free(cameras[device_number]);
+      cameras[device_number] = NULL;
+    }
   }
 
   free(cameras);
@@ -798,6 +809,13 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
     CAM_IFACE_ERROR_FORMAT("return structure NULL");
     return;
   }
+
+  if (!cameras[device_number]) {
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR;
+    CAM_IFACE_ERROR_FORMAT("camera not available");
+    return;
+  }
+
   snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->vendor);
   snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->model);
   snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%llXh", (long long unsigned int)cameras[device_number]->guid);
