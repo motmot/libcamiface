@@ -165,16 +165,28 @@ int main(int argc, char** argv) {
   }
   _check_error();
 
+  device_number = -1;
+
   printf("%d camera(s) found.\n",ncams);
   for (i=0; i<ncams; i++) {
     cam_iface_get_camera_info(i, &cam_info_struct);
+    if (cam_iface_have_error()==CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR) {
+      printf("  camera %d: (not available)\n",i);
+      cam_iface_clear_error();
+      continue;
+    }
+    device_number = i;
+    _check_error();
     printf("  camera %d:\n",i);
     printf("    vendor: %s\n",cam_info_struct.vendor);
     printf("    model: %s\n",cam_info_struct.model);
     printf("    chip: %s\n",cam_info_struct.chip);
   }
 
-  device_number = ncams-1;
+  if (device_number == -1) {
+    fprintf(stderr,"No cameras available.\n");
+    exit(1);
+  }
 
   printf("choosing camera %d\n",device_number);
 
