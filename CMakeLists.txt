@@ -33,7 +33,7 @@ project(libcamiface)
 # version
 set(V_MAJOR 0)
 set(V_MINOR 6)
-set(V_PATCH 0)
+set(V_PATCH 1)
 
 SET(CMAKE_BUILD_TYPE "Release")
 
