@@ -1,3 +1,9 @@
+libcamiface (0.6.2-0ads1) lucid; urgency=low
+
+  * New upstream release
+
+ -- Andrew Straw <strawman@astraw.com>  Thu, 24 Jun 2010 16:35:05 -0700
+
 libcamiface (0.6.1-0ads1) lucid; urgency=low
 
   * New upstream release
