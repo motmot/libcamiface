@@ -1,3 +1,9 @@
+libcamiface-avt (0.6.2-0ads1) lucid; urgency=low
+
+  * New upstream release
+
+ -- Andrew Straw <strawman@astraw.com>  Fri, 25 Jun 2010 13:01:21 -0700
+
 libcamiface-avt (0.6.1-0ads1) lucid; urgency=low
 
   * Package for AVT GigE SDK
