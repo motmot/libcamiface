@@ -411,7 +411,7 @@ void initialize_gl_texture() {
     printf("image stride: %d, PBO stride: %d\n",stride,(int)PBO_stride);
   }
 
-  buffer = malloc( tex_height*PBO_stride );
+  buffer = (char*)malloc( tex_height*PBO_stride );
   if (!buffer) {
     fprintf(stderr,"ERROR: failed to allocate buffer\n");
     exit(1);
