@@ -82,6 +82,14 @@ IF(QUICKTIME_FOUND)
   set(all_backends ${all_backends} quicktime)
 ENDIF(QUICKTIME_FOUND)
 
+# Backend: Basler Pylon --------------------------------
+
+FIND_PACKAGE(BaslerPylon)
+
+IF(BASLER_PYLON_FOUND)
+  set(all_backends ${all_backends} basler_pylon)
+ENDIF(BASLER_PYLON_FOUND)
+
 # Build targets -------------------------------------
 
 # create config.h file
