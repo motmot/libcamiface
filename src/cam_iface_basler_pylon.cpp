@@ -748,6 +748,7 @@ void CCbasler_pylon_start_camera(CCbasler_pylon *cam) {
     return;                    // already started
   Pylon::IStreamGrabber *grabber;
   size_t size;
+  try {
     grabber = cam->device->GetStreamGrabber(stream_grabber_index);
     grabber->Open();
 
@@ -789,24 +790,23 @@ void CCbasler_pylon_start_camera(CCbasler_pylon *cam) {
     for (unsigned i = 0; i < cam->num_image_buffers; i++) {
       DEBUG_ONLY(std::cerr << "registering buffer " << std::endl);
       Pylon::StreamBufferHandle h;
-      try {
 	h = grabber->RegisterBuffer(buf_at, size);
-      } catch (GenICam::GenericException e) {
-	CAM_IFACE_ERROR_GENICAM_EXCEPTION("GenICam exception registering buffers", e);
-	return;
-      } catch (std::exception e) {
-	CAM_IFACE_ERROR_EXCEPTION("std::exception registering buffers", e);
-	return;
-      } catch (...) {
-	CAM_IFACE_ERROR("unknown exception registering buffers");
-	return;
-      }
       cam->buffer_handles[i] = h;
       buf_at += size;
       grabber->QueueBuffer(h);
     }
     camera_execute (cam, "AcquisitionStart");
     cam->grabber = grabber;
+  } catch (GenICam::GenericException e) {
+    CAM_IFACE_ERROR_GENICAM_EXCEPTION("GenICam exception in start_camera", e);
+    return;
+  } catch (std::exception e) {
+    CAM_IFACE_ERROR_EXCEPTION("std::exception in start_camera", e);
+    return;
+  } catch (...) {
+    CAM_IFACE_ERROR("unknown exception in start_camera");
+    return;
+  }
 }
 
 void CCbasler_pylon_stop_camera(CCbasler_pylon *cam) {
