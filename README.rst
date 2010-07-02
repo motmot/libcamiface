@@ -243,6 +243,10 @@ Programs->Microsoft Visual C++ 2008 Express Edition->Visual Studio
 Tools->Visual Studio 2008 Command Prompt. Change directories into the
 libcamiface source directory.
 
+Compile in Release mode. (On linux, this would be done with adding
+``-DCMAKE_BUILD_TYPE=Release`` in your call to cmake. As I write this,
+I'm not sure of the best way to do it in Windows.)
+
 ::
 
   cmakesetup
