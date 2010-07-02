@@ -331,6 +331,7 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
     snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%s", info.GetDeviceClass().c_str());
   } catch (std::exception e) {
     CAM_IFACE_ERROR ("finding the camera");
+    return;
   }
 }
 
@@ -467,6 +468,7 @@ CCbasler_pylon_construct(int device_number,
   if (rv == 0) {
     BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR("error allocating memory");
+    return NULL;
   } else {
     CCbasler_pylon_CCbasler_pylon(rv,
                                   device_number,
@@ -709,8 +711,6 @@ void CCbasler_pylon_start_camera(CCbasler_pylon *cam) {
     return;                    // already started
   Pylon::IStreamGrabber *grabber;
   size_t size;
-  try {
-    //cam->device->Open();
     grabber = cam->device->GetStreamGrabber(stream_grabber_index);
     grabber->Open();
 
@@ -750,19 +750,26 @@ void CCbasler_pylon_start_camera(CCbasler_pylon *cam) {
     cam->buffer_handles = new Pylon::StreamBufferHandle[cam->num_image_buffers];
     char *buf_at = (char *) cam->buffers;
     for (unsigned i = 0; i < cam->num_image_buffers; i++) {
-DEBUG_ONLY(std::cerr << "registering buffer " << std::endl);
-      Pylon::StreamBufferHandle h = grabber->RegisterBuffer(buf_at, size);
+      DEBUG_ONLY(std::cerr << "registering buffer " << std::endl);
+      Pylon::StreamBufferHandle h;
+      try {
+	h = grabber->RegisterBuffer(buf_at, size);
+      } catch (GenICam::GenericException e) {
+	CAM_IFACE_ERROR_GENICAM_EXCEPTION("GenICam exception registering buffers", e);
+	return;
+      } catch (std::exception e) {
+	CAM_IFACE_ERROR_EXCEPTION("std::exception registering buffers", e);
+	return;
+      } catch (...) {
+	CAM_IFACE_ERROR("unknown exception registering buffers");
+	return;
+      }
       cam->buffer_handles[i] = h;
       buf_at += size;
       grabber->QueueBuffer(h);
     }
     camera_execute (cam, "AcquisitionStart");
     cam->grabber = grabber;
-  } catch (GenICam::GenericException e) {
-    CAM_IFACE_ERROR_GENICAM_EXCEPTION("registering buffers", e);
-  } catch (std::exception e) {
-    CAM_IFACE_ERROR_EXCEPTION("registering buffers", e);
-  }
 }
 
 void CCbasler_pylon_stop_camera(CCbasler_pylon *cam) {
@@ -868,6 +875,7 @@ void CCbasler_pylon_get_camera_property_info(CCbasler_pylon *cam,
     }
   } catch (std::exception e) {
     CAM_IFACE_ERROR_EXCEPTION("getting property information", e);
+    return;
   }
 }
 
@@ -898,6 +906,7 @@ void CCbasler_pylon_get_camera_property(CCbasler_pylon *cam,
     }
   } catch (std::exception e) {
     CAM_IFACE_ERROR_EXCEPTION("getting property value", e);
+    return;
   }
 }
 
@@ -928,6 +937,7 @@ void CCbasler_pylon_set_camera_property(CCbasler_pylon *cam,
     }
   } catch (std::exception e) {
     CAM_IFACE_ERROR_EXCEPTION("setting property value", e);
+    return;
   }
 }
 
@@ -987,11 +997,13 @@ void CCbasler_pylon_point_next_frame_blocking(CCbasler_pylon *cam,
                                               float timeout)
 {
   CAM_IFACE_ERROR("point_next_frame_blocking: unimplemented");
+  return;
 }
 
 void CCbasler_pylon_unpoint_frame( CCbasler_pylon *cam)
 {
   CAM_IFACE_ERROR("unpoint_frame: unimplemented");
+  return;
 }
 
 void CCbasler_pylon_get_last_timestamp(CCbasler_pylon *cam,
@@ -1108,6 +1120,7 @@ void CCbasler_pylon_set_framerate( CCbasler_pylon *cam,
                              float framerate )
 {
   CAM_IFACE_ERROR("set_framerate not implemented");
+  return;
 }
 
 void CCbasler_pylon_get_max_frame_size( CCbasler_pylon *cam,
