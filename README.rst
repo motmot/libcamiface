@@ -317,6 +317,25 @@ Environment variables:
  * *DC1394_BACKEND_AUTO_DEBAYER* use dc1394 to de-Bayer the images,
     resulting in RGB8 images (rather than MONO8 Bayer images).
 
+Basler Pylon
+------------
+
+Environment variables for CMake:
+
+ * *BASLER_PYLON_LIB_PATH* location of Basler libraries
+    (e.g. ``export BASLER_PYLON_LIB_PATH="/opt/pylon/lib64/"``)
+
+ * *BASLER_PYLON_INCLUDE_PATH* location of Basler include files
+    (e.g. ``export BASLER_PYLON_INCLUDE_PATH="/opt/pylon/include/"``)
+
+Environment variables for Basler Pylon libraries:
+
+ * *PYLON_ROOT* location of Pylon SDK root (e.g. 
+   ``export PYLON_ROOT=/opt/pylon``)
+
+ * *GENICAM_ROOT* location of GenICam root (e.g. 
+   ``export GENICAM_ROOT_V1_1=/opt/pylon``)
+
 Git source code repository
 ==========================
 
