@@ -267,9 +267,46 @@ static Pylon::IPylonDevice **basler_pylon_cameras = 0;
 
 
 /* Assert that we have the correct type of camera on-hand. */
-#define CHECK_CC(camera) \
-    assert((camera)->inherited.vmt \
-       == (CamContext_functable *) (&CCbasler_pylon_vmt))
+
+#ifdef MEGA_BACKEND
+#define CHECK_CC(camera)						\
+  if (!(camera)) {							\
+    basler_pylon_cam_iface_error = -1;					\
+    CAM_IFACE_ERROR("no CamContext specified (NULL argument)");		\
+    return;                                                             \
+  } else {								\
+    if (!((camera)->inherited.vmt ==					\
+	  (CamContext_functable *) (&CCbasler_pylon_vmt))) {		\
+      basler_pylon_cam_iface_error = -1;				\
+      CAM_IFACE_ERROR("no CamContext specified (NULL argument)");	\
+      return;								\
+    }									\
+    if ((camera)->grabber == NULL) {					\
+      basler_pylon_cam_iface_error = -1;				\
+      CAM_IFACE_ERROR("no CamContext grabber (camera not started)");	\
+      return;								\
+    }									\
+  }
+#else
+#define CHECK_CC(camera)                                                     \
+  if (!(camera)) {							\
+    cam_iface_error = -1;                                               \
+    CAM_IFACE_ERROR("no CamContext specified (NULL argument)");		\
+    return;                                                             \
+  } else {								\
+    if (!((camera)->inherited.vmt ==					\
+	  (CamContext_functable *) (&CCbasler_pylon_vmt))) {		\
+      cam_iface_error = -1;						\
+      CAM_IFACE_ERROR("no CamContext specified (NULL argument)");	\
+      return;								\
+    }									\
+    if ((camera)->grabber == NULL) {					\
+      cam_iface_error = -1;						\
+      CAM_IFACE_ERROR("no CamContext grabber (camera not started)");	\
+      return;								\
+    }									\
+  }
+#endif
 
 
 #include "cam_iface_basler_pylon.h"
