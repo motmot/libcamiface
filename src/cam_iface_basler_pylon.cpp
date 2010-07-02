@@ -353,8 +353,15 @@ int BACKEND_METHOD(cam_iface_get_num_cameras)() {
     for (int i = 0; i < basler_pylon_n_cameras; i++)
       basler_pylon_cameras[i] = 0;
     return basler_pylon_n_cameras;
+  } catch (GenICam::GenericException e) {
+    std::cerr<<"GenericException: " << e.GetDescription() << std::endl;
+    CAM_IFACE_ERROR_EXCEPTION("GenICam::GenericException in get_num_cameras",e);
+    return -1;
   } catch (std::exception e) {
-    CAM_IFACE_ERROR("counting devices");
+    CAM_IFACE_ERROR_EXCEPTION("std::exception in get_num_cameras",e);
+    return -1;
+  } catch (...) {
+    CAM_IFACE_ERROR("in get_num_cameras");
     return -1;
   }
 }
@@ -367,8 +374,15 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
     snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", info.GetVendorName().c_str());
     snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", info.GetModelName().c_str());
     snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%s", info.GetDeviceClass().c_str());
+  } catch (GenICam::GenericException e) {
+    std::cerr<<"GenericException: " << e.GetDescription() << std::endl;
+    CAM_IFACE_ERROR_EXCEPTION("GenICam::GenericException in get_camera_info",e);
+    return;
   } catch (std::exception e) {
-    CAM_IFACE_ERROR ("finding the camera");
+    CAM_IFACE_ERROR_EXCEPTION("std::exception in get_camera_info",e);
+    return;
+  } catch (...) {
+    CAM_IFACE_ERROR("in get_camera_info");
     return;
   }
 }
