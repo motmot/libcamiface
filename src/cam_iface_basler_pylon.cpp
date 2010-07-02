@@ -369,7 +369,6 @@ static Pylon::IPylonDevice *force_device (int device_number)
    || basler_pylon_n_cameras == -1)
     return NULL;
   if (basler_pylon_cameras[device_number] == 0) {
-    std::cerr << "opening device" << std::endl;
     try {
       Pylon::DeviceInfoList_t devices;
       Pylon::CTlFactory::GetInstance().EnumerateDevices(devices);
@@ -435,8 +434,7 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
     mode_string[0] = 0;
     return;
   }
-  DEBUG_ONLY(std::cerr<<"about to print names"<<std::endl);
-  PrintNames(device->GetNodeMap()->GetNode("Root"), 0);
+  //PrintNames(device->GetNodeMap()->GetNode("Root"), 0);
 #if 0
   GenApi::NodeList_t list;
   for (GenApi::NodeList_t::iterator it = list.begin();
