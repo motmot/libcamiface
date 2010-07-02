@@ -33,7 +33,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       so there will probably only be a very limited set of modes
       (corresponding to various pixel formats at the sensor's resolution)
    *  point_next_frame_blocking and unpoint_frame methods are not implemented.
-   *  trigger-mode APIs are not implemented.
    *  some of the Basler-Pylon camera properties
       are floating-point numbers.  As you presumably know, the
       libcamiface properties are always integers (modulo
