@@ -1117,7 +1117,6 @@ void CCbasler_pylon_get_frame_roi(CCbasler_pylon *cam,
                                   int* width,
                                   int* height)
 {
-  CHECK_CC(cam);
   *left = cam->roi_left;
   *top = cam->roi_top;
   *width = cam->roi_width;
@@ -1170,14 +1169,12 @@ void CCbasler_pylon_get_max_frame_size( CCbasler_pylon *cam,
 void CCbasler_pylon_get_buffer_size(CCbasler_pylon *cam,
                                     int *size)
 {
-  CHECK_CC(cam);
   *size=cam->buffer_size;
 }
 
 void CCbasler_pylon_get_num_framebuffers(CCbasler_pylon *cam,
                                          int *num_framebuffers)
 {
-  CHECK_CC(cam);
   *num_framebuffers=cam->num_image_buffers;
 }
 
