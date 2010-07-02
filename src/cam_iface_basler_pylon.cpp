@@ -142,6 +142,7 @@ typedef struct CCbasler_pylon {
 
   double last_timestamp;
   unsigned last_frameno;
+  bool grabber_open;
 } CCbasler_pylon;
 
 // forward declarations
@@ -668,6 +669,7 @@ CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
 
   cam->last_timestamp = 0;
   cam->last_frameno = 0;
+  cam->grabber_open = false;
   cam->trigger_mode = 0;
 
   cam->num_image_buffers = num_image_buffers;
@@ -713,18 +715,22 @@ basler_pylon_stop_camera (CCbasler_pylon *cam)
       }
       DEBUG_ONLY(std::cerr << "FinishGrab" << std::endl);
       grabber->FinishGrab();
+      grabber->Close();
+      cam->grabber_open = false;
       delete [] cam->buffer_handles;
       free (cam->buffers);
       cam->buffers = 0;
       cam->buffer_handles = 0;
     }
-    DEBUG_ONLY(std::cerr << "IsOpen" << std::endl);
-    if (device->IsOpen()) {
-      DEBUG_ONLY(std::cerr << "Close" << std::endl);
-      device->Close();
-    }
+  } catch (GenICam::GenericException e) {
+      std::cerr<<"GenericException: " << e.GetDescription() << std::endl;
+      CAM_IFACE_ERROR_EXCEPTION ("closing device failed", e);
+      return NULL;
   } catch (std::exception e) {
     CAM_IFACE_ERROR_EXCEPTION("closing device failed", e);
+    return false;
+  } catch (...) { 
+    CAM_IFACE_ERROR("unknown exception closing device");
     return false;
   }
   return true;
@@ -734,6 +740,14 @@ void CCbasler_pylon_close(CCbasler_pylon *cam) {
   CHECK_CC(cam);
 
   basler_pylon_stop_camera (cam);
+
+  Pylon::IPylonDevice *device = cam->device;
+
+  DEBUG_ONLY(std::cerr << "IsOpen" << std::endl);
+  if (device->IsOpen()) {
+    DEBUG_ONLY(std::cerr << "Close" << std::endl);
+    device->Close();
+  }
 
   /* destroy device */
   DEBUG_ONLY(std::cerr << "deleting device" << std::endl);
@@ -750,7 +764,10 @@ void CCbasler_pylon_start_camera(CCbasler_pylon *cam) {
   size_t size;
   try {
     grabber = cam->device->GetStreamGrabber(stream_grabber_index);
-    grabber->Open();
+    if (!(cam->grabber_open)) {
+      grabber->Open();
+      cam->grabber_open = true;
+    }
 
     // Set the camera to continuous frame mode
     if (cam->trigger_mode == 0) {
