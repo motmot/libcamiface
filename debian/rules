@@ -28,7 +28,9 @@ clean:
 	dh clean
 
 binary-arch: install
-	dh binary-arch
+	dh binary-arch --before dh_shlibdeps
+	dh_shlibdeps -a --dpkg-shlibdeps-params=--ignore-missing-info
+	dh binary-arch --after dh_shlibdeps
 
 binary-indep: install
 	dh binary-indep

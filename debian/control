@@ -1,42 +1,42 @@
-Source: libcamiface-avt
+Source: libcamiface-basler
 Maintainer: Andrew Straw <strawman@astraw.com>
 Section: utils
 Priority: extra
 Build-Depends: debhelper (>= 7), cmake (>= 2.6),
-  libdc1394-22-dev (>= 2.0.2~svn547), libavt-gige-dev,
+  libdc1394-22-dev (>= 2.0.2~svn547), basler-pylon,
   freeglut3-dev, libxmu-dev, libxi-dev, libglew1.5-dev
 Standards-Version: 3.8.4
 
-Package: libcamiface-avt
+Package: libcamiface-basler
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libavt-gige0
+Depends: ${shlibs:Depends}, ${misc:Depends}, basler-pylon
 Suggests: coriander
-Provides: libcamiface, libcamiface-prosilica
-Conflicts: libcamiface, libcamiface-prosilica
-Replaces: libcamiface, libcamiface-prosilica
+Provides: libcamiface
+Conflicts: libcamiface, libcamiface-prosilica, libcamiface-avt
+Replaces: libcamiface, libcamiface-prosilica, libcamiface-avt
 Description: cross-platform cross-backend camera driver (library)
  cam_iface is the core package of several in the motmot
  repository that are involved with digital camera acquisition
  and analysis
 
-Package: libcamiface-avt-dev
+Package: libcamiface-basler-dev
 Architecture: any
 Section: libdevel
-Depends: ${shlibs:Depends}, ${misc:Depends}, libavt-gige0, libcamiface-avt, camiface-avt, libcamiface-avt
+Depends: ${shlibs:Depends}, ${misc:Depends}, libcamiface-basler, camiface-basler
 Suggests: coriander
-Provides: libcamiface-dev, libcamiface-prosilica-dev
-Conflicts: libcamiface-dev, libcamiface-prosilica-dev
-Replaces: libcamiface-dev, libcamiface-prosilica-dev
+Provides: libcamiface-dev
+Conflicts: libcamiface-dev, libcamiface-prosilica-dev, libcamiface-avt-dev
+Replaces: libcamiface-dev, libcamiface-prosilica-dev, libcamiface-avt-dev
 Description: cross-platform cross-backend camera driver (development files)
  cam_iface is the core package of several in the motmot
  repository that are involved with digital camera acquisition
  and analysis
 
-Package: camiface-avt
+Package: camiface-basler
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libcamiface-avt
+Depends: ${shlibs:Depends}, ${misc:Depends}, libcamiface-basler
 Suggests: coriander
-Provides: camiface, camiface-prosilica
+Provides: camiface
 Conflicts: camiface, camiface-prosilica
 Replaces: camiface, camiface-prosilica
 Description: cross-platform cross-backend camera utilities
