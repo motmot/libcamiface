@@ -375,14 +375,23 @@ static Pylon::IPylonDevice *force_device (int device_number)
       Pylon::CTlFactory::GetInstance().EnumerateDevices(devices);
       Pylon::CDeviceInfo info = devices[device_number];
       assert(device_number<devices.size());
+      assert(device_number>=0);
+      
+      // the following call can emit SIGABRT and kill the program, despite our exception catching
       basler_pylon_cameras[device_number] = Pylon::CTlFactory::GetInstance().CreateDevice(devices[device_number]);
+
       assert(basler_pylon_cameras[device_number]);
       basler_pylon_cameras[device_number]->Open();
     } catch (GenICam::GenericException e) {
       std::cerr<<"GenericException: " << e.GetDescription() << std::endl;
       CAM_IFACE_ERROR_EXCEPTION ("getting the camera", e);
+      return NULL;
     } catch (std::exception e) {
-      CAM_IFACE_ERROR_EXCEPTION ("getting the camera", e);
+      CAM_IFACE_ERROR_EXCEPTION ("std::exception getting the camera", e);
+      return NULL;
+    } catch (...) { 
+      CAM_IFACE_ERROR("unknown exception getting the camera");
+      return NULL;
     }
   }
   return basler_pylon_cameras[device_number];
@@ -417,8 +426,10 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
   Pylon::IPylonDevice *device = force_device (device_number);
   if (device == 0) {
     mode_string[0] = 0;
+    // error is already set
     return;
   }
+    
   if (mode_number >= BASLER_PYLON_N_PIXEL_CODINGS) {
     CAM_IFACE_ERROR("bad mode");
     mode_string[0] = 0;
@@ -574,9 +585,14 @@ CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
   cam->inherited.coding = basler_pylon_pixel_coding_mapping[mode_number].coding;
   cam->inherited.depth = basler_pylon_pixel_coding_mapping[mode_number].depth;
 
+  Pylon::IPylonDevice *device = force_device (device_number);
+  if (device == 0) {
+    // error is already set
+    return;
+  }
+
+  cam->device = device;
   try{
-    Pylon::IPylonDevice *device = force_device (device_number);
-    cam->device = device;
     GenApi::CIntegerPtr width = device->GetNodeMap()->GetNode("WidthMax");
     GenApi::CIntegerPtr height = device->GetNodeMap()->GetNode("HeightMax");
     cam->sensor_width = width->GetValue();
