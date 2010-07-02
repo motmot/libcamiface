@@ -70,7 +70,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/select.h>
 #include <errno.h>
 
-#undef CAM_IFACE_DC1394_SLOWDEBUG
 #define INVALID_FILENO 0
 #define DELAY 50000
 
@@ -599,17 +598,6 @@ CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
   // call parent
   CamContext_CamContext((CamContext*)cam,device_number,num_image_buffers,mode_number);
   cam->inherited.vmt = (CamContext_functable*)&CCbasler_pylon_vmt;
-
-#ifdef CAM_IFACE_DC1394_SLOWDEBUG
-  char mode_string[255];
-
-  fprintf(stderr,"attempting to start camera %d with mode_number %d\n",device_number,mode_number);
-  cam_iface_get_mode_string(device_number,mode_number,mode_string,255);
-  if (BACKEND_GLOBAL(cam_iface_error)) {
-    return;
-  }
-  fprintf(stderr,"mode string: %s\n",mode_string);
-#endif
 
   if ((device_number < 0)|(device_number >= basler_pylon_n_cameras)) {
     BACKEND_GLOBAL(cam_iface_error) = -1;
