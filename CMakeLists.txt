@@ -35,8 +35,6 @@ set(V_MAJOR 0)
 set(V_MINOR 6)
 set(V_PATCH 2)
 
-SET(CMAKE_BUILD_TYPE "Release")
-
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 
 FIND_PACKAGE(PkgConfig)
