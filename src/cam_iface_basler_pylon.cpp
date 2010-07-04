@@ -1032,7 +1032,7 @@ void CCbasler_pylon_grab_next_frame_blocking_with_stride(CCbasler_pylon *cam,
 	     stride);/*size*/
     }
   }
-  cam->last_timestamp = 0.001 * result.GetTimeStamp();
+  cam->last_timestamp = 0.001 * result.GetTimeStamp() / 125000.0; // XXX scale from 1394 cycles?
   cam->last_frameno = result.FrameNr();
 
   cam->grabber->QueueBuffer(result.Handle(), NULL);
