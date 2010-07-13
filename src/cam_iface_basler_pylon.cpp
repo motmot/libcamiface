@@ -124,9 +124,6 @@ typedef struct CCbasler_pylon {
   Pylon::StreamBufferHandle *buffer_handles;
   void *buffers;
 
-  // optional: created on demand
-  GenApi::NodeList_t *properties;
-
   unsigned sensor_width, sensor_height;
   unsigned roi_left;
   unsigned roi_top;
@@ -234,6 +231,15 @@ myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0
 
 static int basler_pylon_n_cameras = -1;
 static Pylon::IPylonDevice **basler_pylon_cameras = 0;
+
+#define PV_NUM_ATTR 2
+const char *BACKEND_GLOBAL(pv_attr_strings)[PV_NUM_ATTR] = {
+  "gain",
+  "shutter" // exposure
+};
+#define PV_ATTR_GAIN 0
+#define PV_ATTR_SHUTTER 1
+
 
 #define CAM_IFACE_ERROR(message)                            \
   do {                                                      \
@@ -587,6 +593,17 @@ grabber_set_int  (Pylon::IStreamGrabber *grabber,
   return ptr->SetValue(value);
 }
 
+static void
+camera_get_int_range  (CCbasler_pylon  *cam,
+                       const char     *name,
+                       int64_t        *min_out,
+                       int64_t        *max_out)
+{
+  GenApi::CIntegerPtr ptr = cam->device->GetNodeMap()->GetNode(name);
+  *min_out = ptr->GetMin();
+  *max_out = ptr->GetMax();
+}
+
 
 void
 CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
@@ -666,7 +683,6 @@ CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
   cam->grabber = 0;
   cam->buffers = 0;
   cam->buffer_handles = 0;
-  cam->properties = 0;
 
   cam->last_timestamp = 0;
   cam->last_frameno = 0;
@@ -775,15 +791,11 @@ void CCbasler_pylon_start_camera(CCbasler_pylon *cam) {
       camera_set_enum(cam, "TriggerSelector", "AcquisitionStart");
       camera_set_enum(cam, "TriggerMode", "Off");
       camera_set_enum(cam, "AcquisitionMode", "Continuous");
-      camera_set_enum(cam, "ExposureMode", "Timed");
-      camera_set_int(cam, "ExposureTimeRaw", 200);
     } else {
       camera_set_enum(cam, "TriggerSelector", "AcquisitionStart");
       camera_set_enum(cam, "TriggerMode", "On");
       camera_set_enum_value(cam, "TriggerSource", cam->trigger_mode - 1);
       camera_set_enum(cam, "AcquisitionMode", "Continuous");
-      camera_set_enum(cam, "ExposureMode", "Timed");
-      camera_set_int(cam, "ExposureTimeRaw", 200);
     }
 
 
@@ -831,138 +843,82 @@ void CCbasler_pylon_stop_camera(CCbasler_pylon *cam) {
   basler_pylon_stop_camera (cam);
 }
 
-static bool
-is_allowable_node (GenApi::INode *node)
-{
-return false;
-  DEBUG_ONLY(std::cerr << "is_allowable_node: " << node->GetName() << "; is-available=" << GenApi::IsAvailable(node) << "; i,b,f="
- << (void*)(dynamic_cast<GenApi::IInteger*> (node)) << ","
- << (void*)(dynamic_cast<GenApi::IBoolean*> (node)) << ","
- << (void*)(dynamic_cast<GenApi::IFloat*> (node)) << std::endl);
-  if (!GenApi::IsAvailable(node))
-      return false;
-  if (!GenApi::IsReadable(node))		// HACK
-      return false;
-  if (!GenApi::IsWritable(node))		// HACK
-      return false;
-  return ((dynamic_cast<GenApi::IInteger*> (node)) != 0
-       || (dynamic_cast<GenApi::IBoolean*> (node)) != 0
-       || (dynamic_cast<GenApi::IFloat*> (node)) != 0);
-}
-
-static bool
-basler_pylon_force_properties (CCbasler_pylon *cam)
-{
-  if (cam->properties == 0) {
-    try {
-      GenApi::NodeList_t *props = new GenApi::NodeList_t;
-      cam->device->GetNodeMap()->GetNodes (*props);
-
-      // filter properties???
-      for (GenApi::node_vector::iterator iter = (*props).begin();
-           iter != (*props).end();
-           ) {
-        if (is_allowable_node (*iter))
-          iter++;
-        else
-          iter = (*props).erase(iter);
-      }
-      cam->properties = props;
-    } catch (std::exception e) {
-      CAM_IFACE_ERROR_EXCEPTION("getting NodeList", e);
-      return false;
-    }
-  }
-  return true;
-}
 void CCbasler_pylon_get_num_camera_properties(CCbasler_pylon *cam,
                                         int* num_properties) {
-  *num_properties = 0;
-  if (!basler_pylon_force_properties (cam))
-    return;
-  *num_properties = cam->properties->size();
-  DEBUG_ONLY(std::cerr << "n properties = " << *num_properties << std::endl);
+  *num_properties = PV_NUM_ATTR;
 }
 
 void CCbasler_pylon_get_camera_property_info(CCbasler_pylon *cam,
                                        int property_number,
                                        CameraPropertyInfo *info) {
-  if (!basler_pylon_force_properties (cam))
-    return;
-  try {
-    GenApi::INode *prop = (*(cam->properties))[property_number];
-
-    info->name = prop->GetName().c_str();
-	  DEBUG_ONLY(std::cerr << "property " << property_number << " named " << prop->GetName() << std::endl);
-    info->is_present = true;
-
-    info->on_off_capable = false;
-    info->absolute_capable = true;
-    info->absolute_control_mode = true;
-    info->has_auto_mode = false;
-    info->has_manual_mode = true;
-    info->available = true;
-    info->readout_capable = true;
-    info->is_scaled_quantity = false;
-    info->scaled_unit_name = NULL;
-    info->scale_offset = 0.0;
-    info->scale_gain = 1.0;
-    if ((dynamic_cast<GenApi::IInteger*> (prop)) != 0) {
-      GenApi::IInteger *N = (GenApi::IInteger*) prop;
-      info->absolute_min_value = info->min_value = N->GetMin();
-      info->absolute_max_value = info->max_value = N->GetMax();
-      info->original_value = N->GetValue();
-    } else if ((dynamic_cast<GenApi::IFloat*> (prop)) != 0) {
-      GenApi::IFloat *N = (GenApi::IFloat*) prop;
-      info->absolute_min_value = info->min_value = N->GetMin();
-      info->absolute_max_value = info->max_value = N->GetMax();
-      info->original_value = N->GetValue();
-      if (N->GetUnit().c_str() != NULL
-       && N->GetUnit().c_str()[0] != 0) {
-        info->is_scaled_quantity = true;
-        info->scaled_unit_name = N->GetUnit().c_str();
-      }
-    } else if ((dynamic_cast<GenApi::IBoolean*> (prop)) != 0) {
-      GenApi::IBoolean *N = (GenApi::IBoolean*) prop;
-      info->on_off_capable = true;
-    } else {
-      assert(0);   /// should have been filtered out above
-    }
-  } catch (std::exception e) {
-    CAM_IFACE_ERROR_EXCEPTION("getting property information", e);
-    return;
+  if (info==NULL) {
+    CAM_IFACE_ERROR("no info argument specified (NULL argument)");
   }
+  info->is_present = 1;
+
+  info->min_value = 0;
+  //info->max_value = min(MAX_LONG,MAX_UINT32);
+  info->max_value = 0x7FFFFFFF;
+
+  info->has_auto_mode = 1;
+  info->has_manual_mode = 1;
+
+  info->is_scaled_quantity = 0;
+
+  info->original_value = 0;
+
+  info->available = 1;
+  info->readout_capable = 1;
+  info->on_off_capable = 0;
+
+  info->absolute_capable = 0;
+  info->absolute_control_mode = 0;
+  info->absolute_min_value = 0.0;
+  info->absolute_max_value = 0.0;
+
+  int64_t mymin,mymax;
+
+  switch (property_number) {
+    case PV_ATTR_GAIN:
+      info->name = "gain";
+      info->has_auto_mode = 0;
+      camera_get_int_range (cam, "GainRaw", &mymin, &mymax);
+      info->min_value = mymin;
+      info->max_value = mymax;
+      break;
+    case PV_ATTR_SHUTTER:
+      info->name = "shutter";
+      info->is_scaled_quantity = 1;
+      info->scaled_unit_name = "msec";
+      info->scale_offset = 0;
+      info->scale_gain = 1e-3; // convert from microsecond to millisecond
+      camera_get_int_range (cam, "ExposureTimeRaw", &mymin, &mymax);
+      info->min_value = mymin;
+      info->max_value = mymax;
+      break;
+    default:
+      CAM_IFACE_ERROR("invalid property number");
+      break;
+  }
+  return;
 }
 
 void CCbasler_pylon_get_camera_property(CCbasler_pylon *cam,
                                   int property_number,
                                   long* Value,
                                   int* Auto ) {
-  if (!basler_pylon_force_properties (cam))
-    return;
-  if (Auto != NULL)
-    *Auto = false;
-  try {
-    GenApi::INode *prop = (*(cam->properties))[property_number];
-    if ((dynamic_cast<GenApi::IInteger*> (prop)) != 0) {
-      GenApi::IInteger *N = (GenApi::IInteger*) prop;
-      if (Value != NULL)
-        *Value = N->GetValue();
-    } else if ((dynamic_cast<GenApi::IFloat*> (prop)) != 0) {
-      GenApi::IFloat *N = (GenApi::IFloat*) prop;
-      if (Value != NULL)
-        *Value = N->GetValue();
-    } else if ((dynamic_cast<GenApi::IBoolean*> (prop)) != 0) {
-      GenApi::IBoolean *N = (GenApi::IBoolean*) prop;
-      if (Value != NULL)
-        *Value = N->GetValue();
-    } else {
-      assert(0);
-    }
-  } catch (std::exception e) {
-    CAM_IFACE_ERROR_EXCEPTION("getting property value", e);
-    return;
+  switch (property_number) {
+    case PV_ATTR_GAIN:
+      *Value = camera_get_int (cam, "GainRaw");
+      break;
+    case PV_ATTR_SHUTTER:
+      *Value = camera_get_int(cam, "ExposureTimeRaw");
+      break;
+    default: 
+      CAM_IFACE_ERROR("invalid property number");
+      return;
   }
+  *Auto = false;
 }
 
 void CCbasler_pylon_set_camera_property(CCbasler_pylon *cam,
@@ -970,29 +926,20 @@ void CCbasler_pylon_set_camera_property(CCbasler_pylon *cam,
                                         long Value,
                                         int Auto )
 {
-  if (!basler_pylon_force_properties (cam))
-    return;
   if (Auto) {
     CAM_IFACE_ERROR("automatic camera properties not supported");
     return;
   }
-  try {
-    GenApi::INode *prop = (*(cam->properties))[property_number];
-    if ((dynamic_cast<GenApi::IInteger*> (prop)) != 0) {
-      GenApi::IInteger *N = (GenApi::IInteger*) prop;
-      N->SetValue(Value);
-    } else if ((dynamic_cast<GenApi::IFloat*> (prop)) != 0) {
-      GenApi::IFloat *N = (GenApi::IFloat*) prop;
-      N->SetValue(Value);
-    } else if ((dynamic_cast<GenApi::IBoolean*> (prop)) != 0) {
-      GenApi::IBoolean *N = (GenApi::IBoolean*) prop;
-      N->SetValue(Value);
-    } else {
-      assert(0);
-    }
-  } catch (std::exception e) {
-    CAM_IFACE_ERROR_EXCEPTION("setting property value", e);
-    return;
+  switch (property_number) {
+    case PV_ATTR_GAIN:
+      camera_set_int (cam, "GainRaw", Value);
+      break;
+    case PV_ATTR_SHUTTER:
+      camera_set_int(cam, "ExposureTimeRaw", Value);
+      break;
+    default: 
+      CAM_IFACE_ERROR("invalid property number");
+      return;
   }
 }
 
