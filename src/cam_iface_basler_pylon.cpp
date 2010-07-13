@@ -232,13 +232,13 @@ myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0
 static int basler_pylon_n_cameras = -1;
 static Pylon::IPylonDevice **basler_pylon_cameras = 0;
 
-#define PV_NUM_ATTR 2
-const char *BACKEND_GLOBAL(pv_attr_strings)[PV_NUM_ATTR] = {
+#define CI_BASLER_NUM_ATTR 2
+const char *BACKEND_GLOBAL(pv_attr_strings)[CI_BASLER_NUM_ATTR] = {
   "gain",
   "shutter" // exposure
 };
-#define PV_ATTR_GAIN 0
-#define PV_ATTR_SHUTTER 1
+#define CI_BASLER_ATTR_GAIN 0
+#define CI_BASLER_ATTR_SHUTTER 1
 
 
 #define CAM_IFACE_ERROR(message)                            \
@@ -860,7 +860,7 @@ void CCbasler_pylon_stop_camera(CCbasler_pylon *cam) {
 
 void CCbasler_pylon_get_num_camera_properties(CCbasler_pylon *cam,
                                         int* num_properties) {
-  *num_properties = PV_NUM_ATTR;
+  *num_properties = CI_BASLER_NUM_ATTR;
 }
 
 void CCbasler_pylon_get_camera_property_info(CCbasler_pylon *cam,
@@ -894,14 +894,14 @@ void CCbasler_pylon_get_camera_property_info(CCbasler_pylon *cam,
   int64_t mymin,mymax;
 
   switch (property_number) {
-    case PV_ATTR_GAIN:
+    case CI_BASLER_ATTR_GAIN:
       info->name = "gain";
       info->has_auto_mode = 0;
       camera_get_int_range (cam, "GainRaw", &mymin, &mymax);
       info->min_value = mymin;
       info->max_value = mymax;
       break;
-    case PV_ATTR_SHUTTER:
+    case CI_BASLER_ATTR_SHUTTER:
       info->name = "shutter";
       info->is_scaled_quantity = 1;
       info->scaled_unit_name = "msec";
@@ -923,10 +923,10 @@ void CCbasler_pylon_get_camera_property(CCbasler_pylon *cam,
                                   long* Value,
                                   int* Auto ) {
   switch (property_number) {
-    case PV_ATTR_GAIN:
+    case CI_BASLER_ATTR_GAIN:
       *Value = camera_get_int (cam, "GainRaw");
       break;
-    case PV_ATTR_SHUTTER:
+    case CI_BASLER_ATTR_SHUTTER:
       *Value = camera_get_int(cam, "ExposureTimeRaw");
       break;
     default: 
@@ -946,10 +946,10 @@ void CCbasler_pylon_set_camera_property(CCbasler_pylon *cam,
     return;
   }
   switch (property_number) {
-    case PV_ATTR_GAIN:
+    case CI_BASLER_ATTR_GAIN:
       camera_set_int (cam, "GainRaw", Value);
       break;
-    case PV_ATTR_SHUTTER:
+    case CI_BASLER_ATTR_SHUTTER:
       camera_set_int(cam, "ExposureTimeRaw", Value);
       break;
     default: 
