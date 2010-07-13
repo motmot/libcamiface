@@ -358,7 +358,6 @@ int BACKEND_METHOD(cam_iface_get_num_cameras)() {
       basler_pylon_cameras[i] = 0;
     return basler_pylon_n_cameras;
   } catch (GenICam::GenericException e) {
-    std::cerr<<"GenericException: " << e.GetDescription() << std::endl;
     CAM_IFACE_ERROR_EXCEPTION("GenICam::GenericException in get_num_cameras",e);
     return -1;
   } catch (std::exception e) {
@@ -439,8 +438,7 @@ static Pylon::IPylonDevice *force_device (int device_number)
       assert(basler_pylon_cameras[device_number]);
       basler_pylon_cameras[device_number]->Open();
     } catch (GenICam::GenericException e) {
-      std::cerr<<"GenericException: " << e.GetDescription() << std::endl;
-      CAM_IFACE_ERROR_EXCEPTION ("getting the camera", e);
+      CAM_IFACE_ERROR_GENICAM_EXCEPTION ("getting the camera", e);
       return NULL;
     } catch (std::exception e) {
       CAM_IFACE_ERROR_EXCEPTION ("std::exception getting the camera", e);
@@ -668,6 +666,9 @@ CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
     cs->FromString("Timestamp");
     ce->SetValue(true );
 
+  } catch (GenICam::GenericException e) {
+    CAM_IFACE_ERROR_GENICAM_EXCEPTION("creating camera", e);
+    return;
   } catch (std::exception e) {
     CAM_IFACE_ERROR_EXCEPTION("creating camera", e);
     return;
@@ -740,8 +741,7 @@ basler_pylon_stop_camera (CCbasler_pylon *cam)
       cam->buffer_handles = 0;
     }
   } catch (GenICam::GenericException e) {
-      std::cerr<<"GenericException: " << e.GetDescription() << std::endl;
-      CAM_IFACE_ERROR_EXCEPTION ("closing device failed", e);
+      CAM_IFACE_ERROR_GENICAM_EXCEPTION ("closing device failed", e);
       return NULL;
   } catch (std::exception e) {
     CAM_IFACE_ERROR_EXCEPTION("closing device failed", e);
