@@ -575,6 +575,15 @@ camera_get_int  (CCbasler_pylon *cam,
 }
 
 static void
+camera_set_float  (CCbasler_pylon *cam,
+                   const char     *name,
+                   double          value)
+{
+  GenApi::CFloatPtr ptr = cam->device->GetNodeMap()->GetNode(name);
+  ptr->SetValue(value);
+}
+
+static void
 camera_execute  (CCbasler_pylon *cam,
                  const char *name)
 {
@@ -798,6 +807,14 @@ void CCbasler_pylon_start_camera(CCbasler_pylon *cam) {
       camera_set_enum(cam, "AcquisitionMode", "Continuous");
     }
 
+    // Select the input line
+    camera_set_enum(cam, "LineSelector", "Line1");
+    // Set the parameter value to 100 microseconds
+    camera_set_float(cam, "LineDebouncerTimeAbs", 100);
+
+    camera_set_enum(cam, "ExposureMode", "Timed");
+    //camera_set_int(cam, "ExposureTimeRaw", 4000);
+    camera_set_int(cam, "ExposureTimeRaw", 16);
 
     // Get the image buffer size
     size = camera_get_int (cam, "PayloadSize");
