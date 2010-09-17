@@ -499,13 +499,28 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
     PrintNames(*it);
   }
 #endif
-  GenApi::CIntegerPtr width = device->GetNodeMap()->GetNode("Width");
-  GenApi::CIntegerPtr height = device->GetNodeMap()->GetNode("Height");
-  DEBUG_ONLY(std::cerr << "mode_string_maxlen=" << mode_string_maxlen << "; w/h=" << width->GetValue() << "/" << height->GetValue() << std::endl);
-  snprintf (mode_string, mode_string_maxlen,
-            "%u x %u: %s",
-            (unsigned) width->GetValue(), (unsigned) height->GetValue(),
-            basler_pylon_pixel_coding_mapping[mode_number].pylon_name);
+  try
+  {
+    GenApi::CIntegerPtr width = device->GetNodeMap()->GetNode("Width");
+    GenApi::CIntegerPtr height = device->GetNodeMap()->GetNode("Height");
+    DEBUG_ONLY(std::cerr << "mode_string_maxlen=" << mode_string_maxlen << "; w/h=" << width->GetValue() << "/" << height->GetValue() << std::endl);
+    snprintf (mode_string, mode_string_maxlen,
+              "%u x %u: %s",
+              (unsigned) width->GetValue(), (unsigned) height->GetValue(),
+              basler_pylon_pixel_coding_mapping[mode_number].pylon_name);
+  } catch (GenICam::GenericException e) {
+    CAM_IFACE_ERROR_GENICAM_EXCEPTION ("getting the camera", e);
+    mode_string[0] = 0;
+    return;
+  } catch (std::exception e) {
+    CAM_IFACE_ERROR_EXCEPTION ("std::exception getting the camera", e);
+    mode_string[0] = 0;
+    return;
+  } catch (...) { 
+    CAM_IFACE_ERROR("unknown exception getting the camera");
+    mode_string[0] = 0;
+    return;
+  }
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
