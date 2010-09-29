@@ -499,13 +499,28 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
     PrintNames(*it);
   }
 #endif
-  GenApi::CIntegerPtr width = device->GetNodeMap()->GetNode("Width");
-  GenApi::CIntegerPtr height = device->GetNodeMap()->GetNode("Height");
-  DEBUG_ONLY(std::cerr << "mode_string_maxlen=" << mode_string_maxlen << "; w/h=" << width->GetValue() << "/" << height->GetValue() << std::endl);
-  snprintf (mode_string, mode_string_maxlen,
-            "%u x %u: %s",
-            (unsigned) width->GetValue(), (unsigned) height->GetValue(),
-            basler_pylon_pixel_coding_mapping[mode_number].pylon_name);
+  try
+  {
+    GenApi::CIntegerPtr width = device->GetNodeMap()->GetNode("Width");
+    GenApi::CIntegerPtr height = device->GetNodeMap()->GetNode("Height");
+    DEBUG_ONLY(std::cerr << "mode_string_maxlen=" << mode_string_maxlen << "; w/h=" << width->GetValue() << "/" << height->GetValue() << std::endl);
+    snprintf (mode_string, mode_string_maxlen,
+              "%u x %u: %s",
+              (unsigned) width->GetValue(), (unsigned) height->GetValue(),
+              basler_pylon_pixel_coding_mapping[mode_number].pylon_name);
+  } catch (GenICam::GenericException e) {
+    CAM_IFACE_ERROR_GENICAM_EXCEPTION ("getting the camera", e);
+    mode_string[0] = 0;
+    return;
+  } catch (std::exception e) {
+    CAM_IFACE_ERROR_EXCEPTION ("std::exception getting the camera", e);
+    mode_string[0] = 0;
+    return;
+  } catch (...) { 
+    CAM_IFACE_ERROR("unknown exception getting the camera");
+    mode_string[0] = 0;
+    return;
+  }
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
@@ -644,6 +659,16 @@ CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
     return;
   }
 
+  // camera isn't running
+  cam->grabber = 0;
+  cam->buffers = 0;
+  cam->buffer_handles = 0;
+
+  cam->last_timestamp = 0;
+  cam->last_frameno = 0;
+  cam->grabber_open = false;
+  cam->trigger_mode = 0;
+
   cam->inherited.device_number = device_number;
   cam->inherited.coding = basler_pylon_pixel_coding_mapping[mode_number].coding;
   cam->inherited.depth = basler_pylon_pixel_coding_mapping[mode_number].depth;
@@ -689,15 +714,6 @@ CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
   cam->roi_width = cam->sensor_width;
   cam->roi_height = cam->sensor_height;
 
-  // camera isn't running
-  cam->grabber = 0;
-  cam->buffers = 0;
-  cam->buffer_handles = 0;
-
-  cam->last_timestamp = 0;
-  cam->last_frameno = 0;
-  cam->grabber_open = false;
-  cam->trigger_mode = 0;
 
   cam->num_image_buffers = num_image_buffers;
   cam->buffer_size = cam->roi_width
