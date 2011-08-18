@@ -1,3 +1,9 @@
+libcamiface-basler (0.6.3-0ads1) lucid; urgency=low
+
+  * New upstream release
+
+ -- Andrew Straw <strawman@astraw.com>  Thu, 18 Aug 2011 10:46:50 +0200
+
 libcamiface-basler (0.6.2-0ads2) lucid; urgency=low
 
   * Update for Basler Pylon backend
