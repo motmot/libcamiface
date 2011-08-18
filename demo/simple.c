@@ -256,7 +256,7 @@ int main(int argc, char** argv) {
 	    printf("%ld\n",prop_value);
 	  } else {
 	    /* Firefly2 temperature won't be read out. */
-	    printf("no manual mode, won't read out. Original value: %d\n",cam_props.original_value);
+	    printf("no manual mode, won't read out. Original value: %ld\n",cam_props.original_value);
 	  }
 	} else {
 	  printf("not readout capable");
