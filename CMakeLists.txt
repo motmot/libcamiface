@@ -33,9 +33,7 @@ project(libcamiface)
 # version
 set(V_MAJOR 0)
 set(V_MINOR 6)
-set(V_PATCH 2)
-
-SET(CMAKE_BUILD_TYPE "Release")
+set(V_PATCH 3)
 
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 
@@ -81,6 +79,14 @@ FIND_PACKAGE(Carbon)
 IF(QUICKTIME_FOUND)
   set(all_backends ${all_backends} quicktime)
 ENDIF(QUICKTIME_FOUND)
+
+# Backend: Basler Pylon --------------------------------
+
+FIND_PACKAGE(BaslerPylon)
+
+IF(BASLER_PYLON_FOUND)
+  set(all_backends ${all_backends} basler_pylon)
+ENDIF(BASLER_PYLON_FOUND)
 
 # Build targets -------------------------------------
 

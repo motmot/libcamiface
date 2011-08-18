@@ -212,6 +212,23 @@ void cam_iface_startup(void) {
       fprintf(stderr,"ERROR: don't know backend %s\n",backend_names[i]);
       exit(1);
 #endif
+    } else if (!strcmp(backend_names[i],"staticbasler_pylon")) {
+#ifdef MEGA_BACKEND_BASLER_PYLON
+#include "cam_iface_basler_pylon.h"
+      this_backend_info->have_error = basler_pylon_cam_iface_have_error;
+      this_backend_info->clear_error = basler_pylon_cam_iface_clear_error;
+      this_backend_info->get_error_string = basler_pylon_cam_iface_get_error_string;
+      this_backend_info->startup = basler_pylon_cam_iface_startup;
+      this_backend_info->shutdown = basler_pylon_cam_iface_shutdown;
+      this_backend_info->get_num_cameras = basler_pylon_cam_iface_get_num_cameras;
+      this_backend_info->get_num_modes = basler_pylon_cam_iface_get_num_modes;
+      this_backend_info->get_camera_info = basler_pylon_cam_iface_get_camera_info;
+      this_backend_info->get_mode_string = basler_pylon_cam_iface_get_mode_string;
+      this_backend_info->get_constructor_func = basler_pylon_cam_iface_get_constructor_func;
+#else
+      fprintf(stderr,"ERROR: don't know backend %s\n",backend_names[i]);
+      exit(1);
+#endif
     } else if (!strcmp(backend_names[i],"staticpgr_flycap")) {
 #ifdef MEGA_BACKEND_FLYCAPTURE
 #include "cam_iface_pgr_flycap.h"

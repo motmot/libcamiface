@@ -1406,7 +1406,7 @@ void CCdc1394_get_camera_property_info(CCdc1394 *this,
   if ((camera->vendor!=NULL) &&
       (camera->model!=NULL) &&
       (strcmp(camera->vendor,"Basler")==0) &&
-      (strcmp(camera->model,"A602f")==0) &&
+      (strcmp(camera->model,"A602f")==0 || strcmp(camera->model,"A622f")==0) &&
       (feature_id==DC1394_FEATURE_SHUTTER)) {
     info->is_scaled_quantity = 1;
     info->scaled_unit_name = "msec";

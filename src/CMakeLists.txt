@@ -278,6 +278,50 @@ ENDIF(QUICKTIME_FOUND)
 
 
 
+# basler pylon backend ------------------
+
+IF(BASLER_PYLON_FOUND)
+
+
+  set(basler_pylon_SRCS ${common_SRCS}
+      cam_iface_basler_pylon.cpp
+      )
+  set(mega_SRCS ${mega_SRCS}
+      cam_iface_basler_pylon.cpp
+     )
+
+  ADD_LIBRARY(cam_iface_basler_pylon SHARED ${basler_pylon_SRCS})
+  TARGET_LINK_LIBRARIES(cam_iface_basler_pylon ${BASLER_PYLON_LIBRARY})
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${BASLER_PYLON_LIBRARY})
+  SET(mega_DEFINE
+      ${mega_DEFINE}
+      -DMEGA_BACKEND_BASLER_PYLON
+      )
+  set_target_properties(cam_iface_basler_pylon PROPERTIES VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION})
+  include_directories(${BASLER_PYLON_INCLUDE_PATH})
+  # XXX: we should probably test for genicam separately,
+  # but since they come in the same SDK there's no need to indulge
+  # the basler developers' preference for extra abstractions...
+  include_directories(${BASLER_PYLON_INCLUDE_PATH}/genicam)
+
+  ADD_LIBRARY(cam_iface_basler_pylon-static STATIC ${basler_pylon_SRCS})
+  set_target_properties(cam_iface_basler_pylon-static PROPERTIES OUTPUT_NAME "cam_iface_basler_pylon")
+
+  SET_TARGET_PROPERTIES(cam_iface_basler_pylon PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+  SET_TARGET_PROPERTIES(cam_iface_basler_pylon-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+
+  INSTALL(TARGETS cam_iface_basler_pylon cam_iface_basler_pylon-static
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
+ENDIF(BASLER_PYLON_FOUND)
+
+
+
+
 # mega backend -----------------------------
 
 

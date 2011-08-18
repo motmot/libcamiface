@@ -188,13 +188,13 @@ makefiles, include ``-DCMAKE_VERBOSE_MAKEFILE=1``.
 
 To cut a source release::
 
-  VERSION="0.6.2"
+  VERSION="0.6.3"
   git archive --prefix=libcamiface-$VERSION/ release/$VERSION | gzip -9 > ../libcamiface-$VERSION.tar.gz
   git archive --prefix=libcamiface-$VERSION/ --format=zip release/$VERSION > ../libcamiface-$VERSION.zip
 
 To make a Debian source package::
 
-  VERSION="0.6.2"
+  VERSION="0.6.3"
   ln ../libcamiface-$VERSION.tar.gz ../libcamiface_$VERSION.orig.tar.gz
   rm -rf ../libcamiface_*.orig.tar.gz.tmp-nest
   git-buildpackage --git-debian-branch=debian --git-upstream-branch=master --git-no-create-orig --git-tarball-dir=.. --git-ignore-new --git-verbose -rfakeroot -S
@@ -242,6 +242,10 @@ Open a Visual Studio Command Prompt from Start Menu->All
 Programs->Microsoft Visual C++ 2008 Express Edition->Visual Studio
 Tools->Visual Studio 2008 Command Prompt. Change directories into the
 libcamiface source directory.
+
+Compile in Release mode. (On linux, this would be done with adding
+``-DCMAKE_BUILD_TYPE=Release`` in your call to cmake. As I write this,
+I'm not sure of the best way to do it in Windows.)
 
 ::
 
@@ -316,6 +320,25 @@ Environment variables:
 
  * *DC1394_BACKEND_AUTO_DEBAYER* use dc1394 to de-Bayer the images,
     resulting in RGB8 images (rather than MONO8 Bayer images).
+
+Basler Pylon
+------------
+
+Environment variables for CMake:
+
+ * *BASLER_PYLON_LIB_PATH* location of Basler libraries
+    (e.g. ``export BASLER_PYLON_LIB_PATH="/opt/pylon/lib64/"``)
+
+ * *BASLER_PYLON_INCLUDE_PATH* location of Basler include files
+    (e.g. ``export BASLER_PYLON_INCLUDE_PATH="/opt/pylon/include/"``)
+
+Environment variables for Basler Pylon libraries:
+
+ * *PYLON_ROOT* location of Pylon SDK root (e.g. 
+   ``export PYLON_ROOT=/opt/pylon``)
+
+ * *GENICAM_ROOT* location of GenICam root (e.g. 
+   ``export GENICAM_ROOT_V1_1=/opt/pylon``)
 
 Git source code repository
 ==========================
