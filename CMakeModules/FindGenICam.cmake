@@ -1,0 +1,15 @@
+INCLUDE(FindPackageHandleStandardArgs)
+
+FIND_LIBRARY(GENICAM_LIBRARY GenApi_gcc40_v2_1
+  /opt/pylon/genicam/bin/Linux64_x64
+)
+
+FIND_PATH(GENICAM_INCLUDE_PATH GenICamVersion.h
+  "$ENV{GENICAM_INCLUDE_PATH}"
+  /opt/pylon/genicam/library/CPP/include
+)
+
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(GENICAM DEFAULT_MSG
+  GENICAM_INCLUDE_PATH
+  GENICAM_LIBRARY)
+

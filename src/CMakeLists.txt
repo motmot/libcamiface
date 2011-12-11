@@ -291,19 +291,15 @@ IF(BASLER_PYLON_FOUND)
      )
 
   ADD_LIBRARY(cam_iface_basler_pylon SHARED ${basler_pylon_SRCS})
-  TARGET_LINK_LIBRARIES(cam_iface_basler_pylon ${BASLER_PYLON_LIBRARY})
-  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${BASLER_PYLON_LIBRARY})
+  TARGET_LINK_LIBRARIES(cam_iface_basler_pylon ${BASLER_PYLON_LIBRARY} ${GENICAM_LIBRARY})
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${BASLER_PYLON_LIBRARY} ${GENICAM_LIBRARY})
   SET(mega_DEFINE
       ${mega_DEFINE}
       -DMEGA_BACKEND_BASLER_PYLON
       )
   set_target_properties(cam_iface_basler_pylon PROPERTIES VERSION ${CAM_IFACE_VERSION}
     SOVERSION ${CAM_IFACE_SOVERSION})
-  include_directories(${BASLER_PYLON_INCLUDE_PATH})
-  # XXX: we should probably test for genicam separately,
-  # but since they come in the same SDK there's no need to indulge
-  # the basler developers' preference for extra abstractions...
-  include_directories(${BASLER_PYLON_INCLUDE_PATH}/genicam)
+  include_directories(${BASLER_PYLON_INCLUDE_PATH} ${GENICAM_INCLUDE_PATH})
 
   ADD_LIBRARY(cam_iface_basler_pylon-static STATIC ${basler_pylon_SRCS})
   set_target_properties(cam_iface_basler_pylon-static PROPERTIES OUTPUT_NAME "cam_iface_basler_pylon")

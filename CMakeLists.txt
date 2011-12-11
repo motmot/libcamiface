@@ -85,7 +85,12 @@ ENDIF(QUICKTIME_FOUND)
 FIND_PACKAGE(BaslerPylon)
 
 IF(BASLER_PYLON_FOUND)
-  set(all_backends ${all_backends} basler_pylon)
+  FIND_PACKAGE(GenICam)
+  IF(GENICAM_FOUND)
+    set(all_backends ${all_backends} basler_pylon)
+  ELSE(GENICAM_FOUND)
+    message("Basler found, but GenICam not found?!")
+  ENDIF(GENICAM_FOUND)
 ENDIF(BASLER_PYLON_FOUND)
 
 # Build targets -------------------------------------
