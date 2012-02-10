@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if 0
 #define DPRINTF(...)
 #else
-#define DPRINTF(...) printf(__VA_ARGS__); fflush(stdout);
+#define DPRINTF(...) printf("DEBUG:    " __VA_ARGS__); fflush(stdout);
 #endif
 
 #include <stdlib.h>
@@ -207,6 +207,10 @@ myTLS int BACKEND_GLOBAL(cam_iface_error) = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
+uint32_t aravis_num_cameras = 0;
+ArvDevice **aravis_devices = NULL;
+char **aravis_device_names = NULL;
+
 #ifdef MEGA_BACKEND
 #define CAM_IFACE_ERROR_FORMAT(m)                                       \
   snprintf(aravis_cam_iface_error_string,CAM_IFACE_MAX_ERROR_LEN,              \
@@ -252,20 +256,70 @@ const char* BACKEND_METHOD(cam_iface_get_api_version)() {
 }
 
 void BACKEND_METHOD(cam_iface_startup)() {
-  DPRINTF("startup\n");  
-  NOT_IMPLEMENTED;
+  unsigned int i;
+
+  DPRINTF("startup\n");
+
+  g_thread_init (NULL);
+  g_type_init ();  
+  arv_update_device_list ();
+
+  aravis_num_cameras = arv_get_n_devices ();
+  aravis_devices = malloc( aravis_num_cameras*sizeof(ArvDevice *));
+  aravis_device_names = malloc( aravis_num_cameras*sizeof(const char *));
+
+  if (aravis_devices == NULL || aravis_device_names == NULL) {
+    BACKEND_GLOBAL(cam_iface_error) = -1;
+    CAM_IFACE_ERROR_FORMAT("error allocating memory");
+    return;
+  }
+
+  for (i = 0; i < aravis_num_cameras; i++) {
+    aravis_device_names[i] = g_strdup( arv_get_device_id (i) );
+  }
+
 }
 
 void BACKEND_METHOD(cam_iface_shutdown)() {
-  NOT_IMPLEMENTED;
+  arv_shutdown ();
 }
 
-
 int BACKEND_METHOD(cam_iface_get_num_cameras)() {
-  return 0;
+  return aravis_num_cameras;
+}
+
+static void _lazy_init_device(int device_number) {
+  DPRINTF("laxy init %u (%s)\n", device_number, aravis_device_names[device_number]);
+
+  if (aravis_devices[device_number])
+    return;
+
+  aravis_devices[device_number] = arv_open_device ( aravis_device_names[device_number] );
+  if (!ARV_IS_DEVICE (aravis_devices[device_number])) {
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR;
+    CAM_IFACE_ERROR_FORMAT("camera not available");
+  }
 }
 
 void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
+  if (out_camid==NULL) {
+    BACKEND_GLOBAL(cam_iface_error) = -1;
+    CAM_IFACE_ERROR_FORMAT("return structure NULL");
+    return;
+  }
+
+  if (device_number > aravis_num_cameras) {
+    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR;
+    CAM_IFACE_ERROR_FORMAT("camera not available");
+    return;
+  }
+
+  _lazy_init_device(device_number);
+
+  //snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->vendor);
+  //snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->model);
+  //snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%llXh", (long long unsigned int)cameras[device_number]->guid);
+
   NOT_IMPLEMENTED;
 }
 
