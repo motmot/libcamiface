@@ -108,12 +108,19 @@ INSTALL(FILES include/cam_iface.h
 
 # Install linux udev file ---------------------------
 
+pkg_check_modules(UDEV udev)
+
 IF(UNIX)
   IF(NOT APPLE)
-    IF(EXISTS /etc/udev/rules.d)
-      INSTALL(FILES 99-pt-grey-firefly-mv-usb.rules
-        DESTINATION /etc/udev/rules.d)
-    ENDIF(EXISTS /etc/udev/rules.d)
+    IF(UDEV_FOUND)
+      IF(UDEV_VERSION VERSION_LESS 175)
+        INSTALL(FILES 99-pt-grey-firefly-mv-usb.oldudev.rules
+          DESTINATION /etc/udev/rules.d/99-pt-grey-firefly-mv-usb.rules)
+      ELSE(UDEV_VERSION VERSION_LESS 175)
+        INSTALL(FILES 99-pt-grey-firefly-mv-usb.newudev.rules
+          DESTINATION /etc/udev/rules.d/99-pt-grey-firefly-mv-usb.rules)
+      ENDIF(UDEV_VERSION VERSION_LESS 175)
+    ENDIF(UDEV_FOUND)
   ENDIF(NOT APPLE)
 ENDIF(UNIX)
 
