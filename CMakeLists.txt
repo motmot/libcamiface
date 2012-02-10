@@ -55,6 +55,14 @@ IF(DC1394_FOUND)
   set(all_backends ${all_backends} dc1394)
 ENDIF(DC1394_FOUND)
 
+# Backend: aravis ---------------------------------
+
+pkg_check_modules(ARAVIS aravis-0.2)
+
+IF(ARAVIS_FOUND)
+  set(all_backends ${all_backends} aravis)
+ENDIF(ARAVIS_FOUND)
+
 # Backend: Prosilica --------------------------------
 
 FIND_PACKAGE(ProsilicaGigE)
