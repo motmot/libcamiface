@@ -218,7 +218,7 @@ myTLS int BACKEND_GLOBAL(cam_iface_error) = 0;
 myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 uint32_t aravis_num_cameras = 0;
-ArvDevice **aravis_devices = NULL;
+ArvCamera **aravis_cameras = NULL;
 char **aravis_device_names = NULL;
 
 #ifdef MEGA_BACKEND
@@ -279,10 +279,10 @@ void BACKEND_METHOD(cam_iface_startup)() {
   arv_update_device_list ();
 
   aravis_num_cameras = arv_get_n_devices ();
-  aravis_devices = calloc(aravis_num_cameras, sizeof(ArvDevice *));
+  aravis_cameras = calloc(aravis_num_cameras, sizeof(ArvCamera *));
   aravis_device_names = calloc(aravis_num_cameras, sizeof(const char *));
 
-  if (aravis_devices == NULL || aravis_device_names == NULL) {
+  if (aravis_cameras == NULL || aravis_device_names == NULL) {
     BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
     return;
@@ -306,52 +306,87 @@ int BACKEND_METHOD(cam_iface_get_num_cameras)() {
 #endif
 }
 
-static unsigned int _lazy_init_device(int device_number) {
+static ArvCamera * _lazy_init_camera(int device_number) {
   int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+
+  if (aravis_cameras[device_index])
+    return aravis_cameras[device_index];
 
   DPRINTF("laxy init device_number:%u aravis_id:%u aravis_name:%s\n", 
           device_number, GET_ARAVIS_DEVICE_INDEX(device_number),
           aravis_device_names[device_index]);
 
-  if (aravis_devices[device_index])
-    return 1;
-
-  aravis_devices[device_index] = arv_open_device ( aravis_device_names[device_index] );
-  if (!ARV_IS_DEVICE (aravis_devices[device_index])) {
+  aravis_cameras[device_index] = arv_camera_new ( aravis_device_names[device_index] );
+  if (!aravis_cameras[device_index]) {
     BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR;
     CAM_IFACE_ERROR_FORMAT("camera not available");
-    return 0;
+    return NULL;
   }
 
-  return 1;
+  return aravis_cameras[device_index];
 }
 
 void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
+  ArvCamera *camera;
+
   if (out_camid==NULL) {
     BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("return structure NULL");
     return;
   }
 
-  if (!_lazy_init_device(device_number))
+  camera = _lazy_init_camera(device_number);
+  if (!camera)
     return;
 
-  //snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->vendor);
-  //snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->model);
-  //snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%llXh", (long long unsigned int)cameras[device_number]->guid);
+  snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", arv_camera_get_vendor_name(camera));
+  snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", arv_camera_get_model_name(camera));
+  snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%s", arv_camera_get_device_id(camera));
 
-  NOT_IMPLEMENTED;
 }
 
 void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
-  NOT_IMPLEMENTED;
+  ArvCamera *camera;
+  guint n_formats;
+  gint64 *formats;
+
+unsigned int i = 0;
+
+  camera = _lazy_init_camera(device_number);
+  if (!camera) {
+    *num_modes = 0;
+    return;
+  }
+
+  formats = arv_camera_get_available_pixel_formats (camera, &n_formats);
+  *num_modes = n_formats;
+
+  for (i=0; i < n_formats; i++) {
+    DPRINTF("Mode: %s\n", arv_pixel_format_to_gst_caps_string(formats[i]));
+  }  
+
+  g_free(formats);
 }
 
 void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
                                int mode_number,
                                char* mode_string,
                                int mode_string_maxlen) {
-  NOT_IMPLEMENTED;
+
+  ArvCamera *camera;
+  guint n_formats;
+  gint64 *formats;
+
+  camera = _lazy_init_camera(device_number);
+  if (!camera)
+    return;
+
+  formats = arv_camera_get_available_pixel_formats (camera, &n_formats);
+
+  snprintf(mode_string,mode_string_maxlen,"%s",
+           arv_pixel_format_to_gst_caps_string(formats[mode_number]));
+
+  g_free(formats);
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
@@ -402,7 +437,7 @@ void CCaravis_CCaravis( CCaravis *this,
     CAM_IFACE_ERROR_FORMAT("malloc failed");
     return;
   }
-  this->cam_iface_mode_number = mode_number; // different than DC1934 mode number
+  this->cam_iface_mode_number = mode_number;
   this->nframe_hack=0;
   this->fileno = 0;
   this->nfds = 0;
