@@ -31,11 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Backend for libaravis-0.2 */
 #include "cam_iface.h"
 
-#if 0
-#define DPRINTF(...)
-#else
-#define DPRINTF(...) printf("DEBUG:    " __VA_ARGS__); fflush(stdout);
-#endif
+#define ARAVIS_INCLUDE_FAKE_CAMERA 0
+#define ARAVIS_DEBUG_ENABLE 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -47,6 +44,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <arv.h>
 #include <glib.h>
 #include <glib/gprintf.h>
+
+#if ARAVIS_INCLUDE_FAKE_CAMERA
+#define GET_ARAVIS_DEVICE_INDEX(i) (i)
+#else
+#define GET_ARAVIS_DEVICE_INDEX(i) (i+1)
+#endif
+
+#if !ARAVIS_DEBUG_ENABLE
+#define DPRINTF(...)
+#else
+#define DPRINTF(...) printf("DEBUG:    " __VA_ARGS__); fflush(stdout);
+#endif
+
 
 struct CCaravis; // forward declaration
 
@@ -261,12 +271,16 @@ void BACKEND_METHOD(cam_iface_startup)() {
   DPRINTF("startup\n");
 
   g_thread_init (NULL);
-  g_type_init ();  
+  g_type_init ();
+
+  /* this creates an association between list index and device IDs. This association
+  will not change until the next call to this function, so I consider the list
+  index to be canonical */
   arv_update_device_list ();
 
   aravis_num_cameras = arv_get_n_devices ();
-  aravis_devices = malloc( aravis_num_cameras*sizeof(ArvDevice *));
-  aravis_device_names = malloc( aravis_num_cameras*sizeof(const char *));
+  aravis_devices = calloc(aravis_num_cameras, sizeof(ArvDevice *));
+  aravis_device_names = calloc(aravis_num_cameras, sizeof(const char *));
 
   if (aravis_devices == NULL || aravis_device_names == NULL) {
     BACKEND_GLOBAL(cam_iface_error) = -1;
@@ -285,20 +299,31 @@ void BACKEND_METHOD(cam_iface_shutdown)() {
 }
 
 int BACKEND_METHOD(cam_iface_get_num_cameras)() {
+#if ARAVIS_INCLUDE_FAKE_CAMERA
   return aravis_num_cameras;
+#else
+  return aravis_num_cameras - 1;
+#endif
 }
 
-static void _lazy_init_device(int device_number) {
-  DPRINTF("laxy init %u (%s)\n", device_number, aravis_device_names[device_number]);
+static unsigned int _lazy_init_device(int device_number) {
+  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
 
-  if (aravis_devices[device_number])
-    return;
+  DPRINTF("laxy init device_number:%u aravis_id:%u aravis_name:%s\n", 
+          device_number, GET_ARAVIS_DEVICE_INDEX(device_number),
+          aravis_device_names[device_index]);
 
-  aravis_devices[device_number] = arv_open_device ( aravis_device_names[device_number] );
-  if (!ARV_IS_DEVICE (aravis_devices[device_number])) {
+  if (aravis_devices[device_index])
+    return 1;
+
+  aravis_devices[device_index] = arv_open_device ( aravis_device_names[device_index] );
+  if (!ARV_IS_DEVICE (aravis_devices[device_index])) {
     BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR;
     CAM_IFACE_ERROR_FORMAT("camera not available");
+    return 0;
   }
+
+  return 1;
 }
 
 void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
@@ -308,13 +333,8 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
     return;
   }
 
-  if (device_number > aravis_num_cameras) {
-    BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR;
-    CAM_IFACE_ERROR_FORMAT("camera not available");
+  if (!_lazy_init_device(device_number))
     return;
-  }
-
-  _lazy_init_device(device_number);
 
   //snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->vendor);
   //snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", cameras[device_number]->model);
