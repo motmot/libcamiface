@@ -4,7 +4,7 @@ Section: utils
 Priority: extra
 Build-Depends: debhelper (>= 7), cmake (>= 2.6),
   libdc1394-22-dev (>= 2.0.2~svn547),
-  freeglut3-dev, libxmu-dev, libxi-dev, libglew1.5-dev
+  freeglut3-dev, libxmu-dev, libxi-dev, libglew1.5-dev, libaravis-dev
 Build-Conflicts: libprosilica-gige-dev, libavt-gige-dev, basler-pylon
 Standards-Version: 3.8.4
 
