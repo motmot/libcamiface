@@ -103,12 +103,11 @@ typedef struct {
 typedef struct CCaravis {
   CamContext inherited;
 
-  int cam_iface_mode_number; // different than DC1934 mode number
+  int cam_iface_mode_number;
 
   int max_width;       // maximum buffer width
   int max_height;      // maximum buffer height
 
-  char bayer[5];
   int roi_left;
   int roi_top;
   int roi_width;
@@ -116,16 +115,8 @@ typedef struct CCaravis {
   int buffer_size;     // bytes per frame
   unsigned long nframe_hack;
 
-  int num_dma_buffers;
-  uint64_t last_timestamp;
+  ArvCamera *camera;
 
-  // for select()
-  int fileno;
-  fd_set fdset;
-  int nfds;
-  int capture_is_set;
-
-  int auto_debayer;
 } CCaravis;
 
 // forward declarations
@@ -243,6 +234,8 @@ char **aravis_device_names = NULL;
   return;
 #endif
 
+#define NOT_IMPLEMENTED_WARN fprintf(stderr,"%s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr);
+
 #include "cam_iface_aravis.h"
 
 const char *BACKEND_METHOD(cam_iface_get_driver_name)() {
@@ -270,7 +263,10 @@ void BACKEND_METHOD(cam_iface_startup)() {
 
   DPRINTF("startup\n");
 
-  g_thread_init (NULL);
+#if !GLIB_CHECK_VERSION (2, 31, 0)
+    g_thread_init (NULL);
+#endif
+
   g_type_init ();
 
   /* this creates an association between list index and device IDs. This association
@@ -334,9 +330,8 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
     CAM_IFACE_ERROR_FORMAT("return structure NULL");
     return;
   }
-
-  camera = _lazy_init_camera(device_number);
-  if (!camera)
+  
+  if ((camera = _lazy_init_camera(device_number)) == NULL)
     return;
 
   snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", arv_camera_get_vendor_name(camera));
@@ -350,20 +345,13 @@ void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) 
   guint n_formats;
   gint64 *formats;
 
-unsigned int i = 0;
-
-  camera = _lazy_init_camera(device_number);
-  if (!camera) {
+  if ((camera = _lazy_init_camera(device_number)) == NULL) {
     *num_modes = 0;
     return;
   }
 
   formats = arv_camera_get_available_pixel_formats (camera, &n_formats);
   *num_modes = n_formats;
-
-  for (i=0; i < n_formats; i++) {
-    DPRINTF("Mode: %s\n", arv_pixel_format_to_gst_caps_string(formats[i]));
-  }  
 
   g_free(formats);
 }
@@ -377,9 +365,10 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
   guint n_formats;
   gint64 *formats;
 
-  camera = _lazy_init_camera(device_number);
-  if (!camera)
+  if ((camera = _lazy_init_camera(device_number)) == NULL) {
+    *mode_string = '\0';
     return;
+  }
 
   formats = arv_camera_get_available_pixel_formats (camera, &n_formats);
 
@@ -437,15 +426,13 @@ void CCaravis_CCaravis( CCaravis *this,
     CAM_IFACE_ERROR_FORMAT("malloc failed");
     return;
   }
+
   this->cam_iface_mode_number = mode_number;
   this->nframe_hack=0;
-  this->fileno = 0;
-  this->nfds = 0;
-  FD_ZERO(&(this->fdset));
 
-  NOT_IMPLEMENTED;
+  /* FIXME: take a ref here too */
+  this->camera = _lazy_init_camera(device_number);
 
-  return;
 }
 
 void CCaravis_close(CCaravis *this) {
@@ -462,7 +449,8 @@ void CCaravis_stop_camera( CCaravis *this ) {
 
 void CCaravis_get_num_camera_properties(CCaravis *this,
                                         int* num_properties) {
-  NOT_IMPLEMENTED;
+  *num_properties = 0;
+  NOT_IMPLEMENTED_WARN;
 }
 
 void CCaravis_get_camera_property_info(CCaravis *this,
@@ -535,7 +523,7 @@ void CCaravis_set_trigger_mode_number( CCaravis *this,
 
 void CCaravis_get_frame_roi( CCaravis *this,
                              int *left, int *top, int* width, int* height ) {
-  NOT_IMPLEMENTED;
+  arv_camera_get_region (this->camera, left, top, width, height);
 }
 
 void CCaravis_set_frame_roi( CCaravis *this,
@@ -565,8 +553,8 @@ void CCaravis_get_buffer_size( CCaravis *this,
 
 void CCaravis_get_num_framebuffers( CCaravis *this,
                                     int *num_framebuffers ) {
-
-  NOT_IMPLEMENTED;
+  *num_framebuffers = 0;
+  NOT_IMPLEMENTED_WARN;
 }
 
 void CCaravis_set_num_framebuffers( CCaravis *this,
