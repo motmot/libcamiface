@@ -57,6 +57,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DPRINTF(...) printf("DEBUG:    " __VA_ARGS__); fflush(stdout);
 #endif
 
+#define DWARNF(...) fprintf(stderr, "WARN :    " __VA_ARGS__); fflush(stderr);
 
 struct CCaravis; // forward declaration
 
@@ -116,6 +117,11 @@ typedef struct CCaravis {
   unsigned long nframe_hack;
 
   ArvCamera *camera;
+  ArvStream *stream;
+  int num_buffers;
+
+  char **trigger_modes;
+  int num_trigger_modes;
 
 } CCaravis;
 
@@ -211,6 +217,15 @@ myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0
 uint32_t aravis_num_cameras = 0;
 ArvCamera **aravis_cameras = NULL;
 char **aravis_device_names = NULL;
+guint32 *aravis_num_camera_formats = NULL;
+gint64 **aravis_camera_formats = NULL;
+
+/* one aravis thread and one mainloop per process, not per camera. I don't know
+how much of libcamiface supports threading anyway, so im not sure of the gain in
+making each camera threaded, or indeed if aravis already does this... */
+GThread *aravis_thread = NULL;
+GMainContext *aravis_context = NULL;
+GMainLoop *aravis_mainloop = NULL;
 
 #ifdef MEGA_BACKEND
 #define CAM_IFACE_ERROR_FORMAT(m)                                       \
@@ -224,17 +239,19 @@ char **aravis_device_names = NULL;
 
 #ifdef MEGA_BACKEND
 #define NOT_IMPLEMENTED                                 \
-  aravis_cam_iface_error = -1;                                 \
+  aravis_cam_iface_error = -1;                          \
+  fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr); \
   CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
   return;
 #else
 #define NOT_IMPLEMENTED                                 \
   cam_iface_error = -1;                                 \
+  fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr); \
   CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
   return;
 #endif
 
-#define NOT_IMPLEMENTED_WARN fprintf(stderr,"%s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr);
+#define NOT_IMPLEMENTED_WARN fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr);
 
 #include "cam_iface_aravis.h"
 
@@ -258,6 +275,21 @@ const char* BACKEND_METHOD(cam_iface_get_api_version)() {
   return CAM_IFACE_API_VERSION;
 }
 
+static gpointer aravis_thread_func(gpointer data) {
+  GMainContext *context = data;
+
+  DPRINTF("startup thread\n");
+
+  g_main_context_push_thread_default (context);
+  aravis_mainloop = g_main_loop_new (context, FALSE);
+  g_main_loop_run (aravis_mainloop);
+
+  DPRINTF("stop thread\n");
+
+  return 0;
+}
+
+
 void BACKEND_METHOD(cam_iface_startup)() {
   unsigned int i;
 
@@ -276,7 +308,10 @@ void BACKEND_METHOD(cam_iface_startup)() {
 
   aravis_num_cameras = arv_get_n_devices ();
   aravis_cameras = calloc(aravis_num_cameras, sizeof(ArvCamera *));
+  aravis_camera_formats = calloc(aravis_num_cameras, sizeof(gint64 *));
+  aravis_num_camera_formats = calloc(aravis_num_cameras, sizeof(guint32 *));
   aravis_device_names = calloc(aravis_num_cameras, sizeof(const char *));
+
 
   if (aravis_cameras == NULL || aravis_device_names == NULL) {
     BACKEND_GLOBAL(cam_iface_error) = -1;
@@ -288,9 +323,14 @@ void BACKEND_METHOD(cam_iface_startup)() {
     aravis_device_names[i] = g_strdup( arv_get_device_id (i) );
   }
 
+  /* start the threading and mainloop */
+  aravis_context = g_main_context_new ();
+  aravis_thread = g_thread_new("aravis", aravis_thread_func, aravis_context);
+
 }
 
 void BACKEND_METHOD(cam_iface_shutdown)() {
+  g_main_loop_quit (aravis_mainloop);
   arv_shutdown ();
 }
 
@@ -319,6 +359,10 @@ static ArvCamera * _lazy_init_camera(int device_number) {
     return NULL;
   }
 
+  aravis_camera_formats[device_index] = arv_camera_get_available_pixel_formats (
+                                          aravis_cameras[device_index],
+                                          &(aravis_num_camera_formats[device_index]));
+
   return aravis_cameras[device_index];
 }
 
@@ -344,16 +388,88 @@ void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) 
   ArvCamera *camera;
   guint n_formats;
   gint64 *formats;
+  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+
+  DPRINTF("GET NUM MODES\n");
 
   if ((camera = _lazy_init_camera(device_number)) == NULL) {
     *num_modes = 0;
     return;
   }
 
-  formats = arv_camera_get_available_pixel_formats (camera, &n_formats);
-  *num_modes = n_formats;
+  *num_modes = aravis_num_camera_formats[device_index];
 
-  g_free(formats);
+}
+
+#define CASE_FORMAT_TO_FORMAT7(_c,_s,_q,_d) case _c:  \
+  *ret = "DC1394_VIDEO_MODE_FORMAT7_0 " _s;     \
+  *coding = _q;                                 \
+  *depth = _d;                                  \
+  break;
+#define CASE_FORMAT_MEH(_c) case _c:            \
+  *ret = #_c;                                   \
+  *coding = CAM_IFACE_UNKNOWN;                  \
+  *depth = -1;                                  \
+  break;
+
+static void _aravis_format_to_camiface(ArvPixelFormat format,
+                                       const char **ret,
+                                       CameraPixelCoding *coding,
+                                       int *depth) {
+  //const char *ret;
+
+  /* AIUI we can always set binning, ROI, etc. This makes us FORMAT7_0 */
+
+  switch (format) {
+    CASE_FORMAT_TO_FORMAT7(ARV_PIXEL_FORMAT_MONO_8, "MONO8", CAM_IFACE_MONO8, 8);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_MONO_8_SIGNED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_MONO_10);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_MONO_10_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_MONO_12);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_MONO_12_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_MONO_14);
+    CASE_FORMAT_TO_FORMAT7(ARV_PIXEL_FORMAT_MONO_16, "MONO16", CAM_IFACE_MONO16, 16);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_GR_8);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_RG_8);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_GB_8);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_BG_8);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_GR_10);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_RG_10);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_GB_10);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_BG_10);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_GR_12);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_RG_12);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_GB_12);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_BG_12);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BAYER_BG_12_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_RGB_8_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BGR_8_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_RGBA_8_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BGRA_8_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_RGB_10_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BGR_10_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_RGB_12_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_BGR_12_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_YUV_411_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_YUV_422_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_YUV_444_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_RGB_8_PLANAR);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_RGB_10_PLANAR);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_RGB_12_PLANAR);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_RGB_16_PLANAR);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_YUV_422_YUYV_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_BAYER_GR_12_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_BAYER_RG_12_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_BAYER_GB_12_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_BAYER_BG_12_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_YUV_422_YUYV_PACKED);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_BAYER_GR_16);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_BAYER_RG_16);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_BAYER_GB_16);
+    CASE_FORMAT_MEH(ARV_PIXEL_FORMAT_CUSTOM_BAYER_BG_16);
+    default:
+      *ret = "unknown color coding";
+  }
 }
 
 void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
@@ -364,18 +480,31 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
   ArvCamera *camera;
   guint n_formats;
   gint64 *formats;
+  gint minw,maxw,minh,maxh;
+  const char *format7_mode_string;
+  CameraPixelCoding coding;
+  int depth;
+  const char *framerate_string = "(user selectable framerate)";
+  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
 
   if ((camera = _lazy_init_camera(device_number)) == NULL) {
     *mode_string = '\0';
     return;
   }
 
-  formats = arv_camera_get_available_pixel_formats (camera, &n_formats);
+  arv_camera_get_width_bounds (camera, &minw, &maxw);
+  arv_camera_get_height_bounds (camera, &minh, &maxh);
 
-  snprintf(mode_string,mode_string_maxlen,"%s",
-           arv_pixel_format_to_gst_caps_string(formats[mode_number]));
+  _aravis_format_to_camiface (
+    aravis_camera_formats[device_index][mode_number],
+    &format7_mode_string,
+    &coding,
+    &depth);
 
-  g_free(formats);
+  snprintf(mode_string,mode_string_maxlen,
+           "%d x %d %s %s",
+           maxw, maxh, format7_mode_string, framerate_string);
+
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
@@ -412,9 +541,16 @@ void delete_CCaravis( CCaravis *this ) {
 void CCaravis_CCaravis( CCaravis *this,
                         int device_number, int NumImageBuffers,
                         int mode_number) {
-  DPRINTF("construct\n");
+  ArvDevice *device;
+  ArvGcNode *node;
+  CameraPixelCoding coding;
+  int depth;
+  const char *format7_mode_string;
+  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
 
-  // call parent
+  DPRINTF("CONSTRUCT: device: %d mode: %d\n", device_number, mode_number);
+
+  /* call parent */
   CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
   this->inherited.vmt = (CamContext_functable*)&CCaravis_vmt;
 
@@ -427,30 +563,79 @@ void CCaravis_CCaravis( CCaravis *this,
     return;
   }
 
+  this->inherited.device_number = device_number;
+
   this->cam_iface_mode_number = mode_number;
   this->nframe_hack=0;
 
   /* FIXME: take a ref here too */
   this->camera = _lazy_init_camera(device_number);
 
+  this->num_buffers = 50;
+
+  /* Fill out camera specific data. If this was non-const then I would cache
+  it globally, but it isn't, so I store it here */
+  device = arv_camera_get_device (this->camera);
+  node = arv_device_get_feature (device, "TriggerSource"); 
+
+  if (node && ARV_IS_GC_ENUMERATION (node)) {
+    const GSList *childs;
+    const GSList *iter;
+    int i;
+
+    this->num_trigger_modes = arv_gc_node_get_n_childs (node);
+    this->trigger_modes = calloc(this->num_trigger_modes, sizeof(const char *));
+
+    childs = arv_gc_node_get_childs (node);
+    for (iter = childs, i = 0; iter != NULL; iter = iter->next, i++) {
+      this->trigger_modes[i] = arv_gc_node_get_name (iter->data);
+    }
+  } else {
+    this->num_trigger_modes = 0;
+    this->trigger_modes = NULL;
+  }
+
+  _aravis_format_to_camiface (
+    aravis_camera_formats[device_index][mode_number],
+    &format7_mode_string,
+    &coding,
+    &depth);
+
+  this->inherited.depth = depth;
+  this->inherited.coding= coding;
+
 }
 
 void CCaravis_close(CCaravis *this) {
-  NOT_IMPLEMENTED;
+  arv_camera_stop_acquisition (this->camera);
 }
 
+
+
 void CCaravis_start_camera( CCaravis *this ) {
-  NOT_IMPLEMENTED;
+  int i;
+  unsigned int payload;
+
+  this->stream = arv_camera_create_stream (this->camera, NULL, NULL);
+
+  payload = arv_camera_get_payload(this->camera);
+  for (i = 0; i < this->num_buffers; i++)
+    arv_stream_push_buffer (this->stream, arv_buffer_new (payload, NULL));
+
+  arv_camera_set_acquisition_mode (this->camera, ARV_ACQUISITION_MODE_CONTINUOUS);
+  arv_camera_start_acquisition (this->camera);
+
 }
 
 void CCaravis_stop_camera( CCaravis *this ) {
-  NOT_IMPLEMENTED;
+  arv_camera_start_acquisition (this->camera);
+  DWARNF("stop camera\n");
 }
 
 void CCaravis_get_num_camera_properties(CCaravis *this,
                                         int* num_properties) {
   *num_properties = 0;
-  NOT_IMPLEMENTED_WARN;
+  DWARNF("get num properties\n");
 }
 
 void CCaravis_get_camera_property_info(CCaravis *this,
@@ -480,7 +665,26 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
 }
 
 void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes, float timeout) {
-  NOT_IMPLEMENTED;
+  int ok = 0;
+  ArvBuffer *buffer = arv_stream_pop_buffer(this->stream);
+
+  if (buffer) {
+    if (buffer->status == ARV_BUFFER_STATUS_SUCCESS) {
+      memcpy((void*)out_bytes /*dest*/, buffer->data, buffer->size);
+    }
+    arv_stream_push_buffer (this->stream, buffer);
+    ok = 1;
+  }
+
+  if (!ok) {
+#ifdef MEGA_BACKEND
+    aravis_cam_iface_error = CAM_IFACE_FRAME_DATA_MISSING_ERROR;
+#else
+    cam_iface_error = CAM_IFACE_FRAME_DATA_MISSING_ERROR;
+#endif
+    *out_bytes = '\0';
+  }
+
 }
 
 void CCaravis_point_next_frame_blocking( CCaravis *this, unsigned char **buf_ptr, float timeout) {
@@ -501,14 +705,14 @@ void CCaravis_get_last_framenumber( CCaravis *this, unsigned long* framenumber )
 
 void CCaravis_get_num_trigger_modes( CCaravis *this,
                                      int *num_trigger_modes ) {
-  NOT_IMPLEMENTED;
+  *num_trigger_modes = this->num_trigger_modes;
 }
 
 void CCaravis_get_trigger_mode_string( CCaravis *this,
                                        int trigger_mode_number,
                                        char* trigger_mode_string, //output parameter
                                        int trigger_mode_string_maxlen) {
-  NOT_IMPLEMENTED;
+  snprintf(trigger_mode_string,trigger_mode_string_maxlen,this->trigger_modes[trigger_mode_number]);
 }
 
 void CCaravis_get_trigger_mode_number( CCaravis *this,
@@ -548,13 +752,13 @@ void CCaravis_get_max_frame_size( CCaravis *this,
 
 void CCaravis_get_buffer_size( CCaravis *this,
                                int *size) {
-  NOT_IMPLEMENTED;
+  guint payload = arv_camera_get_payload(this->camera);
+  *size = payload;
 }
 
 void CCaravis_get_num_framebuffers( CCaravis *this,
                                     int *num_framebuffers ) {
-  *num_framebuffers = 0;
-  NOT_IMPLEMENTED_WARN;
+  *num_framebuffers = this->num_buffers;
 }
 
 void CCaravis_set_num_framebuffers( CCaravis *this,
