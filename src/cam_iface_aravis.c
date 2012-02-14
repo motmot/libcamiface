@@ -242,20 +242,27 @@ GMainLoop *aravis_mainloop = NULL;
 #endif
 
 #ifdef MEGA_BACKEND
-#define NOT_IMPLEMENTED                                 \
-  aravis_cam_iface_error = -1;                          \
-  fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr); \
-  CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
-  return;
+# define NOT_IMPLEMENTED                                  \
+    aravis_cam_iface_error = -1;                          \
+    fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr); \
+    CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
+    return;
+# define ARAVIS_ERROR(_code, _msg)                        \
+    aravis_cam_iface_error = _code;                       \
+    CAM_IFACE_ERROR_FORMAT(_msg);
 #else
-#define NOT_IMPLEMENTED                                 \
-  cam_iface_error = -1;                                 \
-  fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr); \
-  CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
-  return;
+# define NOT_IMPLEMENTED                                  \
+    cam_iface_error = -1;                                 \
+    fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr); \
+    CAM_IFACE_ERROR_FORMAT("not yet implemented");        \
+    return;
+# define ARAVIS_ERROR(_code, _msg)                        \
+    cam_iface_error = _code;                              \
+    CAM_IFACE_ERROR_FORMAT(_msg);
 #endif
 
-#define NOT_IMPLEMENTED_WARN fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr);
+#define NOT_IMPLEMENTED_WARN                            \
+  fprintf(stderr,"WARN :    %s (%d): not yet implemented\n",__FILE__,__LINE__); fflush(stderr);
 
 #include "cam_iface_aravis.h"
 
@@ -629,30 +636,105 @@ void CCaravis_stop_camera( CCaravis *this ) {
   DWARNF("stop camera\n");
 }
 
+typedef enum {
+  ARAVIS_PROPERTY_SHUTTER = 0,
+  ARAVIS_PROPERTY_GAIN,
+  NUM_ARAVIS_PROPERTIES
+} AravisProperties_t;
+
 void CCaravis_get_num_camera_properties(CCaravis *this,
                                         int* num_properties) {
-  *num_properties = 0;
-  DWARNF("get num properties\n");
+  *num_properties = NUM_ARAVIS_PROPERTIES;
 }
 
 void CCaravis_get_camera_property_info(CCaravis *this,
                                        int property_number,
                                        CameraPropertyInfo *info) {
-  NOT_IMPLEMENTED;
+
+  gint imin, imax;
+  double dmin, dmax;
+
+  /* nice cameras do no bother with dirty scaled values */  
+  info->is_scaled_quantity = 0;
+
+  /* nice cameras have auto and manual mode */
+  info->has_auto_mode = 1;
+  info->has_manual_mode = 1;
+
+  /* nice cameras can read their properties */
+  info->readout_capable = 1;
+
+  /* backen implementations of absolute functions is not consistent. Flydra camnodes do
+  not use this API AFAICT */
+  info->absolute_capable = 0;
+  info->absolute_control_mode = 0;
+  info->absolute_min_value = 0.0;
+  info->absolute_max_value = 0.0;
+
+  switch (property_number) {
+    case ARAVIS_PROPERTY_SHUTTER:
+      info->name = "shutter";
+      arv_camera_get_exposure_time_bounds (this->camera, &dmin, &dmax);
+      info->min_value = dmin;
+      info->max_value = dmax;
+      break;
+    case ARAVIS_PROPERTY_GAIN:
+      info->name = "gain";
+      arv_camera_get_gain_bounds (this->camera, &imin, &imax);
+      info->min_value = imin;
+      info->max_value = imax;
+      break;
+    default:
+      info->available = 0;
+      info->is_present = 0;
+      info->name = "";
+      info->min_value = info->max_value = 0;
+      ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "unknown property");
+      break;
+  }
 }
 
 void CCaravis_get_camera_property(CCaravis *this,
                                   int property_number,
                                   long* Value,
                                   int* Auto ) {
-  NOT_IMPLEMENTED;
+
+  switch (property_number) {
+    case ARAVIS_PROPERTY_SHUTTER:
+      *Value = arv_camera_get_exposure_time (this->camera);
+      *Auto = arv_camera_get_exposure_time_auto (this->camera) == ARV_AUTO_CONTINUOUS;
+      break;
+    case ARAVIS_PROPERTY_GAIN:
+      *Value = arv_camera_get_gain (this->camera);
+      *Auto = arv_camera_get_gain_auto (this->camera) == ARV_AUTO_CONTINUOUS;
+      break;
+    default:
+      *Value = 0;
+      *Auto = 0;
+      ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "unknown property");
+      break;
+  }
 }
 
 void CCaravis_set_camera_property(CCaravis *this,
                                   int property_number,
                                   long Value,
                                   int Auto ) {
-  NOT_IMPLEMENTED;
+  ArvAuto aravis_auto;
+
+  aravis_auto = (Auto ? ARV_AUTO_CONTINUOUS : ARV_AUTO_OFF);
+  switch (property_number) {
+    case ARAVIS_PROPERTY_SHUTTER:
+      arv_camera_set_exposure_time_auto (this->camera, aravis_auto);
+      break;
+    case ARAVIS_PROPERTY_GAIN:
+      arv_camera_set_gain_auto (this->camera, aravis_auto);
+      break;
+    default:
+      ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "unknown property");
+      break;
+  }
+
 }
 
 void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
