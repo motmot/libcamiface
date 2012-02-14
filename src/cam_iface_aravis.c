@@ -743,9 +743,9 @@ void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes
   if (buffer) {
     if (buffer->status == ARV_BUFFER_STATUS_SUCCESS) {
       memcpy((void*)out_bytes /*dest*/, buffer->data, buffer->size);
+      ok = 1;
     }
     arv_stream_push_buffer (this->stream, buffer);
-    ok = 1;
   }
 
   if (!ok) {
