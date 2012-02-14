@@ -210,15 +210,19 @@ CCaravis_functable CCaravis_vmt = {
 #endif
 
 /* globals -- allocate space */
+typedef struct {
+  ArvCamera *camera;
+  char *device_name;
+  int num_formats;
+  gint64 *aravis_formats;
+} ArvGlobalCamera;
+
 myTLS int BACKEND_GLOBAL(cam_iface_error) = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 uint32_t aravis_num_cameras = 0;
-ArvCamera **aravis_cameras = NULL;
-char **aravis_device_names = NULL;
-guint32 *aravis_num_camera_formats = NULL;
-gint64 **aravis_camera_formats = NULL;
+ArvGlobalCamera *aravis_cameras = NULL;
 
 /* one aravis thread and one mainloop per process, not per camera. I don't know
 how much of libcamiface supports threading anyway, so im not sure of the gain in
@@ -307,20 +311,16 @@ void BACKEND_METHOD(cam_iface_startup)() {
   arv_update_device_list ();
 
   aravis_num_cameras = arv_get_n_devices ();
-  aravis_cameras = calloc(aravis_num_cameras, sizeof(ArvCamera *));
-  aravis_camera_formats = calloc(aravis_num_cameras, sizeof(gint64 *));
-  aravis_num_camera_formats = calloc(aravis_num_cameras, sizeof(guint32 *));
-  aravis_device_names = calloc(aravis_num_cameras, sizeof(const char *));
+  aravis_cameras = calloc(aravis_num_cameras, sizeof(ArvGlobalCamera));
 
-
-  if (aravis_cameras == NULL || aravis_device_names == NULL) {
+  if (aravis_cameras == NULL) {
     BACKEND_GLOBAL(cam_iface_error) = -1;
     CAM_IFACE_ERROR_FORMAT("error allocating memory");
     return;
   }
 
   for (i = 0; i < aravis_num_cameras; i++) {
-    aravis_device_names[i] = g_strdup( arv_get_device_id (i) );
+    aravis_cameras[i].device_name = g_strdup( arv_get_device_id (i) );
   }
 
   /* start the threading and mainloop */
@@ -345,25 +345,25 @@ int BACKEND_METHOD(cam_iface_get_num_cameras)() {
 static ArvCamera * _lazy_init_camera(int device_number) {
   int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
 
-  if (aravis_cameras[device_index])
-    return aravis_cameras[device_index];
+  if (aravis_cameras[device_index].camera)
+    return aravis_cameras[device_index].camera;
 
   DPRINTF("laxy init device_number:%u aravis_id:%u aravis_name:%s\n", 
           device_number, GET_ARAVIS_DEVICE_INDEX(device_number),
-          aravis_device_names[device_index]);
+          aravis_cameras[device_index].device_name);
 
-  aravis_cameras[device_index] = arv_camera_new ( aravis_device_names[device_index] );
-  if (!aravis_cameras[device_index]) {
+  aravis_cameras[device_index].camera = arv_camera_new ( aravis_cameras[device_index].device_name );
+  if (!aravis_cameras[device_index].camera) {
     BACKEND_GLOBAL(cam_iface_error) = CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR;
     CAM_IFACE_ERROR_FORMAT("camera not available");
     return NULL;
   }
 
-  aravis_camera_formats[device_index] = arv_camera_get_available_pixel_formats (
-                                          aravis_cameras[device_index],
-                                          &(aravis_num_camera_formats[device_index]));
+  aravis_cameras[device_index].aravis_formats = arv_camera_get_available_pixel_formats (
+                                                  aravis_cameras[device_index].camera,
+                                                  &(aravis_cameras[device_index].num_formats));
 
-  return aravis_cameras[device_index];
+  return aravis_cameras[device_index].camera;
 }
 
 void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
@@ -386,37 +386,30 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
 
 void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   ArvCamera *camera;
-  guint n_formats;
-  gint64 *formats;
   int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
-
-  DPRINTF("GET NUM MODES\n");
 
   if ((camera = _lazy_init_camera(device_number)) == NULL) {
     *num_modes = 0;
-    return;
+  } else {
+    *num_modes = aravis_cameras[device_index].num_formats;
   }
-
-  *num_modes = aravis_num_camera_formats[device_index];
-
 }
 
-#define FORMAT_TO_FORMAT7(_c,_m,_s,_q,_d) case _c:  \
-  *ret = "DC1394_VIDEO_MODE_FORMAT7_" _m " " _s;\
-  *coding = _q;                                 \
-  *depth = _d;                                  \
+#define FORMAT_TO_FORMAT7(_c,_m,_s,_q,_d) case _c:\
+  *ret = "DC1394_VIDEO_MODE_FORMAT7_" _m " " _s;  \
+  *coding = _q;                                   \
+  *depth = _d;                                    \
   break;
-#define FORMAT_IGNORE(_c) case _c:            \
-  *ret = #_c;                                   \
-  *coding = CAM_IFACE_UNKNOWN;                  \
-  *depth = -1;                                  \
+#define FORMAT_IGNORE(_c) case _c:                \
+  *ret = #_c;                                     \
+  *coding = CAM_IFACE_UNKNOWN;                    \
+  *depth = -1;                                    \
   break;
 
 static void _aravis_format_to_camiface(ArvPixelFormat format,
                                        const char **ret,
                                        CameraPixelCoding *coding,
                                        int *depth) {
-  //const char *ret;
 
   /* AIUI we can always set binning, ROI, etc. This makes us FORMAT7_0 */
 
@@ -469,6 +462,7 @@ static void _aravis_format_to_camiface(ArvPixelFormat format,
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_CUSTOM_BAYER_BG_16);
     default:
       *ret = "unknown color coding";
+      break;
   }
 }
 
@@ -478,8 +472,6 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
                                int mode_string_maxlen) {
 
   ArvCamera *camera;
-  guint n_formats;
-  gint64 *formats;
   gint minw,maxw,minh,maxh;
   const char *format7_mode_string;
   CameraPixelCoding coding;
@@ -496,7 +488,7 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
   arv_camera_get_height_bounds (camera, &minh, &maxh);
 
   _aravis_format_to_camiface (
-    aravis_camera_formats[device_index][mode_number],
+    aravis_cameras[device_index].aravis_formats[mode_number],
     &format7_mode_string,
     &coding,
     &depth);
@@ -548,7 +540,10 @@ void CCaravis_CCaravis( CCaravis *this,
   const char *format7_mode_string;
   int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
 
-  DPRINTF("CONSTRUCT: device: %d mode: %d\n", device_number, mode_number);
+  DPRINTF("construct device: %d mode: %d (gst mode: %s)\n",
+          device_number, mode_number,
+          arv_pixel_format_to_gst_caps_string(
+            aravis_cameras[device_index].aravis_formats[mode_number]));
 
   /* call parent */
   CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
@@ -566,12 +561,14 @@ void CCaravis_CCaravis( CCaravis *this,
   this->inherited.device_number = device_number;
 
   this->cam_iface_mode_number = mode_number;
+
   this->nframe_hack=0;
-
-  /* FIXME: take a ref here too */
-  this->camera = _lazy_init_camera(device_number);
-
   this->num_buffers = 50;
+
+  this->camera = _lazy_init_camera(device_number);
+  arv_camera_set_binning (this->camera, -1, -1);
+  arv_camera_set_pixel_format (this->camera, aravis_cameras[device_index].aravis_formats[mode_number]);
+
 
   /* Fill out camera specific data. If this was non-const then I would cache
   it globally, but it isn't, so I store it here */
@@ -596,7 +593,7 @@ void CCaravis_CCaravis( CCaravis *this,
   }
 
   _aravis_format_to_camiface (
-    aravis_camera_formats[device_index][mode_number],
+    aravis_cameras[device_index].aravis_formats[mode_number],
     &format7_mode_string,
     &coding,
     &depth);
