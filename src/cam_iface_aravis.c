@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2004-2009, John Stowers. All rights reserved.
+Copyright (c) 2004-2012, John Stowers. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -106,15 +106,8 @@ typedef struct CCaravis {
 
   int cam_iface_mode_number;
 
-  int max_width;       // maximum buffer width
-  int max_height;      // maximum buffer height
-
-  int roi_left;
-  int roi_top;
-  int roi_width;
-  int roi_height;
-  int buffer_size;     // bytes per frame
-  unsigned long nframe_hack;
+	guint32 last_frame_id;
+	guint64 last_timestamp_ns;
 
   ArvCamera *camera;
   ArvStream *stream;
@@ -568,8 +561,8 @@ void CCaravis_CCaravis( CCaravis *this,
   this->inherited.device_number = device_number;
 
   this->cam_iface_mode_number = mode_number;
-
-  this->nframe_hack=0;
+	this->last_frame_id = 0;
+	this->last_timestamp_ns = 0;
   this->num_buffers = 50;
 
   this->camera = _lazy_init_camera(device_number);
@@ -756,11 +749,7 @@ void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes
   }
 
   if (!ok) {
-#ifdef MEGA_BACKEND
-    aravis_cam_iface_error = CAM_IFACE_FRAME_DATA_MISSING_ERROR;
-#else
-    cam_iface_error = CAM_IFACE_FRAME_DATA_MISSING_ERROR;
-#endif
+    ARAVIS_ERROR(CAM_IFACE_FRAME_DATA_MISSING_ERROR, "error getting frame");
     *out_bytes = '\0';
   }
 
@@ -775,11 +764,12 @@ void CCaravis_unpoint_frame( CCaravis *this){
 }
 
 void CCaravis_get_last_timestamp( CCaravis *this, double* timestamp ) {
-  NOT_IMPLEMENTED;
+  /* from nanoseconds to seconds */
+  *timestamp = (double)(this->last_timestamp_ns) * 1e-9;
 }
 
 void CCaravis_get_last_framenumber( CCaravis *this, unsigned long* framenumber ){
-  NOT_IMPLEMENTED;
+  *framenumber = this->last_frame_id;
 }
 
 void CCaravis_get_num_trigger_modes( CCaravis *this,
@@ -796,12 +786,34 @@ void CCaravis_get_trigger_mode_string( CCaravis *this,
 
 void CCaravis_get_trigger_mode_number( CCaravis *this,
                                        int *trigger_mode_number ) {
-  NOT_IMPLEMENTED;
+  int i;
+  const char *trigger_source;
+
+  trigger_source = arv_device_get_string_feature_value (
+                      arv_camera_get_device(this->camera), "TriggerSource");
+
+  if (!trigger_source) {
+    ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "could not read trigger source");
+    return;
+  }
+
+  for (i=0; i<this->num_trigger_modes; i++) {
+    if (strcmp(trigger_source, this->trigger_modes[i]) == 0) {
+      *trigger_mode_number = i;
+      return;
+    }
+  }
+
+  ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "unknown trigger source");
 }
 
 void CCaravis_set_trigger_mode_number( CCaravis *this,
                                        int trigger_mode_number ) {
-  NOT_IMPLEMENTED;
+  if (trigger_mode_number >= this->num_trigger_modes) {
+    ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "unknown trigger mode"); 
+    return;
+  }
+  arv_camera_set_trigger (this->camera, this->trigger_modes[trigger_mode_number]);
 }
 
 void CCaravis_get_frame_roi( CCaravis *this,
@@ -811,28 +823,31 @@ void CCaravis_get_frame_roi( CCaravis *this,
 
 void CCaravis_set_frame_roi( CCaravis *this,
                              int left, int top, int width, int height ) {
-  NOT_IMPLEMENTED;
+  arv_camera_set_region (this->camera, left, top, width, height);
+  DWARNF("Do I need to restart the camera here?");
 }
 
 void CCaravis_get_framerate( CCaravis *this,
                              float *framerate ) {
-  NOT_IMPLEMENTED;
+  *framerate = arv_camera_get_frame_rate (this->camera);
 }
 
 void CCaravis_set_framerate( CCaravis *this,
                              float framerate ) {
-  NOT_IMPLEMENTED;
+  arv_camera_set_frame_rate (this->camera, framerate);
+  DWARNF("Do I need to restart the camera here?");
 }
 
 void CCaravis_get_max_frame_size( CCaravis *this,
                                   int *width, int *height ){
-  NOT_IMPLEMENTED;
+  gint minw,minh;
+  arv_camera_get_width_bounds (this->camera, &minw, width);
+  arv_camera_get_height_bounds (this->camera, &minh, height);
 }
 
 void CCaravis_get_buffer_size( CCaravis *this,
                                int *size) {
-  guint payload = arv_camera_get_payload(this->camera);
-  *size = payload;
+  *size = arv_camera_get_payload(this->camera);
 }
 
 void CCaravis_get_num_framebuffers( CCaravis *this,
