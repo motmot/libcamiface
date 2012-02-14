@@ -540,10 +540,11 @@ void CCaravis_CCaravis( CCaravis *this,
   const char *format7_mode_string;
   int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
 
-  DPRINTF("construct device: %d mode: %d (gst mode: %s)\n",
+  DPRINTF("construct device: %d mode: %d (gst mode: %s) nbuffers: %d\n",
           device_number, mode_number,
           arv_pixel_format_to_gst_caps_string(
-            aravis_cameras[device_index].aravis_formats[mode_number]));
+            aravis_cameras[device_index].aravis_formats[mode_number]),
+          NumImageBuffers);
 
   /* call parent */
   CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
@@ -563,7 +564,7 @@ void CCaravis_CCaravis( CCaravis *this,
   this->cam_iface_mode_number = mode_number;
 	this->last_frame_id = 0;
 	this->last_timestamp_ns = 0;
-  this->num_buffers = 50;
+  this->num_buffers = NumImageBuffers;
 
   this->camera = _lazy_init_camera(device_number);
   arv_camera_set_binning (this->camera, -1, -1);
@@ -738,19 +739,37 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
 
 void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes, float timeout) {
   int ok = 0;
-  ArvBuffer *buffer = arv_stream_pop_buffer(this->stream);
+  ArvBuffer *buffer;
+  guint64 timeoutus;
+  gint ib, ob;
 
-  if (buffer) {
-    if (buffer->status == ARV_BUFFER_STATUS_SUCCESS) {
-      memcpy((void*)out_bytes /*dest*/, buffer->data, buffer->size);
-      ok = 1;
+  if (timeout <= 0) {
+    /* block forever-ish. This uses GTimeVal and adds the supplied offset to it, but I dont know
+    what the maximum of a GTimVal is (or the offset relative to the current time to achieve
+    the maximum, so I just wait for 1 day...
+
+    dont worry about the math, the preprocessor should expand this */
+    timeoutus = G_USEC_PER_SEC * 60 * 60 * 24;
+  } else {
+    timeoutus = timeout * G_USEC_PER_SEC;
+  }
+
+  while (!ok) {
+    arv_stream_get_n_buffers (this->stream, &ib, &ob);
+    printf("[t:%.1f G%d/%d]\n",timeout,ib,ob);
+    buffer = arv_stream_timed_pop_buffer(this->stream, timeoutus);
+    if (buffer) {
+      if (buffer->status == ARV_BUFFER_STATUS_SUCCESS) {
+        memcpy((void*)out_bytes /*dest*/, buffer->data, buffer->size);
+        ok = 1;
+      }
+      arv_stream_push_buffer (this->stream, buffer);
     }
-    arv_stream_push_buffer (this->stream, buffer);
   }
 
   if (!ok) {
-    ARAVIS_ERROR(CAM_IFACE_FRAME_DATA_MISSING_ERROR, "error getting frame");
     *out_bytes = '\0';
+    ARAVIS_ERROR(CAM_IFACE_FRAME_DATA_MISSING_ERROR, "no frame ready");
   }
 
 }
