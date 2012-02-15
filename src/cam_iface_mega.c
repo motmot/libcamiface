@@ -195,6 +195,23 @@ void cam_iface_startup(void) {
       fprintf(stderr,"ERROR: don't know backend %s\n",backend_names[i]);
       exit(1);
 #endif
+    } else if (!strcmp(backend_names[i],"staticaravis")) {
+#ifdef MEGA_BACKEND_ARAVIS
+#include "cam_iface_aravis.h"
+      this_backend_info->have_error = aravis_cam_iface_have_error;
+      this_backend_info->clear_error = aravis_cam_iface_clear_error;
+      this_backend_info->get_error_string = aravis_cam_iface_get_error_string;
+      this_backend_info->startup = aravis_cam_iface_startup;
+      this_backend_info->shutdown = aravis_cam_iface_shutdown;
+      this_backend_info->get_num_cameras = aravis_cam_iface_get_num_cameras;
+      this_backend_info->get_num_modes = aravis_cam_iface_get_num_modes;
+      this_backend_info->get_camera_info = aravis_cam_iface_get_camera_info;
+      this_backend_info->get_mode_string = aravis_cam_iface_get_mode_string;
+      this_backend_info->get_constructor_func = aravis_cam_iface_get_constructor_func;
+#else
+      fprintf(stderr,"ERROR: don't know backend %s\n",backend_names[i]);
+      exit(1);
+#endif
     } else if (!strcmp(backend_names[i],"staticprosilica_gige")) {
 #ifdef MEGA_BACKEND_PROSILICA_GIGE
 #include "cam_iface_prosilica_gige.h"
