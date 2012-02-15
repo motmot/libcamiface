@@ -123,10 +123,12 @@ IF(UNIX)
     IF(UDEV_FOUND)
       IF(UDEV_VERSION VERSION_LESS 175)
         INSTALL(FILES 99-pt-grey-firefly-mv-usb.oldudev.rules
-          DESTINATION /etc/udev/rules.d/99-pt-grey-firefly-mv-usb.rules)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/udev/rules.d/
+          RENAME 99-pt-grey-firefly-mv-usb.rules)
       ELSE(UDEV_VERSION VERSION_LESS 175)
         INSTALL(FILES 99-pt-grey-firefly-mv-usb.newudev.rules
-          DESTINATION /etc/udev/rules.d/99-pt-grey-firefly-mv-usb.rules)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/udev/rules.d/
+          RENAME 99-pt-grey-firefly-mv-usb.rules)
       ENDIF(UDEV_VERSION VERSION_LESS 175)
     ENDIF(UDEV_FOUND)
   ENDIF(NOT APPLE)
