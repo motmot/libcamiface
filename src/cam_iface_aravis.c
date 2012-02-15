@@ -31,8 +31,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Backend for libaravis-0.2 */
 #include "cam_iface.h"
 
-#define ARAVIS_INCLUDE_FAKE_CAMERA 0
-#define ARAVIS_DEBUG_ENABLE 1
+#define ARAVIS_INCLUDE_FAKE_CAMERA                0
+#define ARAVIS_DEBUG_ENABLE                       0
+#define ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING    0
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -44,20 +45,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <arv.h>
 #include <glib.h>
 #include <glib/gprintf.h>
-
-#if ARAVIS_INCLUDE_FAKE_CAMERA
-#define GET_ARAVIS_DEVICE_INDEX(i) (i)
-#else
-#define GET_ARAVIS_DEVICE_INDEX(i) (i+1)
-#endif
-
-#if !ARAVIS_DEBUG_ENABLE
-#define DPRINTF(...)
-#else
-#define DPRINTF(...) printf("DEBUG:    " __VA_ARGS__); fflush(stdout);
-#endif
-
-#define DWARNF(...) fprintf(stderr, "WARN :    " __VA_ARGS__); fflush(stderr);
 
 struct CCaravis; // forward declaration
 
@@ -223,6 +210,20 @@ making each camera threaded, or indeed if aravis already does this... */
 GThread *aravis_thread = NULL;
 GMainContext *aravis_context = NULL;
 GMainLoop *aravis_mainloop = NULL;
+
+#if ARAVIS_INCLUDE_FAKE_CAMERA
+# define GET_ARAVIS_DEVICE_INDEX(i) (i)
+#else
+# define GET_ARAVIS_DEVICE_INDEX(i) (i+1)
+#endif
+
+#if !ARAVIS_DEBUG_ENABLE
+# define DPRINTF(...)
+#else
+# define DPRINTF(...) printf("DEBUG:    " __VA_ARGS__); fflush(stdout);
+#endif
+
+#define DWARNF(...) fprintf(stderr, "WARN :    " __VA_ARGS__); fflush(stderr);
 
 #ifdef MEGA_BACKEND
 #define CAM_IFACE_ERROR_FORMAT(m)                                       \
@@ -526,7 +527,15 @@ CCaravis* CCaravis_construct( int device_number, int NumImageBuffers,
 void delete_CCaravis( CCaravis *this ) {
   CCaravis_close(this);
   this->inherited.vmt = NULL;
+
+  if (this->trigger_modes) {
+    int i;
+    for (i=0; i<this->num_trigger_modes; i++)
+      g_free(this->trigger_modes[i]);
+    free(this->trigger_modes);
+  }
   free(this);
+
   this = NULL;
 }
 
@@ -586,7 +595,7 @@ void CCaravis_CCaravis( CCaravis *this,
 
     childs = arv_gc_node_get_childs (node);
     for (iter = childs, i = 0; iter != NULL; iter = iter->next, i++) {
-      this->trigger_modes[i] = arv_gc_node_get_name (iter->data);
+      this->trigger_modes[i] = g_strdup( arv_gc_node_get_name (iter->data) );
     }
   } else {
     this->num_trigger_modes = 0;
@@ -671,6 +680,14 @@ void CCaravis_get_camera_property_info(CCaravis *this,
       arv_camera_get_exposure_time_bounds (this->camera, &dmin, &dmax);
       info->min_value = dmin;
       info->max_value = dmax;
+// The basler backend does this. I dont know why
+//      info->is_scaled_quantity = 1;
+//      info->scaled_unit_name = "msec";
+//      info->scale_offset = 0;
+//      info->scale_gain = 1e-3; // convert from microsecond to millisecond
+//      camera_get_int_range (cam, "ExposureTimeRaw", &mymin, &mymax);
+//      info->min_value = mymin;
+//      info->max_value = mymax;
       break;
     case ARAVIS_PROPERTY_GAIN:
       info->name = "gain";
@@ -741,22 +758,27 @@ void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes
   int ok = 0;
   ArvBuffer *buffer;
   guint64 timeoutus;
-  gint ib, ob;
 
   if (timeout <= 0) {
-    /* block forever-ish. This uses GTimeVal and adds the supplied offset to it, but I dont know
-    what the maximum of a GTimVal is (or the offset relative to the current time to achieve
-    the maximum, so I just wait for 1 day...
+    /* block forever-ish. In aravis this uses GTimeVal and adds the supplied offset to it, but
+    I don't know what the maximum of a GTimeVal is (or the offset relative to the current time to achieve
+    the maximum). Most awesomely, just setting timeoutus = G_MAXINT64 causes a shorter delay than
+    just waiting for 1 minute, presumably because adding this causes some stupid wraparound somewhere.
 
-    dont worry about the math, the preprocessor should expand this */
-    timeoutus = G_USEC_PER_SEC * 60 * 60 * 24;
+    http://www.freelists.org/post/aravis/A-truly-blocking-arv-stream-timed-pop-buffer
+
+    In conclusion, just wait for 1 minute. */
+    timeoutus = G_USEC_PER_SEC * 60;
   } else {
     timeoutus = timeout * G_USEC_PER_SEC;
   }
 
   while (!ok) {
+#if ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING 
+    gint ib, ob;
     arv_stream_get_n_buffers (this->stream, &ib, &ob);
-    printf("[t:%.1f G%d/%d]\n",timeout,ib,ob);
+    printf("[G%d/%d]\n",ib,ob);
+#endif
     buffer = arv_stream_timed_pop_buffer(this->stream, timeoutus);
     if (buffer) {
       if (buffer->status == ARV_BUFFER_STATUS_SUCCESS) {
@@ -800,7 +822,7 @@ void CCaravis_get_trigger_mode_string( CCaravis *this,
                                        int trigger_mode_number,
                                        char* trigger_mode_string, //output parameter
                                        int trigger_mode_string_maxlen) {
-  snprintf(trigger_mode_string,trigger_mode_string_maxlen,this->trigger_modes[trigger_mode_number]);
+  snprintf(trigger_mode_string,trigger_mode_string_maxlen,"%s",this->trigger_modes[trigger_mode_number]);
 }
 
 void CCaravis_get_trigger_mode_number( CCaravis *this,
@@ -808,6 +830,8 @@ void CCaravis_get_trigger_mode_number( CCaravis *this,
   int i;
   const char *trigger_source;
 
+  /* where is arv_camera_set_trigger?
+  https://bugzilla.gnome.org/show_bug.cgi?id=670084 */
   trigger_source = arv_device_get_string_feature_value (
                       arv_camera_get_device(this->camera), "TriggerSource");
 
@@ -843,7 +867,7 @@ void CCaravis_get_frame_roi( CCaravis *this,
 void CCaravis_set_frame_roi( CCaravis *this,
                              int left, int top, int width, int height ) {
   arv_camera_set_region (this->camera, left, top, width, height);
-  DWARNF("Do I need to restart the camera here?");
+  DWARNF("Do I need to restart the camera when changing ROI?");
 }
 
 void CCaravis_get_framerate( CCaravis *this,
@@ -853,8 +877,8 @@ void CCaravis_get_framerate( CCaravis *this,
 
 void CCaravis_set_framerate( CCaravis *this,
                              float framerate ) {
+  /* the aravis viewer widge adjusts the framerate at runtime without restarting the camera */
   arv_camera_set_frame_rate (this->camera, framerate);
-  DWARNF("Do I need to restart the camera here?");
 }
 
 void CCaravis_get_max_frame_size( CCaravis *this,
