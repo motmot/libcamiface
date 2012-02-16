@@ -34,6 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ARAVIS_INCLUDE_FAKE_CAMERA                0
 #define ARAVIS_DEBUG_ENABLE                       0
 #define ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING    0
+#define ARAVIS_DEBUG_FRAME_ACQUSITION_STRIDE      0
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -90,6 +91,11 @@ typedef struct {
 
 typedef struct CCaravis {
   CamContext inherited;
+
+  int roi_left;
+  int roi_top;
+  int roi_width;
+  int roi_height;
 
   int cam_iface_mode_number;
 
@@ -545,6 +551,7 @@ void CCaravis_CCaravis( CCaravis *this,
   ArvDevice *device;
   ArvGcNode *node;
   CameraPixelCoding coding;
+  gint minw,minh;
   int depth;
   const char *format7_mode_string;
   int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
@@ -611,6 +618,12 @@ void CCaravis_CCaravis( CCaravis *this,
   this->inherited.depth = depth;
   this->inherited.coding= coding;
 
+  /* set roi to max width etc */
+  this->roi_left = 0;
+  this->roi_top = 0;
+  arv_camera_get_width_bounds (this->camera, &minw, &(this->roi_width));
+  arv_camera_get_height_bounds (this->camera, &minh, &(this->roi_height));
+
 }
 
 void CCaravis_close(CCaravis *this) {
@@ -628,6 +641,10 @@ void CCaravis_start_camera( CCaravis *this ) {
   payload = arv_camera_get_payload(this->camera);
   for (i = 0; i < this->num_buffers; i++)
     arv_stream_push_buffer (this->stream, arv_buffer_new (payload, NULL));
+
+  arv_camera_get_region (this->camera,
+                         &(this->roi_left), &(this->roi_top),
+                         &(this->roi_width), &(this->roi_height));
 
   arv_camera_set_acquisition_mode (this->camera, ARV_ACQUISITION_MODE_CONTINUOUS);
   arv_camera_start_acquisition (this->camera);
@@ -751,13 +768,10 @@ void CCaravis_set_camera_property(CCaravis *this,
 void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
                                                     unsigned char *out_bytes,
                                                     intptr_t stride0, float timeout) {
-  NOT_IMPLEMENTED;
-}
-
-void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes, float timeout) {
-  int ok = 0;
   ArvBuffer *buffer;
   guint64 timeoutus;
+  int ok = 0;
+  unsigned int stride = (this->roi_width * this->inherited.depth + 7) / 8;
 
   if (timeout <= 0) {
     /* block forever-ish. In aravis this uses GTimeVal and adds the supplied offset to it, but
@@ -774,15 +788,40 @@ void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes
   }
 
   while (!ok) {
-#if ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING 
+#if ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING
     gint ib, ob;
     arv_stream_get_n_buffers (this->stream, &ib, &ob);
-    printf("[G%d/%d]\n",ib,ob);
+    printf("[G:%d/%d]\n",ib,ob); fflush(stdout);
 #endif
     buffer = arv_stream_timed_pop_buffer(this->stream, timeoutus);
     if (buffer) {
       if (buffer->status == ARV_BUFFER_STATUS_SUCCESS) {
-        memcpy((void*)out_bytes /*dest*/, buffer->data, buffer->size);
+        int wb = buffer->width * this->inherited.depth / 8;
+
+        if (wb>stride0) {
+          *out_bytes = '\0';
+          ARAVIS_ERROR(CAM_IFACE_GENERIC_ERROR, "the buffer provided is not large enough");
+          return;
+        }
+
+#if ARAVIS_DEBUG_FRAME_ACQUSITION_STRIDE
+        printf ("[S:%d/%d(w%d)]\n", stride, (int)stride0, this->roi_width); fflush(stdout);
+#endif
+
+        if (stride0 == stride) {
+          /* same stride */
+          memcpy((void*)out_bytes /*dest*/, buffer->data, buffer->size);
+        } else {
+          int row;
+
+          /* different strides */
+          for (row=0; row < buffer->height; row++) {
+            memcpy((void*)(out_bytes + row * stride0), /*dest*/
+              (const void*)((char*)buffer->data + row * stride),/*src*/
+              stride);/*size*/
+          }
+        }
+
         ok = 1;
       }
       arv_stream_push_buffer (this->stream, buffer);
@@ -793,7 +832,14 @@ void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes
     *out_bytes = '\0';
     ARAVIS_ERROR(CAM_IFACE_FRAME_DATA_MISSING_ERROR, "no frame ready");
   }
+}
 
+void CCaravis_grab_next_frame_blocking( CCaravis *this, unsigned char *out_bytes, float timeout) {
+  CCaravis_grab_next_frame_blocking_with_stride (
+    this,
+    out_bytes,
+    this->roi_width * this->inherited.depth / 8,
+    timeout);
 }
 
 void CCaravis_point_next_frame_blocking( CCaravis *this, unsigned char **buf_ptr, float timeout) {
@@ -861,11 +907,18 @@ void CCaravis_set_trigger_mode_number( CCaravis *this,
 
 void CCaravis_get_frame_roi( CCaravis *this,
                              int *left, int *top, int* width, int* height ) {
-  arv_camera_get_region (this->camera, left, top, width, height);
+  *left = this->roi_left;
+  *top = this->roi_top;
+  *width = this->roi_width;
+  *height = this->roi_height;
 }
 
 void CCaravis_set_frame_roi( CCaravis *this,
                              int left, int top, int width, int height ) {
+  this->roi_left = left;
+  this->roi_top = top;
+  this->roi_width = width;
+  this->roi_height = height;
   arv_camera_set_region (this->camera, left, top, width, height);
   DWARNF("Do I need to restart the camera when changing ROI?");
 }
