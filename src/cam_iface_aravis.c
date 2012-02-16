@@ -97,6 +97,8 @@ typedef struct CCaravis {
   int roi_width;
   int roi_height;
 
+  int started;
+
   int cam_iface_mode_number;
 
 	guint32 last_frame_id;
@@ -581,6 +583,7 @@ void CCaravis_CCaravis( CCaravis *this,
 	this->last_frame_id = 0;
 	this->last_timestamp_ns = 0;
   this->num_buffers = NumImageBuffers;
+  this->started = 0;
 
   this->camera = _lazy_init_camera(device_number);
   arv_camera_set_binning (this->camera, -1, -1);
@@ -648,12 +651,14 @@ void CCaravis_start_camera( CCaravis *this ) {
 
   arv_camera_set_acquisition_mode (this->camera, ARV_ACQUISITION_MODE_CONTINUOUS);
   arv_camera_start_acquisition (this->camera);
+  this->started = 1;
 
 }
 
 void CCaravis_stop_camera( CCaravis *this ) {
-  arv_camera_start_acquisition (this->camera);
-  DWARNF("stop camera\n");
+  arv_camera_stop_acquisition (this->camera);
+  this->started = 0;
+  DWARNF("should probbably free some memory here...\n");
 }
 
 typedef enum {
@@ -915,12 +920,16 @@ void CCaravis_get_frame_roi( CCaravis *this,
 
 void CCaravis_set_frame_roi( CCaravis *this,
                              int left, int top, int width, int height ) {
+
+  if (this->started) {
+    DWARNF("Do I need to restart the camera when changing ROI\n");
+  }
+
   this->roi_left = left;
   this->roi_top = top;
   this->roi_width = width;
   this->roi_height = height;
   arv_camera_set_region (this->camera, left, top, width, height);
-  DWARNF("Do I need to restart the camera when changing ROI?");
 }
 
 void CCaravis_get_framerate( CCaravis *this,
