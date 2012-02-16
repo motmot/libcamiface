@@ -589,6 +589,10 @@ void CCaravis_CCaravis( CCaravis *this,
   arv_camera_set_binning (this->camera, -1, -1);
   arv_camera_set_pixel_format (this->camera, aravis_cameras[device_index].aravis_formats[mode_number]);
 
+  /* puts the camera into continuous acquision mode, in case the last user selected a weird
+  trigger mode */
+  arv_camera_set_frame_rate (this->camera, 10);
+
 
   /* Fill out camera specific data. If this was non-const then I would cache
   it globally, but it isn't, so I store it here */
@@ -903,6 +907,7 @@ void CCaravis_get_trigger_mode_number( CCaravis *this,
 
 void CCaravis_set_trigger_mode_number( CCaravis *this,
                                        int trigger_mode_number ) {
+  DPRINTF("set trigger mode: %d\n", trigger_mode_number);
   if (trigger_mode_number >= this->num_trigger_modes) {
     ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "unknown trigger mode"); 
     return;
@@ -920,6 +925,8 @@ void CCaravis_get_frame_roi( CCaravis *this,
 
 void CCaravis_set_frame_roi( CCaravis *this,
                              int left, int top, int width, int height ) {
+
+  DPRINTF("set roi: %d,%d %dx%d\n", left, top, width, height);
 
   if (this->started) {
     DWARNF("Do I need to restart the camera when changing ROI\n");
@@ -939,6 +946,7 @@ void CCaravis_get_framerate( CCaravis *this,
 
 void CCaravis_set_framerate( CCaravis *this,
                              float framerate ) {
+  DPRINTF("set framerate: %f\n", framerate);
   /* the aravis viewer widge adjusts the framerate at runtime without restarting the camera */
   arv_camera_set_frame_rate (this->camera, framerate);
 }
