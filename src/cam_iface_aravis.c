@@ -709,14 +709,10 @@ void CCaravis_get_camera_property_info(CCaravis *this,
       arv_camera_get_exposure_time_bounds (this->camera, &dmin, &dmax);
       info->min_value = dmin;
       info->max_value = dmax;
-// The basler backend does this. I dont know why
-//      info->is_scaled_quantity = 1;
-//      info->scaled_unit_name = "usec";
-//      info->scale_offset = 0;
-//      info->scale_gain = 1;
-//      camera_get_int_range (this->camera, "ExposureTimeRaw", &imin, &imax);
-//      info->min_value = imin;
-//      info->max_value = imax;
+      info->is_scaled_quantity = 1;
+      info->scaled_unit_name = "msec";
+      info->scale_offset = 0;
+      info->scale_gain = 1e-3;
       break;
     case ARAVIS_PROPERTY_GAIN:
       info->name = "gain";
@@ -762,18 +758,16 @@ void CCaravis_set_camera_property(CCaravis *this,
                                   int Auto ) {
   ArvAuto aravis_auto;
 
+  DPRINTF("set property %d to %ld (auto: %d)\n",property_number, Value, Auto);
+
   aravis_auto = (Auto ? ARV_AUTO_CONTINUOUS : ARV_AUTO_OFF);
   switch (property_number) {
     case ARAVIS_PROPERTY_SHUTTER:
-      if (Auto)
         arv_camera_set_exposure_time_auto (this->camera, aravis_auto);
-      else
-        arv_camera_set_exposure_time (this->camera, (double)aravis_auto);
+        arv_camera_set_exposure_time (this->camera, (double)Value);
       break;
     case ARAVIS_PROPERTY_GAIN:
-      if (Auto)
         arv_camera_set_gain_auto (this->camera, aravis_auto);
-      else
         arv_camera_set_gain (this->camera, (int)Value);
       break;
     default:
