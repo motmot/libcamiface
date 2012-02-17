@@ -834,6 +834,9 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
           }
         }
 
+        this->last_frame_id = buffer->frame_id;
+        this->last_timestamp_ns = buffer->timestamp_ns;
+
         ok = 1;
       }
       arv_stream_push_buffer (this->stream, buffer);
