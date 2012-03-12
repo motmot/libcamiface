@@ -305,6 +305,8 @@ static gpointer aravis_thread_func(gpointer data) {
 
 void BACKEND_METHOD(cam_iface_startup)() {
   unsigned int i;
+  const char *delay_env;
+  float delay_sec;
 
   DPRINTF("startup\n");
 
@@ -319,6 +321,19 @@ void BACKEND_METHOD(cam_iface_startup)() {
   index to be canonical */
   arv_update_device_list ();
 
+  /* default to a 1second delay after startup - this can be overwritten by
+  changing the value of LIBCAMIFACE_ARAVIS_STARTUP_DELAY */
+  delay_env = g_getenv("LIBCAMIFACE_ARAVIS_STARTUP_DELAY");
+  if (delay_env)
+    delay_sec = g_ascii_strtod (delay_env, NULL);
+  else
+    delay_sec = 1.0;
+
+  delay_sec = CLAMP(delay_sec,0.0,5.0);
+
+  DPRINTF("startup delay %.1fs\n", delay_sec);
+  g_usleep (delay_sec * G_USEC_PER_SEC);
+  
   aravis_num_cameras = arv_get_n_devices ();
   aravis_cameras = calloc(aravis_num_cameras, sizeof(ArvGlobalCamera));
 
