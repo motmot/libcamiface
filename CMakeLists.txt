@@ -55,6 +55,14 @@ IF(DC1394_FOUND)
   set(all_backends ${all_backends} dc1394)
 ENDIF(DC1394_FOUND)
 
+# Backend: aravis ---------------------------------
+
+pkg_check_modules(ARAVIS aravis-0.2 glib-2.0 gthread-2.0)
+
+IF(ARAVIS_FOUND)
+  set(all_backends ${all_backends} aravis)
+ENDIF(ARAVIS_FOUND)
+
 # Backend: Prosilica --------------------------------
 
 FIND_PACKAGE(ProsilicaGigE)
@@ -115,10 +123,12 @@ IF(UNIX)
     IF(UDEV_FOUND)
       IF(UDEV_VERSION VERSION_LESS 175)
         INSTALL(FILES 99-pt-grey-firefly-mv-usb.oldudev.rules
-          DESTINATION /etc/udev/rules.d/99-pt-grey-firefly-mv-usb.rules)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/udev/rules.d/
+          RENAME 99-pt-grey-firefly-mv-usb.rules)
       ELSE(UDEV_VERSION VERSION_LESS 175)
         INSTALL(FILES 99-pt-grey-firefly-mv-usb.newudev.rules
-          DESTINATION /etc/udev/rules.d/99-pt-grey-firefly-mv-usb.rules)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/udev/rules.d/
+          RENAME 99-pt-grey-firefly-mv-usb.rules)
       ENDIF(UDEV_VERSION VERSION_LESS 175)
     ENDIF(UDEV_FOUND)
   ENDIF(NOT APPLE)

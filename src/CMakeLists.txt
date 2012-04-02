@@ -67,6 +67,43 @@ IF(DC1394_FOUND)
 
 ENDIF(DC1394_FOUND)
 
+# aravis backend ------------------
+
+IF(ARAVIS_FOUND)
+
+  set(aravis_SRCS ${common_SRCS}
+      cam_iface_aravis.c
+      )
+  set(mega_SRCS ${mega_SRCS}
+      cam_iface_aravis.c
+     )
+
+  include_directories(${ARAVIS_INCLUDE_DIRS})
+
+  ADD_LIBRARY(cam_iface_aravis SHARED ${aravis_SRCS})
+  TARGET_LINK_LIBRARIES(cam_iface_aravis ${ARAVIS_LIBRARIES})
+  set_target_properties(cam_iface_aravis PROPERTIES VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION})
+
+  ADD_LIBRARY(cam_iface_aravis-static STATIC ${aravis_SRCS})
+  set_target_properties(cam_iface_aravis-static PROPERTIES OUTPUT_NAME "cam_iface_aravis")
+
+  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${ARAVIS_LIBRARIES})
+  SET(mega_DEFINE
+      ${mega_DEFINE}
+      -DMEGA_BACKEND_ARAVIS
+      )
+  SET_TARGET_PROPERTIES(cam_iface_aravis PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+  SET_TARGET_PROPERTIES(cam_iface_aravis-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+
+  INSTALL(TARGETS cam_iface_aravis cam_iface_aravis-static
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+
+ENDIF(ARAVIS_FOUND)
+
 # prosilica_gige backend ------------------
 
 IF(PROSILICA_GIGE_FOUND)

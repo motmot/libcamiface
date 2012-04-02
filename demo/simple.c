@@ -104,8 +104,9 @@ void save_ppm(const char* filename,unsigned char *pixels,int width,int height) {
 }
 
 void show_usage(char * cmd) {
-  printf("usage: %s [num_frames]\n",cmd);
+  printf("usage: %s [num_frames] [framerate]\n",cmd);
   printf("  where num_frames can be a number or 'forever'\n");
+  printf("  where where framerate is a floating point number, e.g. 30\n");
   exit(1);
 }
 
@@ -129,6 +130,7 @@ int main(int argc, char** argv) {
   int left, top;
   int width, height;
   int do_num_frames;
+  float framerate;
   CameraPixelCoding coding;
   cam_iface_constructor_func_t new_CamContext;
   Camwire_id cam_info_struct;
@@ -144,6 +146,12 @@ int main(int argc, char** argv) {
     }
   } else {
     do_num_frames = 50;
+  }
+  framerate = -1.0;
+  if (argc>2) {
+    if (sscanf(argv[2],"%f",&framerate)==0) {
+      show_usage(argv[0]);
+    }
   }
 
   for (i=0;i<argc;i++) {
@@ -285,6 +293,11 @@ int main(int argc, char** argv) {
     exit(1);
   }
 #endif
+
+  if (framerate > 0) {
+    CamContext_set_framerate(cc, framerate);
+    printf("set framerate to %.1f fps\n", framerate);
+  }
 
   CamContext_start_camera(cc);
   _check_error();
