@@ -934,6 +934,9 @@ void CCaravis_set_trigger_mode_number( CCaravis *this,
     return;
   }
   arv_camera_set_trigger (this->camera, this->trigger_modes[trigger_mode_number]);
+  if (g_strcmp0 (this->trigger_modes[trigger_mode_number], "Software") == 0) {
+    arv_camera_set_frame_rate (this->camera, 10);
+  }
 }
 
 void CCaravis_get_frame_roi( CCaravis *this,
