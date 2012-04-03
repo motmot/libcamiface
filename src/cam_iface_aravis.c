@@ -797,23 +797,8 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
                                                     unsigned char *out_bytes,
                                                     intptr_t stride0, float timeout) {
   ArvBuffer *buffer;
-  guint64 timeoutus;
   int ok = 0;
   unsigned int stride = (this->roi_width * this->inherited.depth + 7) / 8;
-
-  if (timeout <= 0) {
-    /* block forever-ish. In aravis this uses GTimeVal and adds the supplied offset to it, but
-    I don't know what the maximum of a GTimeVal is (or the offset relative to the current time to achieve
-    the maximum). Most awesomely, just setting timeoutus = G_MAXINT64 causes a shorter delay than
-    just waiting for 1 minute, presumably because adding this causes some stupid wraparound somewhere.
-
-    http://www.freelists.org/post/aravis/A-truly-blocking-arv-stream-timed-pop-buffer
-
-    In conclusion, just wait for 1 minute. */
-    timeoutus = G_USEC_PER_SEC * 60;
-  } else {
-    timeoutus = timeout * G_USEC_PER_SEC;
-  }
 
   while (!ok) {
 #if ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING
@@ -821,7 +806,12 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
     arv_stream_get_n_buffers (this->stream, &ib, &ob);
     printf("[G:%d/%d]\n",ib,ob); fflush(stdout);
 #endif
-    buffer = arv_stream_timed_pop_buffer(this->stream, timeoutus);
+
+    if (timeout <= 0)
+      buffer = arv_stream_pop_buffer(this->stream);
+    else
+      buffer = arv_stream_timed_pop_buffer(this->stream, timeout * G_USEC_PER_SEC);
+
     if (buffer) {
       if (buffer->status == ARV_BUFFER_STATUS_SUCCESS) {
         int wb = buffer->width * this->inherited.depth / 8;
@@ -907,11 +897,7 @@ void CCaravis_get_trigger_mode_number( CCaravis *this,
   int i;
   const char *trigger_source;
 
-  /* where is arv_camera_set_trigger?
-  https://bugzilla.gnome.org/show_bug.cgi?id=670084 */
-  trigger_source = arv_device_get_string_feature_value (
-                      arv_camera_get_device(this->camera), "TriggerSource");
-
+  trigger_source = arv_camera_get_trigger_source (this->camera);
   if (!trigger_source) {
     ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "could not read trigger source");
     return;
