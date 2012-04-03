@@ -619,12 +619,13 @@ void CCaravis_CCaravis( CCaravis *this,
     const GSList *iter;
     int i;
 
-    this->num_trigger_modes = arv_gc_node_get_n_childs (node);
+    childs = arv_gc_enumeration_get_entries (ARV_GC_ENUMERATION (node));
+
+    this->num_trigger_modes =  g_slist_length ((GSList *)childs);
     this->trigger_modes = calloc(this->num_trigger_modes, sizeof(const char *));
 
-    childs = arv_gc_node_get_childs (node);
     for (iter = childs, i = 0; iter != NULL; iter = iter->next, i++) {
-      this->trigger_modes[i] = g_strdup( arv_gc_node_get_name (iter->data) );
+      this->trigger_modes[i] = g_strdup( arv_gc_feature_node_get_name ARV_GC_FEATURE_NODE ((iter->data)) );
     }
   } else {
     this->num_trigger_modes = 0;
