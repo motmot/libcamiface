@@ -356,7 +356,8 @@ void BACKEND_METHOD(cam_iface_startup)() {
 }
 
 void BACKEND_METHOD(cam_iface_shutdown)() {
-  g_main_loop_quit (aravis_mainloop);
+  if (aravis_mainloop)
+    g_main_loop_quit (aravis_mainloop);
   arv_shutdown ();
 }
 
@@ -369,6 +370,8 @@ int BACKEND_METHOD(cam_iface_get_num_cameras)() {
 }
 
 void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
+  gchar **tokens;
+  const gchar *id;
   int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
 
   DPRINTF("get_info %d\n",device_number);
@@ -378,10 +381,19 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
     CAM_IFACE_ERROR_FORMAT("return structure NULL");
     return;
   }
-  
-  snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", "FIXME");
-  snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", "FIXME");
-  snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%s", arv_get_device_id(device_index));
+
+  id = arv_get_device_id(device_index);
+
+  /* In theory we could create a camera here, query the full information, and then unref it.
+  However, in practice this is really slow - as shown getting the camera mode strings, etc. So
+  just get what we can quickly - the model (GUID) is the most important field anyway */
+  tokens = g_strsplit (id, "-", 2);
+
+  snprintf(out_camid->vendor, CAMWIRE_ID_MAX_CHARS, "%s", tokens[0]);
+  snprintf(out_camid->chip, CAMWIRE_ID_MAX_CHARS, "%s", id);
+  snprintf(out_camid->model, CAMWIRE_ID_MAX_CHARS, "%s", "");
+
+  g_strfreev(tokens);
 
 }
 
