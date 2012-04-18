@@ -673,6 +673,8 @@ void CCaravis_CCaravis( CCaravis *this,
   this->roi_top = 0;
   arv_camera_get_width_bounds (this->camera, &minw, &(this->roi_width));
   arv_camera_get_height_bounds (this->camera, &minh, &(this->roi_height));
+  DPRINTF("construct set roi to 0,0 x %d,%d\n", this->roi_width, this->roi_height);
+  arv_camera_set_region (this->camera, this->roi_left, this->roi_top, this->roi_width, this->roi_height);
 
 }
 
