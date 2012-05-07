@@ -631,9 +631,9 @@ void CCaravis_CCaravis( CCaravis *this,
   arv_camera_set_pixel_format (this->camera, aravis_formats[mode_number]);
 
   /* puts the camera into continuous acquision mode, in case the last user selected a weird
-  trigger mode */
-  arv_camera_set_frame_rate (this->camera, 10);
-
+  trigger mode. Set this to an impossibly high value so that the camera comes up effectively free
+  running. */
+  arv_camera_set_frame_rate (this->camera, 999);
 
   /* Fill out camera specific data. If this was non-const then I would cache
   it globally, but it isn't, so I store it here */
