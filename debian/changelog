@@ -1,3 +1,9 @@
+libcamiface (0.7.3-0ads1) precise; urgency=low
+
+  * New upstream release
+
+ -- Andrew Straw <strawman@astraw.com>  Wed, 30 May 2012 15:45:54 +0200
+
 libcamiface (0.7.0-0ads1) precise; urgency=low
 
   * New upstream release
