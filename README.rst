@@ -188,13 +188,13 @@ makefiles, include ``-DCMAKE_VERBOSE_MAKEFILE=1``.
 
 To cut a source release::
 
-  VERSION="0.7.0"
+  VERSION="0.7.3"
   git archive --prefix=libcamiface-$VERSION/ release/$VERSION | gzip -9 > ../libcamiface-$VERSION.tar.gz
   git archive --prefix=libcamiface-$VERSION/ --format=zip release/$VERSION > ../libcamiface-$VERSION.zip
 
 To make a Debian source package::
 
-  VERSION="0.7.0"
+  VERSION="0.7.3"
   ln ../libcamiface-$VERSION.tar.gz ../libcamiface_$VERSION.orig.tar.gz
   rm -rf ../libcamiface_*.orig.tar.gz.tmp-nest
   git-buildpackage --git-debian-branch=debian --git-upstream-branch=master --git-no-create-orig --git-tarball-dir=.. --git-ignore-new --git-verbose -rfakeroot -S
