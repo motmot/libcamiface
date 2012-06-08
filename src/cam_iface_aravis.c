@@ -198,6 +198,7 @@ CCaravis_functable CCaravis_vmt = {
 /* globals -- allocate space */
 typedef struct {
   char    *device_name;
+  char    *device_address;
   gint64  *aravis_formats;
   int     num_modes;
   gint    maxw,maxh;
@@ -346,6 +347,7 @@ void BACKEND_METHOD(cam_iface_startup)() {
 
   for (i = 0; i < aravis_num_cameras; i++) {
     aravis_cameras[i].device_name = g_strdup( arv_interface_get_device_id (aravis_interface, i) );
+    aravis_cameras[i].device_address = g_strdup( arv_interface_get_device_address (aravis_interface, i) );
     aravis_cameras[i].aravis_formats = NULL;
     aravis_cameras[i].num_modes = -1;
   }
@@ -607,17 +609,50 @@ void CCaravis_CCaravis( CCaravis *this,
   this->inherited.device_number = device_number;
 
   this->cam_iface_mode_number = mode_number;
-	this->last_frame_id = 0;
-	this->last_timestamp_ns = 0;
+  this->last_frame_id = 0;
+  this->last_timestamp_ns = 0;
   this->num_buffers = NumImageBuffers;
   this->started = 0;
 
   id = aravis_cameras[device_index].device_name;
-  this->camera = arv_camera_new (id);
+
+  /* if an interface is supplied, use that to connect to the camera */
+  device = NULL;
+  if (interface) {
+    GInetAddress *interface_address, *device_address;
+    interface_address = g_inet_address_new_from_string (interface);
+    device_address = g_inet_address_new_from_string (aravis_cameras[device_index].device_address);
+    if (interface_address && device_address)
+        device = arv_gv_device_new (interface_address, device_address);
+  } else {
+    device = arv_open_device (id);
+  }
+
+  if (!ARV_IS_DEVICE (device)) {
+    ARAVIS_ERROR(CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR, "error connecting to camera");
+    return;
+  } else {
+    char *sia,*sda;
+    GInetAddress *ia, *da;
+
+    ia = g_inet_socket_address_get_address (
+            G_INET_SOCKET_ADDRESS(
+                arv_gv_device_get_interface_address (ARV_GV_DEVICE(device))));
+    sia = g_inet_address_to_string (ia);
+    da = g_inet_socket_address_get_address (
+            G_INET_SOCKET_ADDRESS(
+                arv_gv_device_get_device_address (ARV_GV_DEVICE(device))));
+    sda = g_inet_address_to_string (da);
+    DPRINTF("connecting: interface %s -> camera %s (auto:%c)\n", sia, sda, interface ? 'N' : 'Y');
+    g_free(sia);
+    g_free(sda);
+  }
+
+  this->camera = g_object_new (ARV_TYPE_CAMERA, "device", device, NULL);
   aravis_formats = arv_camera_get_available_pixel_formats (this->camera, &n_pixel_formats);
 
-  DPRINTF("construct number: %d index: %d id: %s uid: %s mode: %d (gst mode: %s) nbuffers: %d\n",
-          device_number, device_index, id,
+  DPRINTF("constructed camera: number: %d id: %s uid: %s mode: %d (gst mode: %s) nbuffers: %d\n",
+          device_number, id,
           arv_camera_get_device_id(this->camera),
           mode_number,
           arv_pixel_format_to_gst_caps_string(
@@ -634,7 +669,6 @@ void CCaravis_CCaravis( CCaravis *this,
 
   /* Fill out camera specific data. If this was non-const then I would cache
   it globally, but it isn't, so I store it here */
-  device = arv_camera_get_device (this->camera);
   node = arv_device_get_feature (device, "TriggerSource"); 
 
   if (node && ARV_IS_GC_ENUMERATION (node)) {
