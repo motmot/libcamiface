@@ -836,7 +836,7 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
         DPRINTF("failed blocking acquire, timeout next time");
       }
     } else {
-      buffer = arv_stream_timed_pop_buffer(this->stream, timeout * G_USEC_PER_SEC);
+      buffer = arv_stream_timeout_pop_buffer(this->stream, timeout * G_USEC_PER_SEC);
     }
       
 
