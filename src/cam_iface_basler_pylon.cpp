@@ -80,7 +80,7 @@ typedef struct {
   cam_iface_constructor_func_t construct;
   void (*destruct)(struct CamContext*);
 
-  void (*CCbasler_pylon)(struct CCbasler_pylon*,int,int,int);
+  void (*CCbasler_pylon)(struct CCbasler_pylon*,int,int,int,const char*);
   void (*close)(struct CCbasler_pylon*);
   void (*start_camera)(struct CCbasler_pylon*);
   void (*stop_camera)(struct CCbasler_pylon*);
@@ -142,10 +142,10 @@ typedef struct CCbasler_pylon {
 
 // forward declarations
 CCbasler_pylon* CCbasler_pylon_construct( int device_number, int NumImageBuffers,
-                              int mode_number);
+                              int mode_number, const char *interface);
 void delete_CCbasler_pylon(struct CCbasler_pylon*);
 
-void CCbasler_pylon_CCbasler_pylon(struct CCbasler_pylon*,int,int,int);
+void CCbasler_pylon_CCbasler_pylon(struct CCbasler_pylon*,int,int,int,const char *);
 void CCbasler_pylon_close(struct CCbasler_pylon*);
 void CCbasler_pylon_start_camera(struct CCbasler_pylon*);
 void CCbasler_pylon_stop_camera(struct CCbasler_pylon*);
@@ -524,13 +524,14 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
-  return (CamContext* (*)(int, int, int))CCbasler_pylon_construct;
+  return (CamContext* (*)(int, int, int, const char*))CCbasler_pylon_construct;
 }
 
 CCbasler_pylon *
 CCbasler_pylon_construct(int device_number,
                          int num_image_buffers,
-                         int mode_number) {
+                         int mode_number,
+                         const char *interface) {
   CCbasler_pylon *rv;
 
   rv = (CCbasler_pylon *) malloc(sizeof(CCbasler_pylon));
@@ -542,7 +543,8 @@ CCbasler_pylon_construct(int device_number,
     CCbasler_pylon_CCbasler_pylon(rv,
                                   device_number,
                                   num_image_buffers,
-                                  mode_number);
+                                  mode_number,
+                                  interface);
     if (BACKEND_GLOBAL(cam_iface_error)) {
       free(rv);
       return NULL;
@@ -631,11 +633,12 @@ void
 CCbasler_pylon_CCbasler_pylon(CCbasler_pylon *cam,
                               int device_number,
                               int num_image_buffers,
-                              int mode_number) {
+                              int mode_number,
+                              const char *interface) {
   int i;
 
   // call parent
-  CamContext_CamContext((CamContext*)cam,device_number,num_image_buffers,mode_number);
+  CamContext_CamContext((CamContext*)cam,device_number,num_image_buffers,mode_number,interface);
   cam->inherited.vmt = (CamContext_functable*)&CCbasler_pylon_vmt;
 
   if ((device_number < 0)|(device_number >= basler_pylon_n_cameras)) {

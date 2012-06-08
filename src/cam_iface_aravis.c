@@ -53,7 +53,7 @@ typedef struct {
   cam_iface_constructor_func_t construct;
   void (*destruct)(struct CamContext*);
 
-  void (*CCaravis)(struct CCaravis*,int,int,int);
+  void (*CCaravis)(struct CCaravis*,int,int,int,const char*);
   void (*close)(struct CCaravis*);
   void (*start_camera)(struct CCaravis*);
   void (*stop_camera)(struct CCaravis*);
@@ -114,10 +114,10 @@ typedef struct CCaravis {
 
 // forward declarations
 CCaravis* CCaravis_construct( int device_number, int NumImageBuffers,
-                              int mode_number);
+                              int mode_number, const char *interface);
 void delete_CCaravis(struct CCaravis*);
 
-void CCaravis_CCaravis(struct CCaravis*,int,int,int);
+void CCaravis_CCaravis(struct CCaravis*,int,int,int,const char *);
 void CCaravis_close(struct CCaravis*);
 void CCaravis_start_camera(struct CCaravis*);
 void CCaravis_stop_camera(struct CCaravis*);
@@ -533,11 +533,11 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
-  return (CamContext* (*)(int, int, int))CCaravis_construct;
+  return (CamContext* (*)(int, int, int, const char *))CCaravis_construct;
 }
 
 CCaravis* CCaravis_construct( int device_number, int NumImageBuffers,
-                              int mode_number) {
+                              int mode_number, const char *interface) {
   CCaravis* this=NULL;
 
   this = malloc(sizeof(CCaravis));
@@ -547,7 +547,7 @@ CCaravis* CCaravis_construct( int device_number, int NumImageBuffers,
   } else {
     CCaravis_CCaravis( this,
                        device_number, NumImageBuffers,
-                       mode_number);
+                       mode_number, interface);
     if (BACKEND_GLOBAL(cam_iface_error)) {
       free(this);
       return NULL;
@@ -573,7 +573,7 @@ void delete_CCaravis( CCaravis *this ) {
 
 void CCaravis_CCaravis( CCaravis *this,
                         int device_number, int NumImageBuffers,
-                        int mode_number) {
+                        int mode_number, const char *interface) {
   ArvDevice *device;
   ArvGcNode *node;
   CameraPixelCoding coding;
@@ -586,7 +586,7 @@ void CCaravis_CCaravis( CCaravis *this,
   int device_index = device_number;
 
   /* call parent */
-  CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
+  CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number,interface);
   this->inherited.vmt = (CamContext_functable*)&CCaravis_vmt;
 
   /* initialize */

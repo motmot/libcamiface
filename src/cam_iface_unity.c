@@ -330,7 +330,7 @@ void cam_iface_shutdown(void) {
 }
 
 CamContext* CCunity_construct( int device_number, int NumImageBuffers,
-                               int mode_number) {
+                               int mode_number, const char *interface) {
   int i;
   struct backend_info_t* this_backend_info;
   CamContext* result;
@@ -343,7 +343,7 @@ CamContext* CCunity_construct( int device_number, int NumImageBuffers,
 
       construct = this_backend_info->get_constructor_func( device_number-this_backend_info->cam_start_idx );
       result = construct( device_number-this_backend_info->cam_start_idx,
-                          NumImageBuffers, mode_number );
+                          NumImageBuffers, mode_number, interface );
       CHECK_CI_ERRV();
     }
   }

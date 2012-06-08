@@ -722,7 +722,7 @@ for (device_number = 0; device_number < ncams; device_number++) {
   num_buffers = 5;
 
   new_CamContext = cam_iface_get_constructor_func(device_number);
-  cc_all[device_number] = new_CamContext(device_number,num_buffers,mode_number);
+  cc_all[device_number] = new_CamContext(device_number,num_buffers,mode_number,NULL);
   _check_error();
 
   cc = cc_all[device_number];

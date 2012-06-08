@@ -333,7 +333,7 @@ typedef struct {
   cam_iface_constructor_func_t construct;
   void (*destruct)(struct CamContext*);
 
-  void (*CCflycap)(struct CCflycap*,int,int,int);
+  void (*CCflycap)(struct CCflycap*,int,int,int,const char*);
   void (*close)(struct CCflycap*);
   void (*start_camera)(struct CCflycap*);
   void (*stop_camera)(struct CCflycap*);
@@ -375,10 +375,10 @@ typedef struct CCflycap {
 
 // forward declarations
 CCflycap* CCflycap_construct( int device_number, int NumImageBuffers,
-                              int mode_number);
+                              int mode_number, const char *interface);
 void delete_CCflycap(struct CCflycap*);
 
-void CCflycap_CCflycap(struct CCflycap*,int,int,int);
+void CCflycap_CCflycap(struct CCflycap*,int,int,int,const char *);
 void CCflycap_close(struct CCflycap*);
 void CCflycap_start_camera(struct CCflycap*);
 void CCflycap_stop_camera(struct CCflycap*);
@@ -692,24 +692,24 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
-  return (CamContext* (*)(int, int, int))CCflycap_construct;
+  return (CamContext* (*)(int, int, int, const char *))CCflycap_construct;
 }
 
 CCflycap* CCflycap_construct( int device_number, int NumImageBuffers,
-                                 int mode_number) {
+                                 int mode_number, const char *interface) {
   CCflycap *ccntxt = NULL;
   ccntxt = new CCflycap; // C++ equivalent to malloc
   memset(ccntxt,0,sizeof(CCflycap));
   CCflycap_CCflycap( ccntxt, device_number,NumImageBuffers,
-                     mode_number);
+                     mode_number, interface);
   return ccntxt;
 }
 
 void CCflycap_CCflycap( CCflycap * ccntxt, int device_number, int NumImageBuffers,
-                        int mode_number) {
+                        int mode_number, const char *interface) {
 
   // call parent
-  CamContext_CamContext((CamContext*)ccntxt,device_number,NumImageBuffers,mode_number); // XXX cast error?
+  CamContext_CamContext((CamContext*)ccntxt,device_number,NumImageBuffers,mode_number,interface); // XXX cast error?
   ccntxt->inherited.vmt = (CamContext_functable*)&CCflycap_vmt;
 
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);

@@ -64,7 +64,7 @@ typedef struct {
   cam_iface_constructor_func_t construct;
   void (*destruct)(struct CamContext*);
 
-  void (*CCdc1394)(struct CCdc1394*,int,int,int);
+  void (*CCdc1394)(struct CCdc1394*,int,int,int,const char*);
   void (*close)(struct CCdc1394*);
   void (*start_camera)(struct CCdc1394*);
   void (*stop_camera)(struct CCdc1394*);
@@ -129,10 +129,10 @@ typedef struct CCdc1394 {
 
 // forward declarations
 CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
-                              int mode_number);
+                              int mode_number, const char *interface);
 void delete_CCdc1394(struct CCdc1394*);
 
-void CCdc1394_CCdc1394(struct CCdc1394*,int,int,int);
+void CCdc1394_CCdc1394(struct CCdc1394*,int,int,int,const char*);
 void CCdc1394_close(struct CCdc1394*);
 void CCdc1394_start_camera(struct CCdc1394*);
 void CCdc1394_stop_camera(struct CCdc1394*);
@@ -939,11 +939,11 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
-  return (CamContext* (*)(int, int, int))CCdc1394_construct;
+  return (CamContext* (*)(int, int, int, const char*))CCdc1394_construct;
 }
 
 CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
-                              int mode_number) {
+                              int mode_number, const char *interface) {
   CCdc1394* this=NULL;
 
   this = malloc(sizeof(CCdc1394));
@@ -953,7 +953,7 @@ CCdc1394* CCdc1394_construct( int device_number, int NumImageBuffers,
   } else {
     CCdc1394_CCdc1394( this,
                        device_number, NumImageBuffers,
-                       mode_number);
+                       mode_number,interface);
     if (BACKEND_GLOBAL(cam_iface_error)) {
       free(this);
       return NULL;
@@ -971,7 +971,7 @@ void delete_CCdc1394( CCdc1394 *this ) {
 
 void CCdc1394_CCdc1394( CCdc1394 *this,
                         int device_number, int NumImageBuffers,
-                        int mode_number) {
+                        int mode_number, const char *interface) {
   dc1394video_mode_t video_mode, test_video_mode;
   dc1394framerate_t framerate;
   uint32_t h_size,v_size;
@@ -981,7 +981,7 @@ void CCdc1394_CCdc1394( CCdc1394 *this,
   int i;
 
   // call parent
-  CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
+  CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number,interface);
   this->inherited.vmt = (CamContext_functable*)&CCdc1394_vmt;
 
 #ifdef CAM_IFACE_DC1394_SLOWDEBUG
