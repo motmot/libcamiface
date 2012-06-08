@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Backend for libaravis-0.2 */
 #include "cam_iface.h"
 
-#define ARAVIS_DEBUG_ENABLE                       0
 #define ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING    0
 #define ARAVIS_DEBUG_FRAME_ACQUSITION_STRIDE      0
 
@@ -208,6 +207,7 @@ myTLS int BACKEND_GLOBAL(cam_iface_error) = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
+static unsigned int aravis_debug = 0;
 static uint32_t aravis_num_cameras = 0;
 static ArvInterface *aravis_interface = NULL;
 static ArvGlobalCamera *aravis_cameras = NULL;
@@ -219,11 +219,11 @@ GThread *aravis_thread = NULL;
 GMainContext *aravis_context = NULL;
 GMainLoop *aravis_mainloop = NULL;
 
-#if !ARAVIS_DEBUG_ENABLE
-# define DPRINTF(...)
-#else
-# define DPRINTF(...) printf("DEBUG:    " __VA_ARGS__); fflush(stdout);
-#endif
+#define DPRINTF(...)                    \
+  if (aravis_debug) {                   \
+    fprintf(stderr,"DEBUG:    " __VA_ARGS__);   \
+    fflush(stdout);                     \
+  }
 
 #define DWARNF(...) fprintf(stderr, "WARN :    " __VA_ARGS__); fflush(stderr);
 
@@ -299,7 +299,7 @@ static gpointer aravis_thread_func(gpointer data) {
 
 void BACKEND_METHOD(cam_iface_startup)() {
   unsigned int i;
-  const char *delay_env;
+  const char *delay_env, *debug_env;
   float delay_sec;
 
   DPRINTF("startup\n");
@@ -309,6 +309,12 @@ void BACKEND_METHOD(cam_iface_startup)() {
 #endif
 
   g_type_init ();
+
+  debug_env = g_getenv("LIBCAMIFACE_ARAVIS_DEBUG");
+  if (debug_env)
+    aravis_debug = g_ascii_strtoull(debug_env, NULL, 10);
+  else
+    aravis_debug = 0;
 
   /* this creates an association between list index and device IDs. This association
   will not change until the next call to this function, so I consider the list
