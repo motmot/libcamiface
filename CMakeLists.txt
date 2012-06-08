@@ -32,8 +32,8 @@ project(libcamiface)
 
 # version
 set(V_MAJOR 0)
-set(V_MINOR 7)
-set(V_PATCH 3)
+set(V_MINOR 8)
+set(V_PATCH 0)
 
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 
@@ -57,10 +57,12 @@ ENDIF(DC1394_FOUND)
 
 # Backend: aravis ---------------------------------
 
-pkg_check_modules(ARAVIS glib-2.0 gthread-2.0 aravis-0.2>=0.1.12)
+pkg_check_modules(ARAVIS glib-2.0 gthread-2.0 aravis-0.2>=0.1.14)
 
 IF(ARAVIS_FOUND)
   set(all_backends ${all_backends} aravis)
+  link_directories(${ARAVIS_LIBRARY_DIRS})
+  include_directories(${ARAVIS_INCLUDE_DIRS})
 ENDIF(ARAVIS_FOUND)
 
 # Backend: Prosilica --------------------------------

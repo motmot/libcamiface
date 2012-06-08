@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CAM_IFACE_H
 #define CAM_IFACE_H
 
-#define CAM_IFACE_API_VERSION "20091105"
+#define CAM_IFACE_API_VERSION "20120806"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -198,7 +198,7 @@ CAM_IFACE_API void cam_iface_get_mode_string(int device_number,
 struct CamContext; /* forward declaration */
 
 /* constructor that mallocs memory: */
-typedef struct CamContext* (*cam_iface_constructor_func_t)(int,int,int);
+typedef struct CamContext* (*cam_iface_constructor_func_t)(int,int,int,const char*);
 
 CAM_IFACE_API
 cam_iface_constructor_func_t cam_iface_get_constructor_func(int device_number);
@@ -211,7 +211,7 @@ typedef struct {
   void (*destruct)(struct CamContext*);
 
   /* constructor on already malloced memory: */
-  void (*CamContext)(struct CamContext*,int,int,int);
+  void (*CamContext)(struct CamContext*,int,int,int,const char*);
   /* destructor on externally malloced memory: */
   void (*close)(struct CamContext*);
 
@@ -261,7 +261,7 @@ typedef struct CamContext { /* These are READ ONLY. To change, call the appropri
 CAM_IFACE_API void delete_CamContext(CamContext*);
 CAM_IFACE_API void CamContext_CamContext(CamContext *ccntxt,
                                          int device_number,int NumImageBuffers,
-                                         int mode_number);
+                                         int mode_number,const char *interface);
 CAM_IFACE_API void CamContext_close(CamContext *ccntxt);
 
 CAM_IFACE_API void CamContext_start_camera(CamContext *ccntxt);

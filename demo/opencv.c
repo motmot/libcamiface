@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
   num_buffers = 5;
 
   new_CamContext = cam_iface_get_constructor_func(0);
-  cc = new_CamContext(0,num_buffers,mode_number);
+  cc = new_CamContext(0,num_buffers,mode_number,NULL);
   _check_error();
 
   CamContext_get_frame_roi(cc, &left, &top, &width, &height);

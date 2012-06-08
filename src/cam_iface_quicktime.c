@@ -52,7 +52,7 @@ typedef struct {
   cam_iface_constructor_func_t construct;
   void (*destruct)(struct CamContext*);
 
-  void (*CCquicktime)(struct CCquicktime*,int,int,int);
+  void (*CCquicktime)(struct CCquicktime*,int,int,int,const char*);
   void (*close)(struct CCquicktime*);
   void (*start_camera)(struct CCquicktime*);
   void (*stop_camera)(struct CCquicktime*);
@@ -106,10 +106,10 @@ typedef struct CCquicktime {
 
 // forward declarations
 CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
-                              int mode_number);
+                              int mode_number, const char *interface);
 void delete_CCquicktime(struct CCquicktime*);
 
-void CCquicktime_CCquicktime(struct CCquicktime*,int,int,int);
+void CCquicktime_CCquicktime(struct CCquicktime*,int,int,int,const char *);
 void CCquicktime_close(struct CCquicktime*);
 void CCquicktime_start_camera(struct CCquicktime*);
 void CCquicktime_stop_camera(struct CCquicktime*);
@@ -512,11 +512,11 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
-  return (CamContext* (*)(int, int, int))CCquicktime_construct;
+  return (CamContext* (*)(int, int, int, const char *))CCquicktime_construct;
 }
 
 CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
-                                    int mode_number) {
+                                    int mode_number, const char *interface) {
   CCquicktime* this=NULL;
 
   this = malloc(sizeof(CCquicktime));
@@ -526,7 +526,7 @@ CCquicktime* CCquicktime_construct( int device_number, int NumImageBuffers,
   } else {
     CCquicktime_CCquicktime( this,
                              device_number, NumImageBuffers,
-                             mode_number);
+                             mode_number, interface);
     if (BACKEND_GLOBAL(cam_iface_error)) {
       free(this);
       return NULL;
@@ -544,13 +544,13 @@ void delete_CCquicktime( CCquicktime *this ) {
 
 void CCquicktime_CCquicktime( CCquicktime* in_cr,
                               int device_number, int NumImageBuffers,
-                              int mode_number) {
+                              int mode_number, const char *interface) {
   SeqGrabComponent cam;
   Component sgCompID;
   OSErr err;
 
   // call parent
-  CamContext_CamContext((CamContext*)in_cr,device_number,NumImageBuffers,mode_number);
+  CamContext_CamContext((CamContext*)in_cr,device_number,NumImageBuffers,mode_number,interface);
   in_cr->inherited.vmt = (CamContext_functable*)&CCquicktime_vmt;
 
   CAM_IFACE_CHECK_DEVICE_NUMBER(device_number);

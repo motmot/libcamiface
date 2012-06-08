@@ -78,8 +78,6 @@ IF(ARAVIS_FOUND)
       cam_iface_aravis.c
      )
 
-  include_directories(${ARAVIS_INCLUDE_DIRS})
-
   ADD_LIBRARY(cam_iface_aravis SHARED ${aravis_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_aravis ${ARAVIS_LIBRARIES})
   set_target_properties(cam_iface_aravis PROPERTIES VERSION ${CAM_IFACE_VERSION}

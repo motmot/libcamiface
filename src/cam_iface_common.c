@@ -35,7 +35,7 @@ CAM_IFACE_API void delete_CamContext(CamContext*this) {
 }
 
 CAM_IFACE_API void CamContext_CamContext(CamContext *this,int device_number, int NumImageBuffers,
-                           int mode_number ) {
+                           int mode_number, const char *interface ) {
   // Must call derived class to make instance.
   this->vmt = NULL;
 }

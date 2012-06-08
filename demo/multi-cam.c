@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
     num_buffers = 5;
 
     new_CamContext = cam_iface_get_constructor_func(camno);
-    cc[camno] = new_CamContext(camno,num_buffers,mode_number);
+    cc[camno] = new_CamContext(camno,num_buffers,mode_number,NULL);
     _check_error();
 
     CamContext_get_frame_roi(cc[camno], &left, &top, &width, &height);

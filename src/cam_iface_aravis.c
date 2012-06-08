@@ -31,8 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Backend for libaravis-0.2 */
 #include "cam_iface.h"
 
-#define ARAVIS_INCLUDE_FAKE_CAMERA                0
-#define ARAVIS_DEBUG_ENABLE                       0
 #define ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING    0
 #define ARAVIS_DEBUG_FRAME_ACQUSITION_STRIDE      0
 
@@ -54,7 +52,7 @@ typedef struct {
   cam_iface_constructor_func_t construct;
   void (*destruct)(struct CamContext*);
 
-  void (*CCaravis)(struct CCaravis*,int,int,int);
+  void (*CCaravis)(struct CCaravis*,int,int,int,const char*);
   void (*close)(struct CCaravis*);
   void (*start_camera)(struct CCaravis*);
   void (*stop_camera)(struct CCaravis*);
@@ -115,10 +113,10 @@ typedef struct CCaravis {
 
 // forward declarations
 CCaravis* CCaravis_construct( int device_number, int NumImageBuffers,
-                              int mode_number);
+                              int mode_number, const char *interface);
 void delete_CCaravis(struct CCaravis*);
 
-void CCaravis_CCaravis(struct CCaravis*,int,int,int);
+void CCaravis_CCaravis(struct CCaravis*,int,int,int,const char *);
 void CCaravis_close(struct CCaravis*);
 void CCaravis_start_camera(struct CCaravis*);
 void CCaravis_stop_camera(struct CCaravis*);
@@ -200,6 +198,7 @@ CCaravis_functable CCaravis_vmt = {
 /* globals -- allocate space */
 typedef struct {
   char    *device_name;
+  char    *device_address;
   gint64  *aravis_formats;
   int     num_modes;
   gint    maxw,maxh;
@@ -209,8 +208,10 @@ myTLS int BACKEND_GLOBAL(cam_iface_error) = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
-uint32_t aravis_num_cameras = 0;
-ArvGlobalCamera *aravis_cameras = NULL;
+static unsigned int aravis_debug = 0;
+static uint32_t aravis_num_cameras = 0;
+static ArvInterface *aravis_interface = NULL;
+static ArvGlobalCamera *aravis_cameras = NULL;
 
 /* one aravis thread and one mainloop per process, not per camera. I don't know
 how much of libcamiface supports threading anyway, so im not sure of the gain in
@@ -219,17 +220,11 @@ GThread *aravis_thread = NULL;
 GMainContext *aravis_context = NULL;
 GMainLoop *aravis_mainloop = NULL;
 
-#if ARAVIS_INCLUDE_FAKE_CAMERA
-# define GET_ARAVIS_DEVICE_INDEX(i) (i)
-#else
-# define GET_ARAVIS_DEVICE_INDEX(i) (i+1)
-#endif
-
-#if !ARAVIS_DEBUG_ENABLE
-# define DPRINTF(...)
-#else
-# define DPRINTF(...) printf("DEBUG:    " __VA_ARGS__); fflush(stdout);
-#endif
+#define DPRINTF(...)                    \
+  if (aravis_debug) {                   \
+    fprintf(stderr,"DEBUG:    " __VA_ARGS__);   \
+    fflush(stdout);                     \
+  }
 
 #define DWARNF(...) fprintf(stderr, "WARN :    " __VA_ARGS__); fflush(stderr);
 
@@ -305,7 +300,7 @@ static gpointer aravis_thread_func(gpointer data) {
 
 void BACKEND_METHOD(cam_iface_startup)() {
   unsigned int i;
-  const char *delay_env;
+  const char *delay_env, *debug_env;
   float delay_sec;
 
   DPRINTF("startup\n");
@@ -316,10 +311,17 @@ void BACKEND_METHOD(cam_iface_startup)() {
 
   g_type_init ();
 
+  debug_env = g_getenv("LIBCAMIFACE_ARAVIS_DEBUG");
+  if (debug_env)
+    aravis_debug = g_ascii_strtoull(debug_env, NULL, 10);
+  else
+    aravis_debug = 0;
+
   /* this creates an association between list index and device IDs. This association
   will not change until the next call to this function, so I consider the list
   index to be canonical */
-  arv_update_device_list ();
+  aravis_interface = arv_gv_interface_get_instance ();
+  arv_interface_update_device_list (aravis_interface);
 
   /* default to a 1second delay after startup - this can be overwritten by
   changing the value of LIBCAMIFACE_ARAVIS_STARTUP_DELAY */
@@ -333,8 +335,8 @@ void BACKEND_METHOD(cam_iface_startup)() {
 
   DPRINTF("startup delay %.1fs\n", delay_sec);
   g_usleep (delay_sec * G_USEC_PER_SEC);
-  
-  aravis_num_cameras = arv_get_n_devices ();
+
+  aravis_num_cameras = arv_interface_get_n_devices (aravis_interface);
   aravis_cameras = calloc(aravis_num_cameras, sizeof(ArvGlobalCamera));
 
   if (aravis_cameras == NULL) {
@@ -344,7 +346,8 @@ void BACKEND_METHOD(cam_iface_startup)() {
   }
 
   for (i = 0; i < aravis_num_cameras; i++) {
-    aravis_cameras[i].device_name = g_strdup( arv_get_device_id (i) );
+    aravis_cameras[i].device_name = g_strdup( arv_interface_get_device_id (aravis_interface, i) );
+    aravis_cameras[i].device_address = g_strdup( arv_interface_get_device_address (aravis_interface, i) );
     aravis_cameras[i].aravis_formats = NULL;
     aravis_cameras[i].num_modes = -1;
   }
@@ -362,17 +365,13 @@ void BACKEND_METHOD(cam_iface_shutdown)() {
 }
 
 int BACKEND_METHOD(cam_iface_get_num_cameras)() {
-#if ARAVIS_INCLUDE_FAKE_CAMERA
   return aravis_num_cameras;
-#else
-  return aravis_num_cameras - 1;
-#endif
 }
 
 void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
   gchar **tokens;
   const gchar *id;
-  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+  int device_index = device_number;
 
   DPRINTF("get_info %d\n",device_number);
 
@@ -382,7 +381,7 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
     return;
   }
 
-  id = arv_get_device_id(device_index);
+  id = arv_interface_get_device_id(aravis_interface, device_index);
 
   /* In theory we could create a camera here, query the full information, and then unref it.
   However, in practice this is really slow - as shown getting the camera mode strings, etc. So
@@ -400,7 +399,7 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
 void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   ArvCamera *camera;
   int *cached_modes;
-  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+  int device_index = device_number;
 
   cached_modes = &(aravis_cameras[device_index].num_modes);
   if (*cached_modes == -1) {
@@ -505,7 +504,7 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
   gint64 *aravis_formats;
   ArvGlobalCamera *cache;
   const char *framerate_string = "(user selectable framerate)";
-  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+  int device_index = device_number;
 
   DPRINTF("get mode string %d\n", device_number);
 
@@ -542,11 +541,11 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 }
 
 cam_iface_constructor_func_t BACKEND_METHOD(cam_iface_get_constructor_func)(int device_number) {
-  return (CamContext* (*)(int, int, int))CCaravis_construct;
+  return (CamContext* (*)(int, int, int, const char *))CCaravis_construct;
 }
 
 CCaravis* CCaravis_construct( int device_number, int NumImageBuffers,
-                              int mode_number) {
+                              int mode_number, const char *interface) {
   CCaravis* this=NULL;
 
   this = malloc(sizeof(CCaravis));
@@ -556,7 +555,7 @@ CCaravis* CCaravis_construct( int device_number, int NumImageBuffers,
   } else {
     CCaravis_CCaravis( this,
                        device_number, NumImageBuffers,
-                       mode_number);
+                       mode_number, interface);
     if (BACKEND_GLOBAL(cam_iface_error)) {
       free(this);
       return NULL;
@@ -582,7 +581,7 @@ void delete_CCaravis( CCaravis *this ) {
 
 void CCaravis_CCaravis( CCaravis *this,
                         int device_number, int NumImageBuffers,
-                        int mode_number) {
+                        int mode_number, const char *interface) {
   ArvDevice *device;
   ArvGcNode *node;
   CameraPixelCoding coding;
@@ -592,10 +591,10 @@ void CCaravis_CCaravis( CCaravis *this,
   gint64 *aravis_formats;
   guint n_pixel_formats;
   const char *id;
-  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+  int device_index = device_number;
 
   /* call parent */
-  CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
+  CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number,interface);
   this->inherited.vmt = (CamContext_functable*)&CCaravis_vmt;
 
   /* initialize */
@@ -610,17 +609,50 @@ void CCaravis_CCaravis( CCaravis *this,
   this->inherited.device_number = device_number;
 
   this->cam_iface_mode_number = mode_number;
-	this->last_frame_id = 0;
-	this->last_timestamp_ns = 0;
+  this->last_frame_id = 0;
+  this->last_timestamp_ns = 0;
   this->num_buffers = NumImageBuffers;
   this->started = 0;
 
   id = aravis_cameras[device_index].device_name;
-  this->camera = arv_camera_new (id);
+
+  /* if an interface is supplied, use that to connect to the camera */
+  device = NULL;
+  if (interface) {
+    GInetAddress *interface_address, *device_address;
+    interface_address = g_inet_address_new_from_string (interface);
+    device_address = g_inet_address_new_from_string (aravis_cameras[device_index].device_address);
+    if (interface_address && device_address)
+        device = arv_gv_device_new (interface_address, device_address);
+  } else {
+    device = arv_open_device (id);
+  }
+
+  if (!ARV_IS_DEVICE (device)) {
+    ARAVIS_ERROR(CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR, "error connecting to camera");
+    return;
+  } else {
+    char *sia,*sda;
+    GInetAddress *ia, *da;
+
+    ia = g_inet_socket_address_get_address (
+            G_INET_SOCKET_ADDRESS(
+                arv_gv_device_get_interface_address (ARV_GV_DEVICE(device))));
+    sia = g_inet_address_to_string (ia);
+    da = g_inet_socket_address_get_address (
+            G_INET_SOCKET_ADDRESS(
+                arv_gv_device_get_device_address (ARV_GV_DEVICE(device))));
+    sda = g_inet_address_to_string (da);
+    DPRINTF("connecting: interface %s -> camera %s (auto:%c)\n", sia, sda, interface ? 'N' : 'Y');
+    g_free(sia);
+    g_free(sda);
+  }
+
+  this->camera = g_object_new (ARV_TYPE_CAMERA, "device", device, NULL);
   aravis_formats = arv_camera_get_available_pixel_formats (this->camera, &n_pixel_formats);
 
-  DPRINTF("construct number: %d index: %d id: %s uid: %s mode: %d (gst mode: %s) nbuffers: %d\n",
-          device_number, device_index, id,
+  DPRINTF("constructed camera: number: %d id: %s uid: %s mode: %d (gst mode: %s) nbuffers: %d\n",
+          device_number, id,
           arv_camera_get_device_id(this->camera),
           mode_number,
           arv_pixel_format_to_gst_caps_string(
@@ -637,7 +669,6 @@ void CCaravis_CCaravis( CCaravis *this,
 
   /* Fill out camera specific data. If this was non-const then I would cache
   it globally, but it isn't, so I store it here */
-  device = arv_camera_get_device (this->camera);
   node = arv_device_get_feature (device, "TriggerSource"); 
 
   if (node && ARV_IS_GC_ENUMERATION (node)) {
@@ -845,7 +876,7 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
         DPRINTF("failed blocking acquire, timeout next time");
       }
     } else {
-      buffer = arv_stream_timed_pop_buffer(this->stream, timeout * G_USEC_PER_SEC);
+      buffer = arv_stream_timeout_pop_buffer(this->stream, timeout * G_USEC_PER_SEC);
     }
       
 
