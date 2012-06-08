@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Backend for libaravis-0.2 */
 #include "cam_iface.h"
 
-#define ARAVIS_INCLUDE_FAKE_CAMERA                0
 #define ARAVIS_DEBUG_ENABLE                       0
 #define ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING    0
 #define ARAVIS_DEBUG_FRAME_ACQUSITION_STRIDE      0
@@ -209,8 +208,9 @@ myTLS int BACKEND_GLOBAL(cam_iface_error) = 0;
 #define CAM_IFACE_MAX_ERROR_LEN 255
 myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
-uint32_t aravis_num_cameras = 0;
-ArvGlobalCamera *aravis_cameras = NULL;
+static uint32_t aravis_num_cameras = 0;
+static ArvInterface *aravis_interface = NULL;
+static ArvGlobalCamera *aravis_cameras = NULL;
 
 /* one aravis thread and one mainloop per process, not per camera. I don't know
 how much of libcamiface supports threading anyway, so im not sure of the gain in
@@ -218,12 +218,6 @@ making each camera threaded, or indeed if aravis already does this... */
 GThread *aravis_thread = NULL;
 GMainContext *aravis_context = NULL;
 GMainLoop *aravis_mainloop = NULL;
-
-#if ARAVIS_INCLUDE_FAKE_CAMERA
-# define GET_ARAVIS_DEVICE_INDEX(i) (i)
-#else
-# define GET_ARAVIS_DEVICE_INDEX(i) (i+1)
-#endif
 
 #if !ARAVIS_DEBUG_ENABLE
 # define DPRINTF(...)
@@ -319,7 +313,8 @@ void BACKEND_METHOD(cam_iface_startup)() {
   /* this creates an association between list index and device IDs. This association
   will not change until the next call to this function, so I consider the list
   index to be canonical */
-  arv_update_device_list ();
+  aravis_interface = arv_gv_interface_get_instance ();
+  arv_interface_update_device_list (aravis_interface);
 
   /* default to a 1second delay after startup - this can be overwritten by
   changing the value of LIBCAMIFACE_ARAVIS_STARTUP_DELAY */
@@ -333,8 +328,8 @@ void BACKEND_METHOD(cam_iface_startup)() {
 
   DPRINTF("startup delay %.1fs\n", delay_sec);
   g_usleep (delay_sec * G_USEC_PER_SEC);
-  
-  aravis_num_cameras = arv_get_n_devices ();
+
+  aravis_num_cameras = arv_interface_get_n_devices (aravis_interface);
   aravis_cameras = calloc(aravis_num_cameras, sizeof(ArvGlobalCamera));
 
   if (aravis_cameras == NULL) {
@@ -344,7 +339,7 @@ void BACKEND_METHOD(cam_iface_startup)() {
   }
 
   for (i = 0; i < aravis_num_cameras; i++) {
-    aravis_cameras[i].device_name = g_strdup( arv_get_device_id (i) );
+    aravis_cameras[i].device_name = g_strdup( arv_interface_get_device_id (aravis_interface, i) );
     aravis_cameras[i].aravis_formats = NULL;
     aravis_cameras[i].num_modes = -1;
   }
@@ -362,17 +357,13 @@ void BACKEND_METHOD(cam_iface_shutdown)() {
 }
 
 int BACKEND_METHOD(cam_iface_get_num_cameras)() {
-#if ARAVIS_INCLUDE_FAKE_CAMERA
   return aravis_num_cameras;
-#else
-  return aravis_num_cameras - 1;
-#endif
 }
 
 void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *out_camid) {
   gchar **tokens;
   const gchar *id;
-  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+  int device_index = device_number;
 
   DPRINTF("get_info %d\n",device_number);
 
@@ -382,7 +373,7 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
     return;
   }
 
-  id = arv_get_device_id(device_index);
+  id = arv_interface_get_device_id(aravis_interface, device_index);
 
   /* In theory we could create a camera here, query the full information, and then unref it.
   However, in practice this is really slow - as shown getting the camera mode strings, etc. So
@@ -400,7 +391,7 @@ void BACKEND_METHOD(cam_iface_get_camera_info)(int device_number, Camwire_id *ou
 void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) {
   ArvCamera *camera;
   int *cached_modes;
-  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+  int device_index = device_number;
 
   cached_modes = &(aravis_cameras[device_index].num_modes);
   if (*cached_modes == -1) {
@@ -505,7 +496,7 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
   gint64 *aravis_formats;
   ArvGlobalCamera *cache;
   const char *framerate_string = "(user selectable framerate)";
-  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+  int device_index = device_number;
 
   DPRINTF("get mode string %d\n", device_number);
 
@@ -592,7 +583,7 @@ void CCaravis_CCaravis( CCaravis *this,
   gint64 *aravis_formats;
   guint n_pixel_formats;
   const char *id;
-  int device_index = GET_ARAVIS_DEVICE_INDEX(device_number);
+  int device_index = device_number;
 
   /* call parent */
   CamContext_CamContext((CamContext*)this,device_number,NumImageBuffers,mode_number);
