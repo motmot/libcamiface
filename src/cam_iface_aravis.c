@@ -31,9 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Backend for libaravis-0.2 */
 #include "cam_iface.h"
 
-#define ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING    0
-#define ARAVIS_DEBUG_FRAME_ACQUSITION_STRIDE      0
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -209,6 +206,11 @@ myTLS int BACKEND_GLOBAL(cam_iface_error) = 0;
 myTLS char BACKEND_GLOBAL(cam_iface_error_string)[CAM_IFACE_MAX_ERROR_LEN]  = {0x00}; //...
 
 static unsigned int aravis_debug = 0;
+#define DEBUG_API       0x1
+#define DEBUG_STREAM    0x2
+#define DEBUG_FRAME     0x4
+static unsigned int aravis_debug_nth = 100;
+static unsigned int aravis_debug_nth_count = 0;
 static uint32_t aravis_num_cameras = 0;
 static ArvInterface *aravis_interface = NULL;
 static ArvGlobalCamera *aravis_cameras = NULL;
@@ -220,10 +222,10 @@ GThread *aravis_thread = NULL;
 GMainContext *aravis_context = NULL;
 GMainLoop *aravis_mainloop = NULL;
 
-#define DPRINTF(...)                    \
-  if (aravis_debug) {                   \
+#define DPRINTF(...)                            \
+  if (aravis_debug & DEBUG_API) {               \
     fprintf(stderr,"DEBUG:    " __VA_ARGS__);   \
-    fflush(stdout);                     \
+    fflush(stdout);                             \
   }
 
 #define DWARNF(...) fprintf(stderr, "WARN :    " __VA_ARGS__); fflush(stderr);
@@ -312,10 +314,29 @@ void BACKEND_METHOD(cam_iface_startup)() {
   g_type_init ();
 
   debug_env = g_getenv("LIBCAMIFACE_ARAVIS_DEBUG");
-  if (debug_env)
+  if (debug_env) {
     aravis_debug = g_ascii_strtoull(debug_env, NULL, 10);
-  else
+    fprintf(stderr,"ARAVIS DEBUG SETTINGS (mask):\n"
+                   "  LIBCAMIFACE_ARAVIS_DEBUG & 0x1\n"
+                   "    debug aravis api calls\n"
+                   "  LIBCAMIFACE_ARAVIS_DEBUG & 0x2\n"
+                   "    debug aravis stream statistics (for network quality monitoring)\n"
+                   "    every LIBCAMIFACE_ARAVIS_DEBUG_NTH frames (default 100)\n"
+                   "  LIBCAMIFACE_ARAVIS_DEBUG & 0x4\n"
+                   "    debug frame acquisition (buffer push/pop)\n");
+    if (aravis_debug & DEBUG_STREAM) {
+      fprintf(stderr,"ARAVIS STREAM DEBUG FORMAT:\n"
+                     "n_completed_buffers, n_failures, n_underruns, "
+                     "n_resent_packets, n_missing_packets\n");
+    }
+    fflush(stdout);
+  } else {
     aravis_debug = 0;
+  }
+
+  debug_env = g_getenv("LIBCAMIFACE_ARAVIS_DEBUG_NTH");
+  if (debug_env)
+    aravis_debug_nth = g_ascii_strtoull(debug_env, NULL, 10);
 
   /* this creates an association between list index and device IDs. This association
   will not change until the next call to this function, so I consider the list
@@ -861,22 +882,23 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
   ArvBuffer *buffer;
   int ok = 0;
   unsigned int stride = (this->roi_width * this->inherited.depth + 7) / 8;
+  ArvStream *stream = this->stream;
 
   while (!ok) {
-#if ARAVIS_DEBUG_FRAME_ACQUSITION_BLOCKING
-    gint ib, ob;
-    arv_stream_get_n_buffers (this->stream, &ib, &ob);
-    printf("[G:%d/%d]\n",ib,ob); fflush(stdout);
-#endif
+    if (aravis_debug & DEBUG_FRAME) {
+        gint ib, ob;
+        arv_stream_get_n_buffers (stream, &ib, &ob);
+        fprintf(stderr, "[G:%d/%d]\n",ib,ob); fflush(stderr);
+    }
 
     if (timeout <= 0) {
-      buffer = arv_stream_pop_buffer(this->stream);
+      buffer = arv_stream_pop_buffer(stream);
       if (!buffer) {
         timeout = 0.5;
         DPRINTF("failed blocking acquire, timeout next time");
       }
     } else {
-      buffer = arv_stream_timeout_pop_buffer(this->stream, timeout * G_USEC_PER_SEC);
+      buffer = arv_stream_timeout_pop_buffer(stream, timeout * G_USEC_PER_SEC);
     }
       
 
@@ -890,9 +912,9 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
           return;
         }
 
-#if ARAVIS_DEBUG_FRAME_ACQUSITION_STRIDE
-        printf ("[S:%d/%d(w%d)]\n", stride, (int)stride0, this->roi_width); fflush(stdout);
-#endif
+        if (aravis_debug & DEBUG_FRAME) {
+          fprintf(stderr, "[S:%d/%d(w%d)]\n", stride, (int)stride0, this->roi_width); fflush(stderr);
+        }
 
         if (stride0 == stride) {
           /* same stride */
@@ -913,7 +935,20 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
 
         ok = 1;
       }
-      arv_stream_push_buffer (this->stream, buffer);
+      arv_stream_push_buffer (stream, buffer);
+    }
+  }
+
+  if (aravis_debug & DEBUG_STREAM) {
+    if (++aravis_debug_nth_count > aravis_debug_nth) {
+      guint64 n_resent_packets, n_missing_packets, n_completed_buffers, n_failures, n_underruns;
+      aravis_debug_nth_count = 0;
+      arv_stream_get_statistics (stream, &n_completed_buffers, &n_failures, &n_underruns);
+      arv_gv_stream_get_statistics (ARV_GV_STREAM(stream), &n_resent_packets, &n_missing_packets);
+      fprintf(stderr, "C:%ld\tF:%ld\tU:%ld\tR:%ld\tM:%ld\n",
+                      n_completed_buffers, n_failures, n_underruns,
+                      n_resent_packets, n_missing_packets);
+      fflush(stderr);
     }
   }
 
