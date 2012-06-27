@@ -745,9 +745,20 @@ void CCaravis_close(CCaravis *this) {
 
 void CCaravis_start_camera( CCaravis *this ) {
   int i;
-  unsigned int payload;
+  unsigned int payload, resend_enabled;
+  const char *env;
 
   this->stream = arv_camera_create_stream (this->camera, NULL, NULL);
+
+  resend_enabled = 0;
+  env = g_getenv("LIBCAMIFACE_ARAVIS_ENABLE_RESEND");
+  if (env)
+    resend_enabled = g_ascii_strtoull(env, NULL, 10);
+  if (resend_enabled)
+    g_object_set (this->stream, "packet-resend", ARV_GV_STREAM_PACKET_RESEND_ALWAYS, NULL);
+  else
+    g_object_set (this->stream, "packet-resend", ARV_GV_STREAM_PACKET_RESEND_NEVER, NULL);
+
   if (!ARV_IS_STREAM(this->stream)) {
     ARAVIS_ERROR(CAM_IFACE_CAMERA_NOT_AVAILABLE_ERROR, "error connecting to camera");
   }
@@ -764,6 +775,7 @@ void CCaravis_start_camera( CCaravis *this ) {
   arv_camera_start_acquisition (this->camera);
   this->started = 1;
 
+  DCAMPRINTF("started camera resend_enabled:%d\n", resend_enabled);
 }
 
 void CCaravis_stop_camera( CCaravis *this ) {
