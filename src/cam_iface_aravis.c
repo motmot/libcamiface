@@ -96,12 +96,13 @@ typedef struct CCaravis {
 
   int cam_iface_mode_number;
 
-	guint32 last_frame_id;
-	guint64 last_timestamp_ns;
+  guint32 last_frame_id;
+  guint64 last_timestamp_ns;
 
   ArvCamera *camera;
   ArvStream *stream;
   int num_buffers;
+  const char *guid;
 
   char **trigger_modes;
   int num_trigger_modes;
@@ -225,7 +226,13 @@ GMainLoop *aravis_mainloop = NULL;
 #define DPRINTF(...)                            \
   if (aravis_debug & DEBUG_API) {               \
     fprintf(stderr,"DEBUG:    " __VA_ARGS__);   \
-    fflush(stdout);                             \
+    fflush(stderr);                             \
+  }
+#define DCAMPRINTF(...)                         \
+  if (aravis_debug & DEBUG_API) {               \
+    fprintf(stderr,"%s ", this->guid);          \
+    fprintf(stderr,"DEBUG:    " __VA_ARGS__);   \
+    fflush(stderr);                             \
   }
 
 #define DWARNF(...) fprintf(stderr, "WARN :    " __VA_ARGS__); fflush(stderr);
@@ -670,11 +677,11 @@ void CCaravis_CCaravis( CCaravis *this,
   }
 
   this->camera = g_object_new (ARV_TYPE_CAMERA, "device", device, NULL);
+  this->guid = arv_camera_get_device_id(this->camera);
   aravis_formats = arv_camera_get_available_pixel_formats (this->camera, &n_pixel_formats);
 
-  DPRINTF("constructed camera: number: %d id: %s uid: %s mode: %d (gst mode: %s) nbuffers: %d\n",
+  DCAMPRINTF("constructed camera: number: %d id: %s mode: %d (gst mode: %s) nbuffers: %d\n",
           device_number, id,
-          arv_camera_get_device_id(this->camera),
           mode_number,
           arv_pixel_format_to_gst_caps_string(
             aravis_formats[mode_number]),
@@ -725,7 +732,7 @@ void CCaravis_CCaravis( CCaravis *this,
   this->roi_top = 0;
   arv_camera_get_width_bounds (this->camera, &minw, &(this->roi_width));
   arv_camera_get_height_bounds (this->camera, &minh, &(this->roi_height));
-  DPRINTF("construct set roi to 0,0 x %d,%d\n", this->roi_width, this->roi_height);
+  DCAMPRINTF("construct set roi to 0,0 x %d,%d\n", this->roi_width, this->roi_height);
   arv_camera_set_region (this->camera, this->roi_left, this->roi_top, this->roi_width, this->roi_height);
 
 }
@@ -857,7 +864,7 @@ void CCaravis_set_camera_property(CCaravis *this,
                                   int Auto ) {
   ArvAuto aravis_auto;
 
-  DPRINTF("set property %d to %ld (auto: %d)\n",property_number, Value, Auto);
+  DCAMPRINTF("set property %d to %ld (auto: %d)\n",property_number, Value, Auto);
 
   aravis_auto = (Auto ? ARV_AUTO_CONTINUOUS : ARV_AUTO_OFF);
   switch (property_number) {
@@ -888,14 +895,15 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
     if (aravis_debug & DEBUG_FRAME) {
         gint ib, ob;
         arv_stream_get_n_buffers (stream, &ib, &ob);
-        fprintf(stderr, "[G:%d/%d]\n",ib,ob); fflush(stderr);
+        fprintf(stderr, "%s [G:%d/%d]\n",this->guid,ib,ob);
+        fflush(stderr);
     }
 
     if (timeout <= 0) {
       buffer = arv_stream_pop_buffer(stream);
       if (!buffer) {
         timeout = 0.5;
-        DPRINTF("failed blocking acquire, timeout next time");
+        DCAMPRINTF("failed blocking acquire, timeout next time");
       }
     } else {
       buffer = arv_stream_timeout_pop_buffer(stream, timeout * G_USEC_PER_SEC);
@@ -913,7 +921,8 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
         }
 
         if (aravis_debug & DEBUG_FRAME) {
-          fprintf(stderr, "[S:%d/%d(w%d)]\n", stride, (int)stride0, this->roi_width); fflush(stderr);
+          fprintf(stderr, "%s [S:%d/%d(w%d)]\n", this->guid, stride, (int)stride0, this->roi_width);
+          fflush(stderr);
         }
 
         if (stride0 == stride) {
@@ -945,7 +954,8 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
       aravis_debug_nth_count = 0;
       arv_stream_get_statistics (stream, &n_completed_buffers, &n_failures, &n_underruns);
       arv_gv_stream_get_statistics (ARV_GV_STREAM(stream), &n_resent_packets, &n_missing_packets);
-      fprintf(stderr, "C:%ld\tF:%ld\tU:%ld\tR:%ld\tM:%ld\n",
+      fprintf(stderr, "%s C:%06ld\tF:%06ld\tU:%06ld\tR:%06ld\tM:%06ld\n",
+                      this->guid,
                       n_completed_buffers, n_failures, n_underruns,
                       n_resent_packets, n_missing_packets);
       fflush(stderr);
@@ -1026,7 +1036,7 @@ void CCaravis_set_trigger_mode_number( CCaravis *this,
 
   trigger_mode_name = this->trigger_modes[trigger_mode_number];
 
-  DPRINTF("set trigger mode: %d (%s)\n", trigger_mode_number, trigger_mode_name);
+  DCAMPRINTF("set trigger mode: %d (%s)\n", trigger_mode_number, trigger_mode_name);
 
   arv_camera_set_trigger (this->camera, trigger_mode_name);
 }
@@ -1042,7 +1052,7 @@ void CCaravis_get_frame_roi( CCaravis *this,
 void CCaravis_set_frame_roi( CCaravis *this,
                              int left, int top, int width, int height ) {
 
-  DPRINTF("set roi: %d,%d %dx%d\n", left, top, width, height);
+  DCAMPRINTF("set roi: %d,%d %dx%d\n", left, top, width, height);
 
   if (this->started) {
     DWARNF("Do I need to restart the camera when changing ROI\n");
@@ -1062,7 +1072,7 @@ void CCaravis_get_framerate( CCaravis *this,
 
 void CCaravis_set_framerate( CCaravis *this,
                              float framerate ) {
-  DPRINTF("set framerate: %f\n", framerate);
+  DCAMPRINTF("set framerate: %f\n", framerate);
   /* the aravis viewer widge adjusts the framerate at runtime without restarting the camera */
   arv_camera_set_frame_rate (this->camera, framerate);
 }
