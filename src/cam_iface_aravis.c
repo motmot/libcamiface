@@ -675,7 +675,7 @@ void CCaravis_CCaravis( CCaravis *this,
     g_free(sda);
   }
 
-  packet_size = -1;
+  packet_size = 1200;
   env = g_getenv("LIBCAMIFACE_ARAVIS_PACKET_SIZE");
   if (env)
     packet_size = g_ascii_strtoll(env, NULL, 10);
@@ -757,7 +757,7 @@ void CCaravis_start_camera( CCaravis *this ) {
 
   this->stream = arv_camera_create_stream (this->camera, NULL, NULL);
 
-  resend_enabled = 0;
+  resend_enabled = 1;
   env = g_getenv("LIBCAMIFACE_ARAVIS_ENABLE_RESEND");
   if (env)
     resend_enabled = g_ascii_strtoull(env, NULL, 10);
