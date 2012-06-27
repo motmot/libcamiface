@@ -614,11 +614,10 @@ void CCaravis_CCaravis( CCaravis *this,
   ArvGcNode *node;
   CameraPixelCoding coding;
   gint minw,minh;
-  int depth;
-  const char *format7_mode_string;
+  int depth, packet_size;
+  const char *id, *format7_mode_string, *env;
   gint64 *aravis_formats;
   guint n_pixel_formats;
-  const char *id;
   int device_index = device_number;
 
   /* call parent */
@@ -676,16 +675,24 @@ void CCaravis_CCaravis( CCaravis *this,
     g_free(sda);
   }
 
+  packet_size = -1;
+  env = g_getenv("LIBCAMIFACE_ARAVIS_PACKET_SIZE");
+  if (env)
+    packet_size = g_ascii_strtoll(env, NULL, 10);
+  if (packet_size > 0)
+    arv_gv_device_set_packet_size (ARV_GV_DEVICE(device), packet_size);
+
   this->camera = g_object_new (ARV_TYPE_CAMERA, "device", device, NULL);
   this->guid = arv_camera_get_device_id(this->camera);
   aravis_formats = arv_camera_get_available_pixel_formats (this->camera, &n_pixel_formats);
 
-  DCAMPRINTF("constructed camera: number: %d id: %s mode: %d (gst mode: %s) nbuffers: %d\n",
+  DCAMPRINTF("constructed camera: number: %d id: %s mode: %d (gst mode: %s) nbuffers: %d packet_size:%d\n",
           device_number, id,
           mode_number,
           arv_pixel_format_to_gst_caps_string(
             aravis_formats[mode_number]),
-          NumImageBuffers);
+          NumImageBuffers,
+          arv_gv_device_get_packet_size (ARV_GV_DEVICE(device)));
 
   arv_camera_set_binning (this->camera, -1, -1);
   arv_camera_set_pixel_format (this->camera, aravis_formats[mode_number]);
