@@ -107,6 +107,8 @@ typedef struct CCaravis {
   char **trigger_modes;
   int num_trigger_modes;
 
+  guint32 framenumber_msbs;
+
 } CCaravis;
 
 // forward declarations
@@ -637,6 +639,8 @@ void CCaravis_CCaravis( CCaravis *this,
 
   this->cam_iface_mode_number = mode_number;
   this->last_frame_id = 0;
+  this->framenumber_msbs = 0;
+
   this->last_timestamp_ns = 0;
   this->num_buffers = NumImageBuffers;
   this->started = 0;
@@ -958,6 +962,12 @@ void CCaravis_grab_next_frame_blocking_with_stride( CCaravis *this,
           }
         }
 
+        /* Check if frame_id wrapped - GigE Vision frames roll over at 2^16 (65536). */
+        if ((buffer->frame_id < 100) &&
+            (this->last_frame_id > 65000) ) {
+          this->framenumber_msbs++;
+        }
+
         this->last_frame_id = buffer->frame_id;
         this->last_timestamp_ns = buffer->timestamp_ns;
 
@@ -1009,7 +1019,13 @@ void CCaravis_get_last_timestamp( CCaravis *this, double* timestamp ) {
 }
 
 void CCaravis_get_last_framenumber( CCaravis *this, unsigned long* framenumber ){
-  *framenumber = this->last_frame_id;
+  guint64 final;
+  final =  (this->framenumber_msbs << 16) + this->last_frame_id;
+
+  /* And a hack because framenumbers do not roll around perfectly. (REALLY?) */
+  final -= this->framenumber_msbs;
+
+  *framenumber = final;
 }
 
 void CCaravis_get_num_trigger_modes( CCaravis *this,
