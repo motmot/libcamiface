@@ -359,7 +359,7 @@ void BACKEND_METHOD(cam_iface_startup)() {
   if (delay_env)
     delay_sec = g_ascii_strtod (delay_env, NULL);
   else
-    delay_sec = 1.0;
+    delay_sec = 0.05;
 
   delay_sec = CLAMP(delay_sec,0.0,5.0);
 
