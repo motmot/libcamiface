@@ -458,7 +458,9 @@ void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) 
   *depth = _d;                                    \
   break;
 #define FORMAT_IGNORE(_c) case _c:                \
-  *ret = #_c;                                     \
+  *ret = g_strdup_printf("!%s (%s)",               \
+         #_c,                                     \
+         arv_pixel_format_to_gst_caps_string(_c));\
   *coding = CAM_IFACE_UNKNOWN;                    \
   *depth = -1;                                    \
   break;
@@ -471,14 +473,16 @@ static void aravis_format_to_camiface(ArvPixelFormat format,
   /* AIUI we can always set binning, ROI, etc. This makes us FORMAT7_0 */
 
   switch (format) {
+    //fview and other users make some sad assumptions about names of format strings
+    //so for the common mono cases return them in the format they expect
     FORMAT_TO_FORMAT7(ARV_PIXEL_FORMAT_MONO_8, "0", "MONO8", CAM_IFACE_MONO8, 8);
+    FORMAT_TO_FORMAT7(ARV_PIXEL_FORMAT_MONO_16, "0", "MONO16", CAM_IFACE_MONO16, 16);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_MONO_8_SIGNED);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_MONO_10);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_MONO_10_PACKED);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_MONO_12);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_MONO_12_PACKED);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_MONO_14);
-    FORMAT_TO_FORMAT7(ARV_PIXEL_FORMAT_MONO_16, "0", "MONO16", CAM_IFACE_MONO16, 16);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_GR_8);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_RG_8);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_GB_8);
@@ -533,7 +537,6 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
   int depth;
   gint64 *aravis_formats;
   ArvGlobalCamera *cache;
-  const char *framerate_string = "(user selectable framerate)";
   int device_index = device_number;
 
   DPRINTF("get mode string %d\n", device_number);
@@ -565,8 +568,8 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
            cache->aravis_formats[mode_number],
            &format7_mode_string, &coding, &depth);
   snprintf(mode_string,mode_string_maxlen,
-           "%d x %d %s %s",
-           cache->maxw, cache->maxh, format7_mode_string, framerate_string);
+           "%d x %d %s",
+           cache->maxw, cache->maxh, format7_mode_string);
 
 }
 
