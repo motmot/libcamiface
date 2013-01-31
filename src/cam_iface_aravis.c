@@ -464,6 +464,13 @@ void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) 
   *coding = CAM_IFACE_UNKNOWN;                    \
   *depth = -1;                                    \
   break;
+#define FORMAT_INCLUDE(_c,_q,_d) case _c:\
+  *ret = g_strdup_printf("%s (%s)",               \
+         #_c,                                     \
+         arv_pixel_format_to_gst_caps_string(_c));\
+  *coding = _q;                                   \
+  *depth = _d;                                    \
+  break;
 
 static void aravis_format_to_camiface(ArvPixelFormat format,
                                        const char **ret,
@@ -486,7 +493,8 @@ static void aravis_format_to_camiface(ArvPixelFormat format,
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_GR_8);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_RG_8);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_GB_8);
-    FORMAT_TO_FORMAT7(ARV_PIXEL_FORMAT_BAYER_BG_8, "2", "MONO8", CAM_IFACE_MONO8_BAYER_BGGR, 8);
+    //FIXME: For it to be viewable in liveview_glut I must swap R/B
+    FORMAT_INCLUDE(ARV_PIXEL_FORMAT_BAYER_BG_8, CAM_IFACE_MONO8_BAYER_RGGB, 8);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_GR_10);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_RG_10);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BAYER_GB_10);
@@ -505,7 +513,8 @@ static void aravis_format_to_camiface(ArvPixelFormat format,
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_RGB_12_PACKED);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_BGR_12_PACKED);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_YUV_411_PACKED);
-    FORMAT_TO_FORMAT7(ARV_PIXEL_FORMAT_YUV_422_PACKED, "2", "MONO8", CAM_IFACE_YUV422, 8);
+    //FIXME: Should work, but stride looks wrong in liveview_glut
+    FORMAT_INCLUDE(ARV_PIXEL_FORMAT_YUV_422_PACKED, CAM_IFACE_YUV422, 8);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_YUV_444_PACKED);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_RGB_8_PLANAR);
     FORMAT_IGNORE(ARV_PIXEL_FORMAT_RGB_10_PLANAR);
