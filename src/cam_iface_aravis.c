@@ -458,14 +458,14 @@ void BACKEND_METHOD(cam_iface_get_num_modes)(int device_number, int *num_modes) 
   *depth = _d;                                    \
   break;
 #define FORMAT_IGNORE(_c) case _c:                \
-  *ret = g_strdup_printf("!%s (%s)",               \
+  *ret = g_strdup_printf("N/A (%s %s)",           \
          #_c,                                     \
          arv_pixel_format_to_gst_caps_string(_c));\
   *coding = CAM_IFACE_UNKNOWN;                    \
   *depth = -1;                                    \
   break;
-#define FORMAT_INCLUDE(_c,_q,_d) case _c:\
-  *ret = g_strdup_printf("%s (%s)",               \
+#define FORMAT_INCLUDE(_c,_q,_d) case _c:         \
+  *ret = g_strdup_printf("%s %s",                 \
          #_c,                                     \
          arv_pixel_format_to_gst_caps_string(_c));\
   *coding = _q;                                   \
