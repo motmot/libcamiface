@@ -33,7 +33,7 @@ project(libcamiface)
 # version
 set(V_MAJOR 0)
 set(V_MINOR 8)
-set(V_PATCH 3)
+set(V_PATCH 4)
 
 include_directories( ${CMAKE_SOURCE_DIR}/include )
 
