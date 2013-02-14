@@ -31,7 +31,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #undef SHADER_DIR
-#define SHADER_DIR "/home/stowers/Straw/libcamiface.git/demo/"
+#define SHADER_DIR "../demo/"
+
+#define USE_COPY
 
 #include <stdio.h>
 #ifdef _WIN32
@@ -67,11 +69,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #error "SHADER_DIR is undefined"
 #endif
 
-#define MAX_N_CAMERAS 10
+#define MAX_N_CAMERAS 1
 
 /* global variables */
 CamContext *cc_all[MAX_N_CAMERAS];
-int device_number;
 int stride, width, height;
 unsigned char *raw_pixels;
 double buf_wf, buf_hf;
@@ -295,10 +296,10 @@ unsigned char* convert_pixels(unsigned char* src,
       if (use_shaders) {
         firstRed = glGetUniformLocation(glsl_program,"firstRed");
         switch(src_coding) {
-        case CAM_IFACE_MONO8_BAYER_BGGR:
+        case CAM_IFACE_MONO8_BAYER_RGGB:
           glUniform2f(firstRed,0,0);
           break;
-        case CAM_IFACE_MONO8_BAYER_RGGB:
+        case CAM_IFACE_MONO8_BAYER_BGGR:
           glUniform2f(firstRed,1,1);
           break;
         case CAM_IFACE_MONO8_BAYER_GRBG:
@@ -647,7 +648,7 @@ void setShaders() {
 
 int main(int argc, char** argv) {
   int num_buffers;
-
+  int device_number = -1;
   int buffer_size;
   int num_modes, num_props, num_trigger_modes;
   char mode_string[255];
@@ -710,7 +711,7 @@ int main(int argc, char** argv) {
 
   for (i=0; i<num_modes; i++) {
     cam_iface_get_mode_string(device_number,i,mode_string,255);
-    if (strstr(mode_string,"ARV_PIXEL_FORMAT_YUV_422_PACKED")!=NULL) {
+    if (strstr(mode_string,"ARV_PIXEL_FORMAT_BAYER_BG_8")!=NULL) {
         // pick this mode
         mode_number = i;
     }
@@ -722,10 +723,10 @@ int main(int argc, char** argv) {
   num_buffers = 5;
 
   new_CamContext = cam_iface_get_constructor_func(device_number);
-  cc_all[device_number] = new_CamContext(device_number,num_buffers,mode_number,NULL);
+  cc_all[0] = new_CamContext(device_number,num_buffers,mode_number,NULL);
   _check_error();
 
-  cc = cc_all[device_number];
+  cc = cc_all[0];
 
   CamContext_get_frame_roi(cc, &left, &top, &width, &height);
   _check_error();
@@ -781,7 +782,7 @@ int main(int argc, char** argv) {
   glEnable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-  cc = cc_all[device_number];
+  cc = cc_all[0];
 
   CamContext_get_num_framebuffers(cc,&num_buffers);
   printf("allocated %d buffers\n",num_buffers);
@@ -815,7 +816,6 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-#define USE_COPY
 #ifdef USE_COPY
   raw_pixels = (unsigned char *)malloc( buffer_size );
   if (raw_pixels==NULL) {
@@ -824,13 +824,13 @@ int main(int argc, char** argv) {
   }
 #endif
 
-  cc = cc_all[device_number];
+  cc = cc_all[0];
   CamContext_start_camera(cc);
   _check_error();
 
   printf("will now run forever. press Ctrl-C to interrupt\n");
 
-  cc = cc_all[device_number];
+  cc = cc_all[0];
 
   CamContext_get_num_trigger_modes( cc, &num_trigger_modes );
   _check_error();
@@ -848,7 +848,7 @@ int main(int argc, char** argv) {
   glutMainLoop();
   printf("\n");
 
-  cc = cc_all[device_number];
+  cc = cc_all[0];
   delete_CamContext(cc);
   _check_error();
 
@@ -865,14 +865,16 @@ int main(int argc, char** argv) {
 /* Send the data to OpenGL. Use the fastest possible method. */
 
 void upload_image_data_to_opengl(unsigned char* raw_image_data,
-                                 CameraPixelCoding coding,
-				 int device_number) {
+                                 CameraPixelCoding coding) {
   unsigned char * gl_image_data;
   static unsigned char* show_pixels=NULL;
   GLuint textureId;
   GLubyte* ptr;
 
-  textureId = textureId_all[device_number];
+  textureId = textureId_all[0];
+
+  fprintf(stdout,".");
+  fflush(stdout);
 
   if (use_pbo) {
 #ifdef USE_GLEW
@@ -923,11 +925,10 @@ void upload_image_data_to_opengl(unsigned char* raw_image_data,
 void grab_frame(void) {
   int errnum;
   CamContext *cc;
-  static int next_device_number=0;
   int data_ok = 0;
 
 #ifdef USE_COPY
-    cc = cc_all[next_device_number];
+    cc = cc_all[0];
 
     CamContext_grab_next_frame_blocking(cc,raw_pixels,-1); // block forever
     errnum = cam_iface_have_error();
@@ -953,14 +954,14 @@ void grab_frame(void) {
     }
 
     if (data_ok) {
-      upload_image_data_to_opengl(raw_pixels,cc->coding,device_number);
+      upload_image_data_to_opengl(raw_pixels,cc->coding);
     }
 
 #else
     CamContext_point_next_frame_blocking(cc,&raw_pixels,-1.0f);
     _check_error();
 
-    upload_image_data_to_opengl(raw_pixels,cc->coding,next_device_number);
+    upload_image_data_to_opengl(raw_pixels,cc->coding);
 
     CamContext_unpoint_frame(cc);
     _check_error();
