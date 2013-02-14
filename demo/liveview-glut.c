@@ -30,6 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
 
+#undef SHADER_DIR
+#define SHADER_DIR "/home/stowers/Straw/libcamiface.git/demo/"
 
 #include <stdio.h>
 #ifdef _WIN32
@@ -69,8 +71,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* global variables */
 CamContext *cc_all[MAX_N_CAMERAS];
-int ncams=0;
-
+int device_number;
 int stride, width, height;
 unsigned char *raw_pixels;
 double buf_wf, buf_hf;
@@ -417,8 +418,8 @@ void initialize_gl_texture() {
     exit(1);
   }
 
-  glGenTextures(ncams, &(textureId_all[0]));
-for (i=0; i<ncams; i++) {
+  glGenTextures(1, &(textureId_all[0]));
+for (i=0; i<1; i++) {
   textureId = textureId_all[i];
   glBindTexture(GL_TEXTURE_2D, textureId);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -443,17 +444,12 @@ void display_pixels(void) {
   int i;
   int ncols,nrows,col_idx,row_idx;
   float wfrac, hfrac, lowx, highx, lowy, highy;
-  if (ncams > 2) {
-    nrows = 2;
-    ncols = (ncams+1) / 2;
-  } else {
-    nrows = 1;
-    ncols = ncams;
-  }
+  nrows = 1;
+  ncols = 1;
   wfrac = 2.0f/ncols;
   hfrac = 2.0f/nrows;
 
-for (i=0; i<ncams; i++) {
+for (i=0; i<1; i++) {
 
   if (i < ncols) {
     row_idx = 0;
@@ -650,7 +646,7 @@ void setShaders() {
 #endif  /* ifdef USE_GLEW */
 
 int main(int argc, char** argv) {
-  int device_number,num_buffers;
+  int num_buffers;
 
   int buffer_size;
   int num_modes, num_props, num_trigger_modes;
@@ -672,7 +668,7 @@ int main(int argc, char** argv) {
 
   printf("using driver %s\n",cam_iface_get_driver_name());
 
-  ncams = cam_iface_get_num_cameras();
+  int ncams = cam_iface_get_num_cameras();
   _check_error();
 
   if (ncams<1) {
@@ -693,9 +689,15 @@ int main(int argc, char** argv) {
     printf("    vendor: %s\n",cam_info_struct.vendor);
     printf("    model: %s\n",cam_info_struct.model);
     printf("    chip: %s\n",cam_info_struct.chip);
+
+    if (strcmp(cam_info_struct.chip, "Basler-21266086") == 0)
+        device_number = i;
   }
 
-for (device_number = 0; device_number < ncams; device_number++) {
+  if (device_number == -1) {
+    fprintf(stderr,"No cameras available.\n");
+    exit(1);
+  }
 
   printf("choosing camera %d\n",device_number);
 
@@ -708,11 +710,9 @@ for (device_number = 0; device_number < ncams; device_number++) {
 
   for (i=0; i<num_modes; i++) {
     cam_iface_get_mode_string(device_number,i,mode_string,255);
-    if (strstr(mode_string,"FORMAT7_0")!=NULL) {
-      if (strstr(mode_string,"MONO8")!=NULL) {
+    if (strstr(mode_string,"ARV_PIXEL_FORMAT_YUV_422_PACKED")!=NULL) {
         // pick this mode
         mode_number = i;
-      }
     }
     printf("  %d: %s\n",i,mode_string);
   }
@@ -733,23 +733,11 @@ for (device_number = 0; device_number < ncams; device_number++) {
   stride = width*cc->depth/8;
   printf("raw image width: %d, stride: %d\n",width,stride);
 
-  if (device_number==0) {
     orig_left = left;
     orig_top = top;
     orig_width = width;
     orig_height = height;
     orig_stride = stride;
-  } else {
-    if (!((orig_left == left) &&
-	  (orig_top == top) &&
-	  (orig_width == width) &&
-	  (orig_height == height) &&
-	  (orig_stride = stride))) {
-      fprintf(stderr,"not all cameras have same shape\n");
-      exit(1);
-    }
-  }
-}
 
   glutInitWindowPosition(-1,-1);
   glutInitWindowSize(width, height);
@@ -793,7 +781,6 @@ for (device_number = 0; device_number < ncams; device_number++) {
   glEnable(GL_TEXTURE_2D);
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-for (device_number=0; device_number < ncams; device_number++) {
   cc = cc_all[device_number];
 
   CamContext_get_num_framebuffers(cc,&num_buffers);
@@ -827,7 +814,6 @@ for (device_number=0; device_number < ncams; device_number++) {
     fprintf(stderr,"buffer size was 0 in %s, line %d\n",__FILE__,__LINE__);
     exit(1);
   }
- }
 
 #define USE_COPY
 #ifdef USE_COPY
@@ -838,15 +824,12 @@ for (device_number=0; device_number < ncams; device_number++) {
   }
 #endif
 
-for (device_number=0; device_number < ncams; device_number++) {
   cc = cc_all[device_number];
   CamContext_start_camera(cc);
   _check_error();
-}
 
   printf("will now run forever. press Ctrl-C to interrupt\n");
 
-for (device_number=0; device_number < ncams; device_number++) {
   cc = cc_all[device_number];
 
   CamContext_get_num_trigger_modes( cc, &num_trigger_modes );
@@ -858,7 +841,6 @@ for (device_number=0; device_number < ncams; device_number++) {
     printf("  %d: %s\n",i,mode_string);
   }
   printf("\n");
- }
 
   glutDisplayFunc(display_pixels); /* set the display callback */
   glutIdleFunc(grab_frame); /* set the idle callback */
@@ -866,11 +848,9 @@ for (device_number=0; device_number < ncams; device_number++) {
   glutMainLoop();
   printf("\n");
 
-for (device_number=0; device_number < ncams; device_number++) {
   cc = cc_all[device_number];
   delete_CamContext(cc);
   _check_error();
-}
 
   cam_iface_shutdown();
   _check_error();
@@ -972,10 +952,8 @@ void grab_frame(void) {
       data_ok = 1;
     }
 
-    next_device_number++;
-    next_device_number = next_device_number % ncams;
     if (data_ok) {
-      upload_image_data_to_opengl(raw_pixels,cc->coding,next_device_number);
+      upload_image_data_to_opengl(raw_pixels,cc->coding,device_number);
     }
 
 #else

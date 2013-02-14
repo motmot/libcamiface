@@ -183,12 +183,15 @@ int main(int argc, char** argv) {
       cam_iface_clear_error();
       continue;
     }
-    device_number = i;
     _check_error();
     printf("  camera %d:\n",i);
     printf("    vendor: %s\n",cam_info_struct.vendor);
     printf("    model: %s\n",cam_info_struct.model);
     printf("    chip: %s\n",cam_info_struct.chip);
+
+    if (strcmp(cam_info_struct.chip, "Basler-21266086") == 0)
+        device_number = i;
+
   }
 
   if (device_number == -1) {
@@ -203,17 +206,19 @@ int main(int argc, char** argv) {
 
   printf("%d mode(s) available:\n",num_modes);
 
-  mode_number = 0;
+  mode_number = -1;
 
   for (i=0; i<num_modes; i++) {
     cam_iface_get_mode_string(device_number,i,mode_string,255);
-    if (strstr(mode_string,"FORMAT7_0")!=NULL) {
-      if (strstr(mode_string,"MONO8")!=NULL) {
-        // pick this mode
+    if (strstr(mode_string,"ARV_PIXEL_FORMAT_YUV_422_PACKED")!=NULL) {
         mode_number = i;
-      }
     }
     printf("  %d: %s\n",i,mode_string);
+  }
+
+  if (mode_number == -1) {
+    fprintf(stderr,"Mode not available.\n");
+    exit(1);
   }
 
   printf("Choosing mode %d\n",mode_number);
