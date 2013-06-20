@@ -57,7 +57,7 @@ ENDIF(DC1394_FOUND)
 
 # Backend: aravis ---------------------------------
 
-pkg_check_modules(ARAVIS glib-2.0 gthread-2.0 aravis-0.2>=0.1.14)
+pkg_check_modules(ARAVIS glib-2.0 gthread-2.0 aravis-0.4)
 
 IF(ARAVIS_FOUND)
   set(all_backends ${all_backends} aravis)
