@@ -721,18 +721,43 @@ void CCaravis_CCaravis( CCaravis *this,
   node = arv_device_get_feature (device, "TriggerSource"); 
 
   if (node && ARV_IS_GC_ENUMERATION (node)) {
+	GSList *available_entries = NULL;
+	const char **strings;
+	const char *string = NULL;
+	gboolean is_available, is_implemented;
     const GSList *childs;
     const GSList *iter;
     int i;
 
     childs = arv_gc_enumeration_get_entries (ARV_GC_ENUMERATION (node));
 
-    this->num_trigger_modes =  g_slist_length ((GSList *)childs);
-    this->trigger_modes = calloc(this->num_trigger_modes, sizeof(const char *));
-
-    for (iter = childs, i = 0; iter != NULL; iter = iter->next, i++) {
-      this->trigger_modes[i] = g_strdup( arv_gc_feature_node_get_name ARV_GC_FEATURE_NODE ((iter->data)) );
+    for (iter = childs, i = 0; iter != NULL; iter = iter->next/*, i++*/) {
+		is_available = arv_gc_feature_node_is_available (iter->data, NULL);
+		is_implemented = arv_gc_feature_node_is_implemented (iter->data, NULL);
+		if (is_available && is_implemented) {
+			string = arv_gc_feature_node_get_display_name (iter->data, NULL);
+			if (string == NULL)
+				string = arv_gc_feature_node_get_name (iter->data);
+			if (string == NULL) {
+				g_slist_free (available_entries);
+				ARAVIS_ERROR(CAM_IFACE_GENERIC_ERROR, "error getting trigger modes");
+                return;
+			} else {
+                DCAMPRINTF("got valid trigger name %s (%d)\n", string, i);
+            }
+			available_entries = g_slist_prepend (available_entries, (gpointer)string);
+			i++;
+		}
     }
+
+    // manually add CC1 (continuous capture)
+	this->trigger_modes = g_new (char *, i + 1);
+    for (i = 0, iter = available_entries; iter != NULL; iter = iter->next, i++)
+		this->trigger_modes[i] = g_strdup(iter->data);
+	this->trigger_modes[i] = g_strdup("CC1");
+
+	this->num_trigger_modes = i+1;
+
   } else {
     ARAVIS_ERROR(CAM_IFACE_GENERIC_ERROR, "error getting trigger modes");
     this->num_trigger_modes = 0;
@@ -1058,8 +1083,12 @@ void CCaravis_get_trigger_mode_number( CCaravis *this,
   const char *trigger_source;
 
   trigger_source = arv_camera_get_trigger_source (this->camera);
+
+  DCAMPRINTF("get trigger mode number for trigger source: %s\n", trigger_source);
+
   if (!trigger_source) {
-    ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "could not read trigger source");
+    //ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "could not read trigger source");
+    *trigger_mode_number = 0;
     return;
   }
 
@@ -1085,7 +1114,11 @@ void CCaravis_set_trigger_mode_number( CCaravis *this,
 
   DCAMPRINTF("set trigger mode: %d (%s)\n", trigger_mode_number, trigger_mode_name);
 
-  arv_camera_set_trigger (this->camera, trigger_mode_name);
+  if (g_strcmp0 (trigger_mode_name, "CC1") == 0) {
+    arv_camera_set_frame_rate (this->camera, 999);
+  } else {
+    arv_camera_set_trigger (this->camera, trigger_mode_name);
+  }
 }
 
 void CCaravis_get_frame_roi( CCaravis *this,
