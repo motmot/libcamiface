@@ -819,7 +819,6 @@ void CCaravis_get_camera_property_info(CCaravis *this,
                                        int property_number,
                                        CameraPropertyInfo *info) {
 
-  gint imin, imax;
   double dmin, dmax;
 
   /* nice cameras do no bother with dirty scaled values */  
@@ -855,9 +854,9 @@ void CCaravis_get_camera_property_info(CCaravis *this,
       break;
     case ARAVIS_PROPERTY_GAIN:
       info->name = "gain";
-      arv_camera_get_gain_bounds (this->camera, &imin, &imax);
-      info->min_value = imin;
-      info->max_value = imax;
+      arv_camera_get_gain_bounds (this->camera, &dmin, &dmax);
+      info->min_value = dmin;
+      info->max_value = dmax;
       break;
     default:
       info->available = 0;
@@ -889,6 +888,9 @@ void CCaravis_get_camera_property(CCaravis *this,
       ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "unknown property");
       break;
   }
+
+  DCAMPRINTF("get property %d = %ld (auto: %d)\n",property_number, *Value, *Auto);
+
 }
 
 void CCaravis_set_camera_property(CCaravis *this,
