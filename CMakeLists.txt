@@ -81,15 +81,6 @@ IF(FLYCAPTURE_FOUND)
   set(all_backends ${all_backends} pgr_flycap)
 ENDIF(FLYCAPTURE_FOUND)
 
-# Backend: QuickTime --------------------------------
-
-FIND_PACKAGE(QuickTime)
-FIND_PACKAGE(Carbon)
-
-IF(QUICKTIME_FOUND)
-  set(all_backends ${all_backends} quicktime)
-ENDIF(QUICKTIME_FOUND)
-
 # Backend: Basler Pylon --------------------------------
 
 FIND_PACKAGE(BaslerPylon)

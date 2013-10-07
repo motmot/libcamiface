@@ -271,47 +271,6 @@ IF(FLYCAPTURE_FOUND)
 
 ENDIF(FLYCAPTURE_FOUND)
 
-# quicktime backend ------------------
-
-IF(QUICKTIME_FOUND)
-
-IF(NOT CARBON_FOUND)
-  MESSAGE(FATAL_ERROR "QuickTime backend depends on Carbon, but Carbon not found")
-ENDIF(NOT CARBON_FOUND)
-
-  set(quicktime_SRCS ${common_SRCS}
-      cam_iface_quicktime.c
-      )
-  set(mega_SRCS ${mega_SRCS}
-      cam_iface_quicktime.c
-     )
-
-  ADD_LIBRARY(cam_iface_quicktime SHARED ${quicktime_SRCS})
-  TARGET_LINK_LIBRARIES(cam_iface_quicktime ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
-  SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${QUICKTIME_LIBRARY} ${CARBON_LIBRARY})
-  SET(mega_DEFINE
-      ${mega_DEFINE}
-      -DMEGA_BACKEND_QUICKTIME
-      )
-  set_target_properties(cam_iface_quicktime PROPERTIES VERSION ${CAM_IFACE_VERSION}
-    SOVERSION ${CAM_IFACE_SOVERSION})
-
-  ADD_LIBRARY(cam_iface_quicktime-static STATIC ${quicktime_SRCS})
-  set_target_properties(cam_iface_quicktime-static PROPERTIES OUTPUT_NAME "cam_iface_quicktime")
-
-  SET_TARGET_PROPERTIES(cam_iface_quicktime PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-  SET_TARGET_PROPERTIES(cam_iface_quicktime-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-
-  INSTALL(TARGETS cam_iface_quicktime cam_iface_quicktime-static
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-  )
-
-ENDIF(QUICKTIME_FOUND)
-
-
-
 
 # basler pylon backend ------------------
 

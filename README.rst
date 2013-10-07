@@ -23,14 +23,11 @@ is a piece of code that creates the libcamiface interface for each
 particular camera driver.
 
 As seen below, the supported camera drivers are currently libdc1394,
-the Prosilia Gigabit Ethernet SDK, Point Grey Research FlyCapture2,
-and the QuickTime SequenceGrabber. For a list of cameras supporting
-the libdc1394 software, see
-http://damien.douxchamps.net/ieee1394/cameras/. For the Prosilica
+the Prosilia Gigabit Ethernet SDK, and Point Grey Research
+FlyCapture2. For a list of cameras supporting the libdc1394 software,
+see http://damien.douxchamps.net/ieee1394/cameras/. For the Prosilica
 Gigabit cameras, see http://www.prosilica.com/. For the Point Grey
-cameras, see http://www.ptgrey.com. The QuickTime SequenceGrabber
-supports any camera available through QuickTime. This includes the
-built-in cameras on Mac laptops and desktops.
+cameras, see http://www.ptgrey.com.
 
 .. _libcamiface-supported-rates:
 
@@ -84,11 +81,6 @@ A number of backends are supported.
     - |NA|
     - |orange| rudiments present in git 'cruft' branch, frequent BSOD
     - |NA|
-  * - `QuickTime SequenceGrabber`_
-    - |NA|
-    - |NA|
-    - |NA| (supported by driver?)
-    - |mostly works| basic functionality works
 
 Key to the above symbols:
 
@@ -102,7 +94,6 @@ Key to the above symbols:
 .. _Prosilica GigE Vision: http://www.prosilica.com
 .. _ImperX: http://www.imperx.com/
 .. _Basler BCAM 1.8: http://www.baslerweb.com/indizes/beitrag_index_en_21486.html
-.. _QuickTime SequenceGrabber: http://developer.apple.com/quicktime/
 
 .. |works| image:: _static/greenlight.png
   :alt: works
