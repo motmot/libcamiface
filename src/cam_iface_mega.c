@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cam_iface_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct backend_info_t {
   char* name;
