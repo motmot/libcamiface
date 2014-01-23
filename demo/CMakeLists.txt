@@ -85,12 +85,12 @@ if(OPENCV_FOUND)
     IF(${BACKEND} STREQUAL "mega")
       TARGET_LINK_LIBRARIES(opencv-${BACKEND}
         cam_iface_mega
-        ${OPENCV_LIBRARIES}
+        ${OPENCV_LIBRARIES} opencv_core opencv_legacy opencv_highgui opencv_imgproc
         )
     ELSE(${BACKEND} STREQUAL "mega")
       TARGET_LINK_LIBRARIES(opencv-${BACKEND}
         cam_iface_${BACKEND}
-        ${OPENCV_LIBRARIES}
+        ${OPENCV_LIBRARIES} opencv_core opencv_legacy opencv_highgui opencv_imgproc
         )
     ENDIF(${BACKEND} STREQUAL "mega")
 
