@@ -736,9 +736,7 @@ void CCaravis_CCaravis( CCaravis *this,
 		is_available = arv_gc_feature_node_is_available (iter->data, NULL);
 		is_implemented = arv_gc_feature_node_is_implemented (iter->data, NULL);
 		if (is_available && is_implemented) {
-			string = arv_gc_feature_node_get_display_name (iter->data, NULL);
-			if (string == NULL)
-				string = arv_gc_feature_node_get_name (iter->data);
+			string = arv_gc_feature_node_get_name (iter->data);
 			if (string == NULL) {
 				g_slist_free (available_entries);
 				ARAVIS_ERROR(CAM_IFACE_GENERIC_ERROR, "error getting trigger modes");
