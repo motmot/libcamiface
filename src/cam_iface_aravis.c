@@ -106,6 +106,7 @@ typedef struct CCaravis {
 
   char **trigger_modes;
   int num_trigger_modes;
+  unsigned int current_trigger_mode;
 
   guint32 framenumber_msbs;
 
@@ -716,6 +717,7 @@ void CCaravis_CCaravis( CCaravis *this,
   trigger mode. Set this to an impossibly high value so that the camera comes up effectively free
   running. */
   arv_camera_set_frame_rate (this->camera, 999);
+  this->current_trigger_mode = 0; /* represents trigger source CC1 */
 
   /* Fill out camera specific data. If this was non-const then I would cache
   it globally, but it isn't, so I store it here */
@@ -1080,28 +1082,15 @@ void CCaravis_get_trigger_mode_string( CCaravis *this,
 
 void CCaravis_get_trigger_mode_number( CCaravis *this,
                                        int *trigger_mode_number ) {
-  int i;
-  const char *trigger_source;
 
-  trigger_source = arv_camera_get_trigger_source (this->camera);
-
-  DCAMPRINTF("get trigger mode number for current trigger source: %s\n", trigger_source);
-
-  if (!trigger_source) {
-    //ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "could not read trigger source");
-    DWARNF("Could not read trigger source - assuming trigger number 0\n");
-    *trigger_mode_number = 0;
-    return;
+  if (this->current_trigger_mode == 0) {
+    DCAMPRINTF("get trigger mode number for current trigger source: CC1\n");
+  } else {
+    const char *trigger_source;
+    trigger_source = arv_camera_get_trigger_source (this->camera);
+    DCAMPRINTF("get trigger mode number for current trigger source: %s\n", trigger_source);
   }
-
-  for (i=0; i<this->num_trigger_modes; i++) {
-    if (strcmp(trigger_source, this->trigger_modes[i]) == 0) {
-      *trigger_mode_number = i;
-      return;
-    }
-  }
-
-  ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "unknown trigger source");
+  *trigger_mode_number = this->current_trigger_mode;
 }
 
 void CCaravis_set_trigger_mode_number( CCaravis *this,
@@ -1113,6 +1102,7 @@ void CCaravis_set_trigger_mode_number( CCaravis *this,
   }
 
   trigger_mode_name = this->trigger_modes[trigger_mode_number];
+  this->current_trigger_mode = trigger_mode_number;
 
   DCAMPRINTF("set trigger mode: %d (%s)\n", trigger_mode_number, trigger_mode_name);
 
