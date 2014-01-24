@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
   int n_frames;
   int have_frame;
   int buffer_size;
-  int num_modes, num_props, num_trigger_modes;
+  int num_modes, num_props;
   char mode_string[255];
   int i,mode_number,camno;
   CameraPropertyInfo cam_props;
@@ -172,13 +172,18 @@ int main(int argc, char** argv) {
 
     printf("%d mode(s) available:\n",num_modes);
 
-    mode_number = 10;
+    mode_number = 0;
 
     for (i=0; i<num_modes; i++) {
       cam_iface_get_mode_string(camno,i,mode_string,255);
+      if (strstr(mode_string,"FORMAT7_0")!=NULL) {
+        if (strstr(mode_string,"MONO8")!=NULL) {
+          // pick this mode
+          mode_number = i;
+        }
+      }
       printf("  %d: %s\n",i,mode_string);
     }
-    printf("Choosing mode %d\n",mode_number);
 
     num_buffers = 5;
 
@@ -232,15 +237,6 @@ int main(int argc, char** argv) {
     if (pixels[camno]==NULL) {
       fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
       exit(1);
-    }
-
-    CamContext_get_num_trigger_modes( cc[camno], &num_trigger_modes );
-    _check_error();
-
-    if (num_trigger_modes) {
-      printf("setting trigger mode 0\n");
-      CamContext_set_trigger_mode_number( cc[camno], 0 );
-      _check_error();
     }
 
     CamContext_start_camera(cc[camno]);

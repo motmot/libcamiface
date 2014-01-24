@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cam_iface.h"
 
 #include <cv.h>
+#include <highgui.h>
 
 double my_floattime() {
 #ifdef _WIN32
@@ -131,9 +132,6 @@ int main(int argc, char** argv) {
     do_num_frames = 50;
   }
 
-  for (i=0;i<argc;i++) {
-    printf("%d: %s\n",i,argv[i]);
-  }
   printf("using driver %s\n",cam_iface_get_driver_name());
 
   if (cam_iface_get_num_cameras()<1) {
@@ -209,14 +207,11 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-#define USE_COPY
-#ifdef USE_COPY
   pixels = (unsigned char *)malloc( buffer_size );
   if (pixels==NULL) {
     fprintf(stderr,"couldn't allocate memory in %s, line %d\n",__FILE__,__LINE__);
     exit(1);
   }
-#endif
 
   if ((cc->coding) == CAM_IFACE_MONO8) {
     cvframe = cvCreateImage( cvSize(width,height),
@@ -226,6 +221,8 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
+  cvNamedWindow( "Camera 0", CV_WINDOW_AUTOSIZE);
+
   CamContext_start_camera(cc);
   _check_error();
 
@@ -233,22 +230,17 @@ int main(int argc, char** argv) {
   n_frames = 0;
 
   if (do_num_frames < 0) {
-    printf("will now run forever. press Ctrl-C to interrupt\n");
+    printf("will now run forever. press Ctrl-C or 'q' to interrupt\n");
   } else {
     printf("will now grab %d frames.\n",do_num_frames);
   }
-
-  /*
-  CamContext_set_trigger_mode_number( cc, 0 );
-  _check_error();
-  */
 
   while (1) {
     if (do_num_frames>=0) {
       do_num_frames--;
       if (do_num_frames<0) break;
     }
-#ifdef USE_COPY
+
     CamContext_grab_next_frame_blocking(cc,pixels,0.2); // timeout after 200 msec
     //CamContext_grab_next_frame_blocking(cc,pixels,-1.0f); // never timeout
     errnum = cam_iface_have_error();
@@ -273,22 +265,9 @@ int main(int argc, char** argv) {
     }
     now = my_floattime();
     n_frames += 1;
-#else
-    CamContext_point_next_frame_blocking(cc,&pixels,-1.0f);
-    now = my_floattime();
-    n_frames += 1;
-    _check_error();
-    fprintf(stdout,".");
-    fflush(stdout);
-#endif
 
-    // Copy new pixels into OpenCV IplImage frame.
-    memcpy( cvframe->imageData,pixels,buffer_size);
-
-#ifndef USE_COPY
-    CamContext_unpoint_frame(cc);
-    _check_error();
-#endif
+    cvframe->imageData = pixels;
+    cvShowImage( "Camera 0", cvframe); 
 
     t_diff = now-last_fps_print;
     if (t_diff > 5.0) {
@@ -297,24 +276,26 @@ int main(int argc, char** argv) {
       last_fps_print = now;
       n_frames = 0;
     }
+
+    char k = cvWaitKey(10);
+    if (k == 'q')
+      break;
   }
 
   coding = cc->coding;
-
   printf("\n");
+
+  if (!cvSaveImage("image.png",cvframe, 0)) printf("Could not save: image.png\n");
+
   delete_CamContext(cc);
   _check_error();
-
-  if (!cvSaveImage("image.png",cvframe)) printf("Could not save: image.png\n");
 
   cvReleaseImage( &cvframe );
 
   cam_iface_shutdown();
   _check_error();
 
-#ifdef USE_COPY
   free(pixels);
-#endif
 
   return 0;
 }

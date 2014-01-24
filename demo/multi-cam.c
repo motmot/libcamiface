@@ -101,8 +101,8 @@ int main(int argc, char** argv) {
   CamContext **cc;
   unsigned char **pixels;
 
-  int num_cameras=2;
   int num_buffers;
+  int num_cameras;
 
   double last_fps_print;
   int n_frames;
@@ -124,6 +124,9 @@ int main(int argc, char** argv) {
   char save_fname[100];
 
   cam_iface_startup_with_version_check();
+  _check_error();
+
+  num_cameras = cam_iface_get_num_cameras();
   _check_error();
 
   if (argc>1) {
@@ -184,13 +187,18 @@ int main(int argc, char** argv) {
 
     printf("%d mode(s) available:\n",num_modes);
 
-    mode_number = 10;
+    mode_number = 0;
 
     for (i=0; i<num_modes; i++) {
       cam_iface_get_mode_string(camno,i,mode_string,255);
+      if (strstr(mode_string,"FORMAT7_0")!=NULL) {
+        if (strstr(mode_string,"MONO8")!=NULL) {
+          // pick this mode
+          mode_number = i;
+        }
+      }
       printf("  %d: %s\n",i,mode_string);
     }
-    printf("Choosing mode %d\n",mode_number);
 
     num_buffers = 5;
 
@@ -252,10 +260,6 @@ int main(int argc, char** argv) {
     printf("will now grab %d frames.\n",do_num_frames);
   }
 
-  /*
-    CamContext_set_trigger_mode_number( cc[camno], 0 );
-    _check_error();
-  */
 
   while (1) {
     if (do_num_frames<0) break;
