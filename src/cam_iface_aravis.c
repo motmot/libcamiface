@@ -363,7 +363,7 @@ void BACKEND_METHOD(cam_iface_startup)() {
 
   delay_sec = CLAMP(delay_sec,0.0,5.0);
 
-  DPRINTF("startup delay %.1fs\n", delay_sec);
+  DPRINTF("startup delay %.2fs\n", delay_sec);
   g_usleep (delay_sec * G_USEC_PER_SEC);
 
   aravis_num_cameras = arv_interface_get_n_devices (aravis_interface);
