@@ -1127,14 +1127,41 @@ void CCaravis_set_frame_roi( CCaravis *this,
   DCAMPRINTF("set roi: %d,%d %dx%d\n", left, top, width, height);
 
   if (this->started) {
-    DWARNF("Do I need to restart the camera when changing ROI\n");
+    if ( (this->roi_left != left) || \
+         (this->roi_top != top) || \
+         (this->roi_width != width) || \
+         (this->roi_height != height) ) {
+
+    unsigned int payload, i;
+    ArvBuffer *buffer;
+
+    DCAMPRINTF("reconfiguring camera as roi has changed\n");
+
+    arv_camera_stop_acquisition (this->camera);
+
+    do {
+      buffer = arv_stream_try_pop_buffer(this->stream);
+    if (buffer != NULL)
+      g_object_unref (buffer);
+    } while (buffer != NULL);
+
+    arv_camera_set_region (this->camera, left, top, width, height);
+    payload = arv_camera_get_payload(this->camera);
+    for (i = 0; i < this->num_buffers; i++)
+      arv_stream_push_buffer (this->stream, arv_buffer_new (payload, NULL));
+
+    arv_camera_start_acquisition (this->camera);
+
+    }
+  }
+  else {
+    arv_camera_set_region (this->camera, left, top, width, height);
   }
 
-  this->roi_left = left;
-  this->roi_top = top;
-  this->roi_width = width;
-  this->roi_height = height;
-  arv_camera_set_region (this->camera, left, top, width, height);
+  arv_camera_get_region (this->camera,
+                         &(this->roi_left), &(this->roi_top),
+                         &(this->roi_width), &(this->roi_height));
+
 }
 
 void CCaravis_get_framerate( CCaravis *this,
