@@ -546,7 +546,9 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
   ArvGlobalCamera *cache;
   int device_index = device_number;
 
-  DPRINTF("get mode string %d\n", device_number);
+  DPRINTF("get mode strings for device %d\n", device_number);
+
+  memset(mode_string, '\0', mode_string_maxlen);
 
   cache = &(aravis_cameras[device_index]);
   if (!cache->aravis_formats) {
@@ -560,7 +562,6 @@ void BACKEND_METHOD(cam_iface_get_mode_string)(int device_number,
 
     if (!ARV_IS_CAMERA(camera)) {
       ARAVIS_ERROR(CAM_IFACE_GENERIC_ERROR, "error getting mode string");
-      *mode_string = '\0';
       return;
     }
 
