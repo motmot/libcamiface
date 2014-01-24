@@ -742,7 +742,8 @@ void CCaravis_CCaravis( CCaravis *this,
 				ARAVIS_ERROR(CAM_IFACE_GENERIC_ERROR, "error getting trigger modes");
                 return;
 			} else {
-                DCAMPRINTF("got valid trigger name %s (%d)\n", string, i);
+                //i+1 here because I insert continuous capture mode as trigger #0
+                DCAMPRINTF("got valid trigger name %s (trigger num %d)\n", string, i+1);
             }
 			available_entries = g_slist_prepend (available_entries, (gpointer)string);
 			i++;
@@ -750,10 +751,11 @@ void CCaravis_CCaravis( CCaravis *this,
     }
 
     // manually add CC1 (continuous capture)
+    //i+1 here because I insert continuous capture mode as trigger #0
 	this->trigger_modes = g_new (char *, i + 1);
     for (i = 0, iter = available_entries; iter != NULL; iter = iter->next, i++)
-		this->trigger_modes[i] = g_strdup(iter->data);
-	this->trigger_modes[i] = g_strdup("CC1");
+		this->trigger_modes[i+1] = g_strdup(iter->data);
+	this->trigger_modes[0] = g_strdup("CC1");
 
 	this->num_trigger_modes = i+1;
 
@@ -1083,10 +1085,11 @@ void CCaravis_get_trigger_mode_number( CCaravis *this,
 
   trigger_source = arv_camera_get_trigger_source (this->camera);
 
-  DCAMPRINTF("get trigger mode number for trigger source: %s\n", trigger_source);
+  DCAMPRINTF("get trigger mode number for current trigger source: %s\n", trigger_source);
 
   if (!trigger_source) {
     //ARAVIS_ERROR(CAM_IFACE_HARDWARE_FEATURE_NOT_AVAILABLE, "could not read trigger source");
+    DWARNF("Could not read trigger source - assuming trigger number 0\n");
     *trigger_mode_number = 0;
     return;
   }
