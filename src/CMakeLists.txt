@@ -43,6 +43,8 @@ IF(DC1394_FOUND)
       cam_iface_dc1394.c
      )
 
+  include_directories(${DC1394_INCLUDE_DIRS})
+
   ADD_LIBRARY(cam_iface_dc1394 SHARED ${dc1394_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_dc1394 ${DC1394_LIBRARIES})
   set_target_properties(cam_iface_dc1394 PROPERTIES VERSION ${CAM_IFACE_VERSION}
