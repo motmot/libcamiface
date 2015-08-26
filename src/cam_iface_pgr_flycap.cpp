@@ -59,7 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <math.h>
 
-#include "FlyCapture2.h"
+#include "flycapture/FlyCapture2.h"
 
 #include <iostream>
 #include <sstream>
