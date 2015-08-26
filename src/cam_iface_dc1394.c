@@ -1286,6 +1286,9 @@ void CCdc1394_get_num_camera_properties(CCdc1394 *this,
 
 void feature_has_auto_mode(dc1394feature_modes_t* modes, dc1394bool_t* result){
   *result = 0;
+  if (modes==NULL) {
+    return;
+  }
   int i;
   for (i=0; i<(modes->num); i++) {
     if ((modes->modes[i]) == DC1394_FEATURE_MODE_AUTO) {
@@ -1297,6 +1300,9 @@ void feature_has_auto_mode(dc1394feature_modes_t* modes, dc1394bool_t* result){
 
 void feature_has_manual_mode(dc1394feature_modes_t* modes, dc1394bool_t* result) {
   *result = 0;
+  if (modes==NULL) {
+    return;
+  }
   int i;
   for (i=0; i<(modes->num); i++) {
     if ((modes->modes[i]) == DC1394_FEATURE_MODE_MANUAL) {
