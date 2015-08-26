@@ -197,7 +197,7 @@ int get_mode_list(int device_number, std::vector<CamMode> &result ) {
       for(pixfmt=pixfmts.begin(); pixfmt!=pixfmts.end(); pixfmt++) {
 	if (*pixfmt & fmt7Info.pixelFormatBitField) {
 
-	  std::ostringstream oss = std::ostringstream();
+	  std::ostringstream oss;
 	  oss << "format 7, mode " << *fmt7mode << " (" << pixfmt2string(*pixfmt) << ", " << fmt7Info.maxWidth << "x" << fmt7Info.maxHeight <<")";
 
 	  mode.descr = oss.str();
@@ -265,7 +265,7 @@ int get_mode_list(int device_number, std::vector<CamMode> &result ) {
       err = cam->GetVideoModeAndFrameRateInfo(*videomode, *framerate, &supported);
       if (err == FlyCapture2::PGRERROR_OK) {
 	if (supported) {
-	  std::ostringstream oss = std::ostringstream();
+	  std::ostringstream oss;
 	  oss << "videomode " << *videomode << " framerate " << *framerate;
 	  mode.descr = oss.str();
 	  mode.videomode = *videomode;
