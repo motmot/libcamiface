@@ -20,9 +20,10 @@ IF(APPLE)
   add_library(libusb STATIC IMPORTED)
   set_property(TARGET libusb PROPERTY IMPORTED_LOCATION /usr/local/lib/libusb-1.0.a)
 
-  SET(DC1394_LIBRARIES 
+  SET(DC1394_LIBRARIES
         dc1394
         libusb
+         -lobjc
         ${IOKIT_LIBRARY} ${COREFOUNDATION_LIBRARY} ${CORESERVICES_LIBRARY})
 
   set(DC1394_INCLUDE_DIRS ${DC1394_INCLUDE_DIR}/.. )
