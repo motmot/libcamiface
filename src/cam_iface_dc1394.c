@@ -400,11 +400,20 @@ const char * BACKEND_METHOD(cam_iface_get_error_string)() {
   return BACKEND_GLOBAL(cam_iface_error_string);
 }
 
-dc1394bool_t _available_feature_filter( dc1394feature_t feature_id, dc1394bool_t was_available ) {
+dc1394bool_t _available_feature_filter( dc1394camera_t *camera, dc1394feature_t feature, dc1394bool_t was_available ) {
+  uint32_t value;
+
   if (!was_available) {
     return was_available;
   }
-  switch (feature_id) {
+
+  // We require getting value to work for a feature to be supported.
+  if (dc1394_feature_get_value(camera, feature, &value)!=DC1394_SUCCESS) {
+    return 0;
+  }
+
+  // Finally, do not support DC1394_FEATURE_TRIGGER.
+  switch (feature) {
   case DC1394_FEATURE_TRIGGER: return 0; break;
   default: return 1;
   }
@@ -606,7 +615,7 @@ void BACKEND_METHOD(cam_iface_startup)() {
     for (i=0; i<DC1394_FEATURE_NUM; i++) {
       feature_info = &(features.feature[i]);
 
-      if (_available_feature_filter( feature_info->id, feature_info->available)) {
+      if (_available_feature_filter( cameras[device_number], feature_info->id, feature_info->available)) {
         features_by_device_number[device_number].num_features++;
       }
 
@@ -690,7 +699,7 @@ void BACKEND_METHOD(cam_iface_startup)() {
     feature_number = 0;
     for (i=0; i<DC1394_FEATURE_NUM; i++) {
       feature_info = &(features.feature[i]);
-      if (_available_feature_filter( feature_info->id, feature_info->available)) {
+      if (_available_feature_filter( cameras[device_number], feature_info->id, feature_info->available)) {
         features_by_device_number[device_number].dc1394_feature_ids[feature_number] = feature_info->id;
         feature_number++;
       }
