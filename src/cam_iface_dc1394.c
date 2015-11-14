@@ -400,7 +400,7 @@ const char * BACKEND_METHOD(cam_iface_get_error_string)() {
   return BACKEND_GLOBAL(cam_iface_error_string);
 }
 
-dc1394bool_t _available_feature_filter( int feature_id, dc1394bool_t was_available ) {
+dc1394bool_t _available_feature_filter( dc1394feature_t feature_id, dc1394bool_t was_available ) {
   if (!was_available) {
     return was_available;
   }
@@ -1426,7 +1426,7 @@ void CCdc1394_get_camera_property(CCdc1394 *this,
                                   long* Value,
                                   int* Auto ) {
   dc1394camera_t *camera;
-  int feature_id;
+  dc1394feature_t feature_id;
   uint32_t this_val;
   dc1394feature_mode_t this_mode;
 
