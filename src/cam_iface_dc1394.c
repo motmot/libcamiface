@@ -1572,7 +1572,7 @@ void CCdc1394_grab_next_frame_blocking_with_stride( CCdc1394 *this,
     return;
   }
 
-  // Poll here even thought user wants to block -- we blocked above
+  // Poll here even though user wants to block -- we blocked above
   // using select(), and this lets us handle EINTR.
 
   CIDC1394CHK(dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &frame));
