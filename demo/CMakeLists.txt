@@ -172,7 +172,7 @@ if(GLUT_FOUND)
     ADD_EXECUTABLE(liveview-glut-${BACKEND} ${liveview-glut-SRCS})
     include_directories(${GLUT_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
     IF(GLEW_FOUND)
-      target_link_libraries(liveview-glut-${BACKEND} imp_glew)
+      target_link_libraries(liveview-glut-${BACKEND} imp_glew m)
     ENDIF(GLEW_FOUND)
 
 
