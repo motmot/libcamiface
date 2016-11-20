@@ -82,11 +82,15 @@ IF(ARAVIS_FOUND)
 
   ADD_LIBRARY(cam_iface_aravis SHARED ${aravis_SRCS})
   TARGET_LINK_LIBRARIES(cam_iface_aravis ${ARAVIS_LIBRARIES})
-  set_target_properties(cam_iface_aravis PROPERTIES VERSION ${CAM_IFACE_VERSION}
-    SOVERSION ${CAM_IFACE_SOVERSION})
+  set_target_properties(cam_iface_aravis PROPERTIES
+    VERSION ${CAM_IFACE_VERSION}
+    SOVERSION ${CAM_IFACE_SOVERSION}
+  )
 
   ADD_LIBRARY(cam_iface_aravis-static STATIC ${aravis_SRCS})
-  set_target_properties(cam_iface_aravis-static PROPERTIES OUTPUT_NAME "cam_iface_aravis")
+  set_target_properties(cam_iface_aravis-static PROPERTIES
+    OUTPUT_NAME "cam_iface_aravis"
+  )
 
   SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${ARAVIS_LIBRARIES})
   SET(mega_DEFINE
