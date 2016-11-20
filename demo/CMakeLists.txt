@@ -47,12 +47,7 @@ set(all_demo_backends ${all_backends})
 FOREACH(SRC ${SRCS})
   FOREACH(BACKEND ${all_demo_backends})
     ADD_EXECUTABLE(${SRC}-${BACKEND} ${SRC}.c)
-    IF(${BACKEND} STREQUAL "mega")
-      message(STATUS "adding mega backend to " ${SRC} " : " ${BACKEND})
-      TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_mega)
-    ELSE(${BACKEND} STREQUAL "mega")
-      TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_${BACKEND})
-    ENDIF(${BACKEND} STREQUAL "mega")
+    TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_${BACKEND})
 
     if(WIN32)
       set_target_properties(${SRC}-${BACKEND} PROPERTIES
@@ -82,17 +77,10 @@ if(OPENCV_FOUND)
     ADD_EXECUTABLE(opencv-${BACKEND} ${opencv_SRCS})
     include_directories(${OPENCV_INCLUDE_DIRS})
 
-    IF(${BACKEND} STREQUAL "mega")
-      TARGET_LINK_LIBRARIES(opencv-${BACKEND}
-        cam_iface_mega
-        ${OPENCV_LIBRARIES} opencv_core opencv_legacy opencv_highgui opencv_imgproc
-        )
-    ELSE(${BACKEND} STREQUAL "mega")
-      TARGET_LINK_LIBRARIES(opencv-${BACKEND}
-        cam_iface_${BACKEND}
-        ${OPENCV_LIBRARIES} opencv_core opencv_legacy opencv_highgui opencv_imgproc
-        )
-    ENDIF(${BACKEND} STREQUAL "mega")
+    TARGET_LINK_LIBRARIES(opencv-${BACKEND}
+      cam_iface_${BACKEND}
+      ${OPENCV_LIBRARIES} opencv_core opencv_legacy opencv_highgui opencv_imgproc
+      )
 
     INSTALL(TARGETS opencv-${BACKEND}
       RUNTIME DESTINATION ${DEMO_DIR}
@@ -176,20 +164,11 @@ if(GLUT_FOUND)
     ENDIF(GLEW_FOUND)
 
 
-    IF(${BACKEND} STREQUAL "mega")
-      message(STATUS "adding mega backend to liveview-glut : " ${BACKEND})
-      TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
-        ${GLUT_LIBRARIES}
-        ${OPENGL_LIBRARIES}
-        cam_iface_mega
-        )
-    ELSE(${BACKEND} STREQUAL "mega")
-      TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
-        cam_iface_${BACKEND}
-        ${GLUT_LIBRARIES}
-        ${OPENGL_LIBRARIES}
-        )
-    ENDIF(${BACKEND} STREQUAL "mega")
+    TARGET_LINK_LIBRARIES(liveview-glut-${BACKEND}
+      cam_iface_${BACKEND}
+      ${GLUT_LIBRARIES}
+      ${OPENGL_LIBRARIES}
+      )
 
 
     INSTALL(TARGETS liveview-glut-${BACKEND}
