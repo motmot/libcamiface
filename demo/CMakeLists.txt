@@ -46,6 +46,8 @@ set(all_demo_backends ${all_backends})
 
 FOREACH(SRC ${SRCS})
   FOREACH(BACKEND ${all_demo_backends})
+
+    # Dynamically linked version
     ADD_EXECUTABLE(${SRC}-${BACKEND} ${SRC}.c)
     TARGET_LINK_LIBRARIES(${SRC}-${BACKEND} cam_iface_${BACKEND})
 
@@ -55,7 +57,11 @@ FOREACH(SRC ${SRCS})
       )
     endif(WIN32)
 
-    INSTALL(TARGETS ${SRC}-${BACKEND}
+    # Statically linked version
+    ADD_EXECUTABLE(${SRC}-${BACKEND}-static ${SRC}.c)
+    TARGET_LINK_LIBRARIES(${SRC}-${BACKEND}-static cam_iface_${BACKEND}-static ${${BACKEND}-static-libs})
+
+    INSTALL(TARGETS ${SRC}-${BACKEND} ${SRC}-${BACKEND}-static
       RUNTIME DESTINATION ${DEMO_DIR}
       LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib

@@ -52,6 +52,7 @@ IF(DC1394_FOUND)
 
   ADD_LIBRARY(cam_iface_dc1394-static STATIC ${dc1394_SRCS})
   set_target_properties(cam_iface_dc1394-static PROPERTIES OUTPUT_NAME "cam_iface_dc1394")
+  SET(dc1394-static-libs ${DC1394_LIBRARIES} PARENT_SCOPE)
 
   SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${DC1394_LIBRARIES})
   SET(mega_DEFINE
@@ -91,6 +92,7 @@ IF(ARAVIS_FOUND)
   set_target_properties(cam_iface_aravis-static PROPERTIES
     OUTPUT_NAME "cam_iface_aravis"
   )
+  SET(aravis-static-libs ${ARAVIS_LIBRARIES} PARENT_SCOPE)
 
   SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${ARAVIS_LIBRARIES})
   SET(mega_DEFINE
@@ -176,6 +178,7 @@ IF(PROSILICA_GIGE_FOUND)
   set_target_properties(cam_iface_prosilica_gige-static PROPERTIES
     OUTPUT_NAME "cam_iface_prosilica_gige"
     )
+  SET(prosilica_gige-static-libs ${PROSILICA_GIGE_LIBRARIES} PARENT_SCOPE)
 
   SET_TARGET_PROPERTIES(cam_iface_prosilica_gige-static PROPERTIES
     CLEAN_DIRECT_OUTPUT 1
@@ -244,6 +247,7 @@ IF(FLYCAPTURE_FOUND)
   set_target_properties(cam_iface_pgr_flycap-static PROPERTIES
     OUTPUT_NAME "cam_iface_pgr_flycap"
     )
+  SET(pgr_flycap-static-libs ${FLYCAPTURE_LIBRARIES} PARENT_SCOPE)
 
   SET_TARGET_PROPERTIES(cam_iface_pgr_flycap-static PROPERTIES
     CLEAN_DIRECT_OUTPUT 1
@@ -300,6 +304,7 @@ IF(BASLER_PYLON_FOUND)
 
   ADD_LIBRARY(cam_iface_basler_pylon-static STATIC ${basler_pylon_SRCS})
   set_target_properties(cam_iface_basler_pylon-static PROPERTIES OUTPUT_NAME "cam_iface_basler_pylon")
+  SET(basler_pylon-static-libs ${BASLER_PYLON_LIBRARY} ${GENICAM_LIBRARY} PARENT_SCOPE)
 
   SET_TARGET_PROPERTIES(cam_iface_basler_pylon PROPERTIES CLEAN_DIRECT_OUTPUT 1)
   SET_TARGET_PROPERTIES(cam_iface_basler_pylon-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
@@ -380,6 +385,7 @@ set(mega_SRCS ${mega_SRCS} ${common_SRCS}
 ADD_LIBRARY(cam_iface_mega SHARED ${mega_SRCS})
 ADD_LIBRARY(cam_iface_mega-static STATIC ${mega_SRCS})
 set_target_properties(cam_iface_mega-static PROPERTIES OUTPUT_NAME "cam_iface_megastatic")
+# SET(mega-static-libs "<Hmm, things work without this. Does anything need to go here?>" PARENT_SCOPE)
 
 SET_TARGET_PROPERTIES(cam_iface_mega PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 SET_TARGET_PROPERTIES(cam_iface_mega-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
