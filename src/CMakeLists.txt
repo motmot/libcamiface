@@ -236,18 +236,15 @@ IF(FLYCAPTURE_FOUND)
 
   SET(CI_FLYCAP_TARGETS cam_iface_pgr_flycap)
 
-  ## if(NOT WIN32)
-  ## # Trouble building static lib on Windows, so disabled for now...
-  ## ADD_LIBRARY(cam_iface_pgr_flycap-static STATIC ${flycapture_SRCS})
-  ## set_target_properties(cam_iface_pgr_flycap-static PROPERTIES
-  ##   OUTPUT_NAME "cam_iface_pgr_flycap"
-  ##   )
+  ADD_LIBRARY(cam_iface_pgr_flycap-static STATIC ${flycapture_SRCS})
+  set_target_properties(cam_iface_pgr_flycap-static PROPERTIES
+    OUTPUT_NAME "cam_iface_pgr_flycap"
+    )
 
-  ## SET_TARGET_PROPERTIES(cam_iface_pgr_flycap-static PROPERTIES
-  ##   CLEAN_DIRECT_OUTPUT 1
-  ## )
-  ## SET(CI_FLYCAP_TARGETS ${CI_FLYCAP_TARGETS} cam_iface_pgr_flycap-static)
-  ## endif(NOT WIN32)
+  SET_TARGET_PROPERTIES(cam_iface_pgr_flycap-static PROPERTIES
+    CLEAN_DIRECT_OUTPUT 1
+  )
+  SET(CI_FLYCAP_TARGETS ${CI_FLYCAP_TARGETS} cam_iface_pgr_flycap-static)
 
   SET(mega_LINK_LIBS ${mega_LINK_LIBS} ${FLYCAPTURE_LIBRARIES})
   SET(mega_DEFINE
